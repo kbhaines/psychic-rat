@@ -14,13 +14,26 @@ func main() {
 	http.ListenAndServe("localhost:8080", nil)
 
 }
+
+type MethodHandler func(http.ResponseWriter, *http.Request)
+
 func handler(writer http.ResponseWriter, request *http.Request) {
 
+	handlerMaps := map[string]MethodHandler{
+		http.MethodPost: handlePost,
+		http.MethodGet:  handleGet,
+	}
+
 	fmt.Printf("%v", request)
-	if request.Method != http.MethodPost {
+	v, ok := handlerMaps[request.Method]
+	if ! ok {
 		unsupportedMethod(writer)
 		return
 	}
+	v(writer, request)
+}
+
+func handlePost(writer http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		unableToParseForm(err, writer)
 		return
@@ -31,28 +44,45 @@ func handler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	fmt.Fprintf(writer, "%v", pledge)
-
 }
 
+func handleGet(writer http.ResponseWriter, request *http.Request) {
+	const message = "Welcome"
+	fmt.Fprintf(writer, message)
+}
+
+type CompanyId string
+
+type ItemId string
+
 type Pledge struct {
-	Type    string
-	Company string
-	value   int
+	Email     string
+	ItemId    ItemId
+	CompanyId CompanyId
+	Value     int
 }
 
 func parseRequest(values url.Values) (Pledge, error) {
-	params, ok := checkFormParametersExist(values, "type", "company", "value")
+	const (
+		Type    = "type"
+		Company = "company"
+		Value   = "value"
+		Email   = "email"
+	)
+
+	params, ok := extractFormParams(values, Type, Company, Value, Email)
 	if ! ok {
 		return Pledge{}, fmt.Errorf("missing values, only got %v", params)
 	}
-	value, err := strconv.Atoi(params["value"])
+
+	value, err := strconv.Atoi(params[Value])
 	if err != nil {
 		return Pledge{}, err
 	}
-	return Pledge{params["type"], params["company"], value}, nil
+	return Pledge{params[Email], ItemId(params[Type]), CompanyId(params[Company]), value}, nil
 }
 
-func checkFormParametersExist(values url.Values, params ...string) (map[string]string, bool) {
+func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
 	results := map[string]string{}
 	for _, p := range (params) {
 		v, ok := values[p]
