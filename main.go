@@ -6,18 +6,71 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"github.com/satori/go.uuid"
+	"time"
 )
 
-func main() {
+type CompanyId string
 
-	http.HandleFunc("/api/v1/pledge", handler)
-	http.ListenAndServe("localhost:8080", nil)
+type ItemId string
 
+type CountryId string
+
+type UserId string
+
+type PledgeId string
+
+type Pledge struct {
+	Id        PledgeId
+	UserId    UserId
+	ItemId    ItemId
+	Timestamp time.Time
+}
+
+type PublicUser struct {
+	Id        UserId
+	Country   CountryId
+	FirstName string
+}
+
+type PrivateUser struct {
+	Id       UserId
+	Email    string
+	FullName string
+	AuthMethod string
+	AuthSecret string
 }
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
 
-func handler(writer http.ResponseWriter, request *http.Request) {
+type HandlerMap struct {
+	PathExpr string
+	Method   string
+	Handler  MethodHandler
+}
+
+type PledgeRepo interface {
+	Save(pledge Pledge) (bool)
+	GetByUserId(id UserId) []Pledge
+}
+
+type PublicUserRepo interface {
+	CreateUser(user PublicUser) (bool)
+	GetById(id UserId) (PublicUser)
+}
+
+type PrivateUserRepo interface {
+	CreateUser(user PrivateUser) (bool)
+	GetByEmail(email string) (PublicUser)
+	GetById(id UserId) (PublicUser)
+}
+
+func main() {
+	http.HandleFunc("/api/v1/pledge", pledgeHandler)
+	http.ListenAndServe("localhost:8080", nil)
+}
+
+func pledgeHandler(writer http.ResponseWriter, request *http.Request) {
 
 	handlerMaps := map[string]MethodHandler{
 		http.MethodPost: handlePost,
@@ -43,6 +96,8 @@ func handlePost(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprintf(writer, "error: %v", err)
 		return
 	}
+
+	//savePledge()
 	fmt.Fprintf(writer, "%v", pledge)
 }
 
@@ -51,26 +106,16 @@ func handleGet(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, message)
 }
 
-type CompanyId string
-
-type ItemId string
-
-type Pledge struct {
-	Email     string
-	ItemId    ItemId
-	CompanyId CompanyId
-	Value     int
-}
-
 func parseRequest(values url.Values) (Pledge, error) {
 	const (
-		Type    = "type"
+		Item    = "item"
 		Company = "company"
 		Value   = "value"
 		Email   = "email"
+		Country = "country"
 	)
 
-	params, ok := extractFormParams(values, Type, Company, Value, Email)
+	params, ok := extractFormParams(values, Item, Company, Value, Email)
 	if ! ok {
 		return Pledge{}, fmt.Errorf("missing values, only got %v", params)
 	}
@@ -79,7 +124,8 @@ func parseRequest(values url.Values) (Pledge, error) {
 	if err != nil {
 		return Pledge{}, err
 	}
-	return Pledge{params[Email], ItemId(params[Type]), CompanyId(params[Company]), value}, nil
+	newId := uuid.NewV4().String()
+	return Pledge{PledgeId(newId), params[Email], ItemId(params[Item]), CompanyId(params[Company]), value}, nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
