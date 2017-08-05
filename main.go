@@ -7,39 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"github.com/satori/go.uuid"
-	"time"
+	ent "psychic-rat/entities"
 )
-
-type CompanyId string
-
-type ItemId string
-
-type CountryId string
-
-type UserId string
-
-type PledgeId string
-
-type Pledge struct {
-	Id        PledgeId
-	UserId    UserId
-	ItemId    ItemId
-	Timestamp time.Time
-}
-
-type PublicUser struct {
-	Id        UserId
-	Country   CountryId
-	FirstName string
-}
-
-type PrivateUser struct {
-	Id       UserId
-	Email    string
-	FullName string
-	AuthMethod string
-	AuthSecret string
-}
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
 
@@ -50,19 +19,8 @@ type HandlerMap struct {
 }
 
 type PledgeRepo interface {
-	Save(pledge Pledge) (bool)
-	GetByUserId(id UserId) []Pledge
-}
-
-type PublicUserRepo interface {
-	CreateUser(user PublicUser) (bool)
-	GetById(id UserId) (PublicUser)
-}
-
-type PrivateUserRepo interface {
-	CreateUser(user PrivateUser) (bool)
-	GetByEmail(email string) (PublicUser)
-	GetById(id UserId) (PublicUser)
+	Save(pledge ent.Pledge) (bool)
+	GetByUserId(id ent.UserId) []ent.Pledge
 }
 
 func main() {
@@ -106,7 +64,7 @@ func handleGet(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, message)
 }
 
-func parseRequest(values url.Values) (Pledge, error) {
+func parseRequest(values url.Values) (ent.Pledge, error) {
 	const (
 		Item    = "item"
 		Company = "company"
@@ -117,15 +75,15 @@ func parseRequest(values url.Values) (Pledge, error) {
 
 	params, ok := extractFormParams(values, Item, Company, Value, Email)
 	if ! ok {
-		return Pledge{}, fmt.Errorf("missing values, only got %v", params)
+		return ent.Pledge{}, fmt.Errorf("missing values, only got %v", params)
 	}
 
 	value, err := strconv.Atoi(params[Value])
 	if err != nil {
-		return Pledge{}, err
+		return ent.Pledge{}, err
 	}
 	newId := uuid.NewV4().String()
-	return Pledge{PledgeId(newId), params[Email], ItemId(params[Item]), CompanyId(params[Company]), value}, nil
+	return ent.Pledge{ent.PledgeId(newId), params[Email], ent.ItemId(params[Item]), ent.CompanyId(params[Company]), value}, nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
