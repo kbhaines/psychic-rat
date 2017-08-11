@@ -12,7 +12,7 @@ type Generic struct {
 }
 
 type GenericDb struct {
-	items map[GenericId](reflect.Type, interface{})
+	items map[GenericId]interface{}
 }
 
 func MakeDb() GenericDb {
