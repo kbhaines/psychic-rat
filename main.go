@@ -18,11 +18,6 @@ type HandlerMap struct {
 	Handler  MethodHandler
 }
 
-type PledgeRepo interface {
-	Save(pledge ent.Record) (bool)
-	GetByUserId(id ent.UserId) []ent.Record
-}
-
 func main() {
 	http.HandleFunc("/api/v1/pledge", pledgeHandler)
 	http.ListenAndServe("localhost:8080", nil)
@@ -78,12 +73,12 @@ func parseRequest(values url.Values) (ent.Record, error) {
 		return ent.Record{}, fmt.Errorf("missing values, only got %v", params)
 	}
 
-	value, err := strconv.Atoi(params[Value])
+	_, err := strconv.Atoi(params[Value])
 	if err != nil {
 		return ent.Record{}, err
 	}
-	newId := uuid.NewV4().String()
-	return ent.Record{ent.Id(newId), params[Email], ent.ItemId(params[Item]), ent.CompanyId(params[Company]), value}, nil
+	_ = uuid.NewV4().String()
+	return ent.Record{}, nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
