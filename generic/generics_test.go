@@ -1,4 +1,4 @@
-package entities
+package generic
 
 import "testing"
 
@@ -68,4 +68,13 @@ func checkGetPerson(db GenericDb, i interface{}, t *testing.T) person {
 		t.Errorf("did not retrieve person")
 	}
 	return p.(person)
+}
+
+func TestNotFound(t *testing.T) {
+	db := MakeDb()
+	createPerson(db, t, 0)
+	_, err := db.Get(1)
+	if err == nil {
+		t.Errorf("error not found")
+	}
 }

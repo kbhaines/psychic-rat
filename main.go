@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"github.com/satori/go.uuid"
-	ent "psychic-rat/entities"
+	ent "psychic-rat/pledge"
 )
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
@@ -83,7 +83,7 @@ func parseRequest(values url.Values) (ent.Pledge, error) {
 		return ent.Pledge{}, err
 	}
 	newId := uuid.NewV4().String()
-	return ent.Pledge{ent.PledgeId(newId), params[Email], ent.ItemId(params[Item]), ent.CompanyId(params[Company]), value}, nil
+	return ent.Pledge{ent.Id(newId), params[Email], ent.ItemId(params[Item]), ent.CompanyId(params[Company]), value}, nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
