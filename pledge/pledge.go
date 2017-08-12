@@ -8,9 +8,15 @@ import (
 
 type Id string
 
-type Pledge struct {
+type Record struct {
 	Id        Id
 	UserId    pubuser.Id
 	ItemId    item.Id
 	Timestamp time.Time
+}
+
+type Repo interface {
+	Create(pledge Record) (Id, error)
+	GetById(id Id) (Record, error)
+	GetByUser(id pubuser.Id) []Id
 }

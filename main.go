@@ -19,8 +19,8 @@ type HandlerMap struct {
 }
 
 type PledgeRepo interface {
-	Save(pledge ent.Pledge) (bool)
-	GetByUserId(id ent.UserId) []ent.Pledge
+	Save(pledge ent.Record) (bool)
+	GetByUserId(id ent.UserId) []ent.Record
 }
 
 func main() {
@@ -64,7 +64,7 @@ func handleGet(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, message)
 }
 
-func parseRequest(values url.Values) (ent.Pledge, error) {
+func parseRequest(values url.Values) (ent.Record, error) {
 	const (
 		Item    = "item"
 		Company = "company"
@@ -75,15 +75,15 @@ func parseRequest(values url.Values) (ent.Pledge, error) {
 
 	params, ok := extractFormParams(values, Item, Company, Value, Email)
 	if ! ok {
-		return ent.Pledge{}, fmt.Errorf("missing values, only got %v", params)
+		return ent.Record{}, fmt.Errorf("missing values, only got %v", params)
 	}
 
 	value, err := strconv.Atoi(params[Value])
 	if err != nil {
-		return ent.Pledge{}, err
+		return ent.Record{}, err
 	}
 	newId := uuid.NewV4().String()
-	return ent.Pledge{ent.Id(newId), params[Email], ent.ItemId(params[Item]), ent.CompanyId(params[Company]), value}, nil
+	return ent.Record{ent.Id(newId), params[Email], ent.ItemId(params[Item]), ent.CompanyId(params[Company]), value}, nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
