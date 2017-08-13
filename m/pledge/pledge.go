@@ -2,7 +2,7 @@ package pledge
 
 import (
 	"time"
-	"psychic-rat/m/pubuserer"
+	"psychic-rat/m/pubuser"
 	"psychic-rat/m/item"
 )
 

@@ -2,7 +2,7 @@ package pledge
 
 import (
 	"errors"
-	"psychic-rat/m/pubuserer"
+	"psychic-rat/m/pubuser"
 )
 
 // declare that we implement Repo interface
