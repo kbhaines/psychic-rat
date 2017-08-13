@@ -1,7 +1,7 @@
 package item
 
 import (
-	"psychic-rat/company"
+	"psychic-rat/m/company"
 )
 
 type Id int

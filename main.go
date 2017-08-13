@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strconv"
 	"github.com/satori/go.uuid"
-	ent "psychic-rat/pledge"
+	ent "psychic-rat/m/pledge"
 )
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
