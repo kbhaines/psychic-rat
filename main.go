@@ -6,8 +6,11 @@ import (
 	"log"
 	"net/url"
 	"strconv"
-	"github.com/satori/go.uuid"
-	ent "psychic-rat/m/pledge"
+	"psychic-rat/m/item"
+	"psychic-rat/m/pubuser"
+	"psychic-rat/factory"
+	"psychic-rat/m/pledge"
+	"time"
 )
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
@@ -16,6 +19,11 @@ type HandlerMap struct {
 	PathExpr string
 	Method   string
 	Handler  MethodHandler
+}
+
+type PledgePost struct {
+	itemId item.Id
+	userId pubuser.Id
 }
 
 func main() {
@@ -50,8 +58,29 @@ func handlePost(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	//savePledge()
-	fmt.Fprintf(writer, "%v", pledge)
+	err = validateRequest(pledge)
+	if err != nil {
+		fmt.Fprintf(writer, "error: %v", err)
+	}
+}
+
+var itemRepo = factory.GetItemRepo()
+var pledgeRepo = factory.GetPledgeRepo()
+var userRepo = factory.GetPubUserRepo()
+
+func validateRequest(post *PledgePost) error {
+	_, err := itemRepo.GetById(post.itemId)
+	if err != nil {
+		return err
+	}
+	_, err = userRepo.GetById(post.userId)
+	if err != nil {
+		return err
+	}
+
+	newPledge := pledge.New(post.userId, post.itemId, time.Now())
+	pledgeRepo.Create(newPledge)
+	return nil
 }
 
 func handleGet(writer http.ResponseWriter, request *http.Request) {
@@ -59,38 +88,35 @@ func handleGet(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, message)
 }
 
-func parseRequest(values url.Values) (ent.Record, error) {
+func parseRequest(values url.Values) (*PledgePost, error) {
 	const (
-		Item    = "item"
-		Company = "company"
-		Value   = "value"
-		Email   = "email"
-		Country = "country"
+		Item = "item"
 	)
 
-	params, ok := extractFormParams(values, Item, Company, Value, Email)
+	params, ok := extractFormParams(values, Item)
 	if ! ok {
-		return ent.Record{}, fmt.Errorf("missing values, only got %v", params)
+		return nil, fmt.Errorf("missing values, only got %v", params)
 	}
 
-	_, err := strconv.Atoi(params[Value])
+	id, err := strconv.Atoi(params[Item])
 	if err != nil {
-		return ent.Record{}, err
+		return nil, fmt.Errorf("illegal value for item (%v)", params[Item])
 	}
-	_ = uuid.NewV4().String()
-	return ent.Record{}, nil
+
+	return &PledgePost{item.Id(id), pubuser.Id(0)}, nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
 	results := map[string]string{}
+	resultOk := true
 	for _, p := range (params) {
 		v, ok := values[p]
 		if ! ok {
-			return results, false
+			resultOk = false
 		}
 		results[p] = v[0]
 	}
-	return results, true
+	return results, resultOk
 }
 
 func unableToParseForm(err error, writer http.ResponseWriter) {
