@@ -66,7 +66,7 @@ func unableToParseForm(err error, writer http.ResponseWriter) {
 	log.Print(err)
 }
 
-func parsePledgePost(values url.Values) (ctr.NewPledgeRequest, error) {
+func parsePledgePost(values url.Values) (ctr.AddPledgeRequest, error) {
 	const (
 		Item = "item"
 	)
@@ -76,7 +76,7 @@ func parsePledgePost(values url.Values) (ctr.NewPledgeRequest, error) {
 		return nil, fmt.Errorf("missing values, only got %v", params)
 	}
 
-	return ctr.GetController().Pledge().MakePledgeRequest(item.Id(params[Item]), pubuser.Id(0)), nil
+	return ctr.GetController().Pledge().MakeAddPledgeRequest(item.Id(params[Item]), pubuser.Id(0)), nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {

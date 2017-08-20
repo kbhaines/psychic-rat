@@ -23,4 +23,3 @@ func (c *controller) Pledge() PledgeController {
 func (c *controller) Item() ItemController {
 	return c.ic
 }
-
