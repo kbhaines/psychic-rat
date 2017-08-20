@@ -1,7 +1,7 @@
 package factory
 
 import "errors"
-import "psychic-rat/m/item"
+import "psychic-rat/mdl/item"
 
 func GetItemRepo() item.Repo {
 	return itemRepo

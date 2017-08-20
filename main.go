@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	"psychic-rat/m/item"
-	"psychic-rat/m/pubuser"
-	"psychic-rat/c"
+	"psychic-rat/mdl/item"
+	"psychic-rat/mdl/pubuser"
+	"psychic-rat/ctr"
 )
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
@@ -55,7 +55,7 @@ func handlePledgePost(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	err = c.HandlePledgeRequest(pledge)
+	err = ctr.GetController().Pledge().HandlePledgeRequest(pledge)
 	if err != nil {
 		fmt.Fprintf(writer, "error: %v", err)
 	}
@@ -66,7 +66,7 @@ func unableToParseForm(err error, writer http.ResponseWriter) {
 	log.Print(err)
 }
 
-func parsePledgePost(values url.Values) (c.NewPledgeRequest, error) {
+func parsePledgePost(values url.Values) (ctr.NewPledgeRequest, error) {
 	const (
 		Item = "item"
 	)
@@ -76,7 +76,7 @@ func parsePledgePost(values url.Values) (c.NewPledgeRequest, error) {
 		return nil, fmt.Errorf("missing values, only got %v", params)
 	}
 
-	return c.MakePledgeRequest(item.Id(params[Item]), pubuser.Id(0)), nil
+	return ctr.GetController().Pledge().MakePledgeRequest(item.Id(params[Item]), pubuser.Id(0)), nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
@@ -86,6 +86,7 @@ func extractFormParams(values url.Values, params ...string) (map[string]string, 
 		v, ok := values[p]
 		if ! ok {
 			resultOk = false
+			continue
 		}
 		results[p] = v[0]
 	}
@@ -108,13 +109,15 @@ func itemHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	const (
-		Make = "make"
-		Model = "model"
-		Manufacturer = "manufacturer"
+		Make    = "make"
+		Model   = "model"
+		Company = "company"
 	)
-	params, ok := extractFormParams(request.Form, Make, Model, Manufacturer)
+	params, ok := extractFormParams(request.Form, Make, Model, Company)
 	if ! ok {
-
+		fmt.Fprintf(writer, "form parameters missing: got %v", params)
 	}
+
+	ctr.GetController()
 
 }

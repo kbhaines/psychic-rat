@@ -2,7 +2,7 @@ package factory
 
 import (
 	"errors"
-	"psychic-rat/m/pubuser"
+	"psychic-rat/mdl/pubuser"
 )
 
 // declare that we implement Repo interface

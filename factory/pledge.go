@@ -1,8 +1,8 @@
 package factory
 
 import (
-	"psychic-rat/m/pubuser"
-	"psychic-rat/m/pledge"
+	"psychic-rat/mdl/pubuser"
+	"psychic-rat/mdl/pledge"
 	"errors"
 )
 

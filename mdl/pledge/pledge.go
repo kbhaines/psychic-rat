@@ -2,8 +2,8 @@ package pledge
 
 import (
 	"time"
-	"psychic-rat/m/pubuser"
-	"psychic-rat/m/item"
+	"psychic-rat/mdl/pubuser"
+	"psychic-rat/mdl/item"
 	"github.com/satori/go.uuid"
 )
 

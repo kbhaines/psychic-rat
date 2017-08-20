@@ -1,7 +1,7 @@
 package item
 
 import (
-	"psychic-rat/m/company"
+	"psychic-rat/mdl/company"
 	"github.com/satori/go.uuid"
 )
 
