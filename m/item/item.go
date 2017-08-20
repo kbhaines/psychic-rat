@@ -5,12 +5,12 @@ import (
 	"github.com/satori/go.uuid"
 )
 
-type Id int
+type Id string
 
 type Record interface {
 	Id() Id
-	Name() string
-	Description() string
+	Make() string
+	Model() string
 	Manufacturer() company.Id
 }
 
@@ -20,14 +20,14 @@ type Repo interface {
 	List() []Id
 }
 
-func New(name string, description string, manufacturer company.Id) Record {
-	return &record{id: Id(uuid.NewV4().String()), description: description, manufacturer: manufacturer}
+func New(make string, model string, manufacturer company.Id) Record {
+	return &record{id: Id(uuid.NewV4().String()), model: model, manufacturer: manufacturer}
 }
 
 type record struct {
 	id           Id
-	name         string
-	description  string
+	make         string
+	model        string
 	manufacturer company.Id
 }
 
@@ -35,12 +35,12 @@ func (r *record) Id() Id {
 	return r.id
 }
 
-func (r *record) Name() string {
-	return r.name
+func (r *record) Make() string {
+	return r.make
 }
 
-func (r *record) Description() string {
-	return r.description
+func (r *record) Model() string {
+	return r.model
 }
 
 func (r *record) Manufacturer() company.Id {
