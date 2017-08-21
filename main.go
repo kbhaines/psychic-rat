@@ -8,6 +8,7 @@ import (
 	"psychic-rat/mdl/item"
 	"psychic-rat/mdl/pubuser"
 	"psychic-rat/ctr"
+	"psychic-rat/mdl/company"
 )
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
@@ -49,13 +50,13 @@ func handlePledgePost(writer http.ResponseWriter, request *http.Request) {
 		unableToParseForm(err, writer)
 		return
 	}
-	pledge, err := parsePledgePost(request.Form)
+	itemId, userId, err := parsePledgePost(request.Form)
 	if err != nil {
 		fmt.Fprintf(writer, "error: %v", err)
 		return
 	}
 
-	err = ctr.GetController().Pledge().HandlePledgeRequest(pledge)
+	err = ctr.GetController().Pledge().AddPledge(itemId, userId)
 	if err != nil {
 		fmt.Fprintf(writer, "error: %v", err)
 	}
@@ -66,17 +67,17 @@ func unableToParseForm(err error, writer http.ResponseWriter) {
 	log.Print(err)
 }
 
-func parsePledgePost(values url.Values) (ctr.AddPledgeRequest, error) {
+func parsePledgePost(values url.Values) (itemId item.Id, userId pubuser.Id, err error) {
 	const (
 		Item = "item"
 	)
 
 	params, ok := extractFormParams(values, Item)
 	if ! ok {
-		return nil, fmt.Errorf("missing values, only got %v", params)
+		return itemId, userId, fmt.Errorf("missing values, only got %v", params)
 	}
 
-	return ctr.GetController().Pledge().MakeAddPledgeRequest(item.Id(params[Item]), pubuser.Id(0)), nil
+	return item.Id(params[Item]), pubuser.Id(0), nil
 }
 
 func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
@@ -99,6 +100,10 @@ func handleGet(writer http.ResponseWriter, request *http.Request) {
 }
 
 func itemHandler(writer http.ResponseWriter, request *http.Request) {
+	if request.Method == http.MethodGet {
+		handleItemGet(writer, request)
+		return
+	}
 	if request.Method != http.MethodPost {
 		unsupportedMethod(writer)
 		return
@@ -118,6 +123,18 @@ func itemHandler(writer http.ResponseWriter, request *http.Request) {
 		fmt.Fprintf(writer, "form parameters missing: got %v", params)
 	}
 
-	ctr.GetController()
+	err := ctr.GetController().Item().AddItem(params[Make], params[Model], company.Id(params[Company]))
+	if err != nil {
+		errorResponse(writer, err)
+	}
 
+}
+
+func errorResponse(writer http.ResponseWriter, err error) {
+	fmt.Fprintf(writer, "error: %v", err)
+}
+
+func handleItemGet(writer http.ResponseWriter, request *http.Request) {
+	items := ctr.GetController().Item().ListItems()
+	fmt.Fprintf(writer, "items: %v", items)
 }

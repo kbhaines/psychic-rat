@@ -10,26 +10,7 @@ import (
 )
 
 type PledgeController interface {
-	MakeAddPledgeRequest(itemId item.Id, userId pubuser.Id) AddPledgeRequest
-	HandlePledgeRequest(req AddPledgeRequest) error
-}
-
-type AddPledgeRequest interface {
-	ItemId() item.Id
-	UserId() pubuser.Id
-}
-
-type addPledgeRequest struct {
-	itemId item.Id
-	userId pubuser.Id
-}
-
-func (p *addPledgeRequest) ItemId() item.Id {
-	return p.itemId
-}
-
-func (p *addPledgeRequest) UserId() pubuser.Id {
-	return p.userId
+	AddPledge(itemId item.Id, userId pubuser.Id) error
 }
 
 var itemRepo = factory.GetItemRepo()
@@ -40,20 +21,17 @@ var _ PledgeController = &pledgeController{}
 
 type pledgeController struct{}
 
-func (p *pledgeController) MakeAddPledgeRequest(itemId item.Id, userId pubuser.Id) AddPledgeRequest {
-	return &addPledgeRequest{itemId: itemId, userId: userId}
-}
 
-func (p *pledgeController) HandlePledgeRequest(req AddPledgeRequest) error {
-	_, err := itemRepo.GetById(req.ItemId())
+func (p *pledgeController) AddPledge(itemId item.Id, userId pubuser.Id) error {
+	_, err := itemRepo.GetById(itemId)
 	if err != nil {
-		return fmt.Errorf("error retrieving item %v: %v", req.ItemId(), err)
+		return fmt.Errorf("error retrieving item %v: %v", itemId, err)
 	}
-	_, err = userRepo.GetById(req.UserId())
+	_, err = userRepo.GetById(userId)
 	if err != nil {
-		return fmt.Errorf("error retrieving user %v: %v", req.ItemId(), err)
+		return fmt.Errorf("error retrieving user %v: %v", itemId, err)
 	}
-	newPledge := pledge.New(req.UserId(), req.ItemId(), time.Now())
+	newPledge := pledge.New(userId, itemId, time.Now())
 	pledgeRepo.Create(newPledge)
 	return nil
 }

@@ -3,53 +3,47 @@ package ctr
 import (
 	"psychic-rat/mdl/company"
 	"fmt"
+	"psychic-rat/mdl/item"
 )
 
 type ItemController interface {
-	HandleAddItemRequest(request AddItemRequest) error
-	MakeAddItemRequest(make string, model string, company company.Id) AddItemRequest
-}
-
-type AddItemRequest interface {
-	Make() string
-	Model() string
-	CompanyId() company.Id
-}
-
-type addItemRequest struct {
-	make      string
-	model     string
-	companyId company.Id
-}
-
-func (i *addItemRequest) Make() string {
-	return i.make
-}
-
-func (i *addItemRequest) Model() string {
-	return i.model
-}
-
-func (i *addItemRequest) CompanyId() company.Id {
-	return i.companyId
+	AddItem(make string, model string, company company.Id) error
+	ListItems() []item.Record
 }
 
 type itemController struct{}
 
 var _ ItemController = &itemController{}
 
-func (i *itemController) MakeAddItemRequest(make string, model string, company company.Id) AddItemRequest {
-	return &addItemRequest{make: make, model: model, companyId: company}
-}
-
-func (i *itemController) HandleAddItemRequest(req AddItemRequest) error {
-	err := checkDuplicate(req)
+func (i *itemController) AddItem(make string, model string, company company.Id) error {
+	item := item.New(make, model, company)
+	err := checkDuplicate(item)
 	if err != nil {
-		fmt.Errorf("duplicate check failed for %v: %v", req, err)
+		return fmt.Errorf("duplicate check failed for new item %s/%s/%s: %v", make, model, company, err)
+	}
+
+	_, err = itemRepo.Create(item)
+	if err != nil {
+		return fmt.Errorf("couldn't create item %v: %v", item, err)
 	}
 	return nil
 }
 
-func checkDuplicate(request AddItemRequest) error {
+func (i *itemController) ListItems() (items []item.Record) {
+	itemIds := itemRepo.List()
+	for _, i := range itemIds {
+		item, _ := itemRepo.GetById(i)
+		items = append(items, item)
+	}
+	return
+}
+
+func checkDuplicate(item item.Record) error {
+	itemsToCheck := itemRepo.GetAllByCompany(item.Company())
+	for _, i := range itemsToCheck {
+		if item.Make() == i.Make() && item.Model() == i.Model() {
+			return fmt.Errorf("existing item: %v", i)
+		}
+	}
 	return nil
 }

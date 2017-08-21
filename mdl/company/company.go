@@ -1,6 +1,6 @@
 package company
 
-type Id int
+type Id string
 type Record struct {
 	Id   Id
 	Name string

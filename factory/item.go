@@ -1,25 +1,25 @@
 package factory
 
 import "errors"
-import "psychic-rat/mdl/item"
+import (
+	"psychic-rat/mdl/item"
+	"psychic-rat/mdl/company"
+)
 
 func GetItemRepo() item.Repo {
 	return itemRepo
 }
 
-
 // declare that we implement Repo interface
-var itemRepo item.Repo = new(repoMap)
-
+var itemRepo item.Repo = &repoMap{ make(map[item.Id]item.Record) }
 
 type repoMap struct {
 	records map[item.Id]item.Record
 }
 
 func (repo *repoMap) Create(i item.Record) (item.Id, error) {
-	newitemId := item.Id(len(repo.records))
-	repo.records[newitemId] = i
-	return newitemId, nil
+	repo.records[i.Id()] = i
+	return i.Id(), nil
 }
 
 func (repo *repoMap) GetById(id item.Id) (item.Record, error) {
@@ -38,4 +38,13 @@ func (repo *repoMap) List() []item.Id {
 		i++
 	}
 	return itemIds
+}
+
+func (repo *repoMap) GetAllByCompany(companyId company.Id) (items []item.Record) {
+	for _, r := range repo.records {
+		if r.Company() == companyId{
+			items = append(items, r)
+		}
+	}
+	return items
 }
