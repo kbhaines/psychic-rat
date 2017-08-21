@@ -28,8 +28,8 @@ func (p *pledgeController) AddPledge(itemId item.Id, userId pubuser.Id) error {
 		return fmt.Errorf("error retrieving item %v: %v", itemId, err)
 	}
 	_, err = userRepo.GetById(userId)
-	if err != nil {
-		return fmt.Errorf("error retrieving user %v: %v", itemId, err)
+	if userId != 0 && err != nil {
+		return fmt.Errorf("error retrieving user %v: %v", userId, err)
 	}
 	newPledge := pledge.New(userId, itemId, time.Now())
 	pledgeRepo.Create(newPledge)

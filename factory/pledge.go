@@ -11,7 +11,7 @@ func GetPledgeRepo() pledge.Repo {
 }
 
 // declare that we implement pledgeMapRepo interface
-var pledgeRepo pledge.Repo = new(pledgeMapRepo)
+var pledgeRepo pledge.Repo = &pledgeMapRepo{ make(map[pledge.Id]pledge.Record)}
 
 type pledgeMapRepo struct {
 	records map[pledge.Id]pledge.Record
