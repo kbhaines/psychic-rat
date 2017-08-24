@@ -81,6 +81,7 @@ func parsePledgePost(values url.Values) (itemId item.Id, userId user.Id, err err
 }
 
 func extractFormParams(values url.Values, params ...string) (results map[string]string, gotAllParams bool) {
+	results = make(map[string]string)
 	gotAllParams = true
 	for _, p := range (params) {
 		v, ok := values[p]
