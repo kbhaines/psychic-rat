@@ -15,12 +15,12 @@ func (repo *RepoMap) Create(i Record) (Id, error) {
 	return newId, nil
 }
 
-func (repo *RepoMap) GetById(id Id) (*Record, error) {
+func (repo *RepoMap) GetById(id Id) (Record, error) {
 	item, found := repo.records[id]
 	if !found {
 		return nil, errors.New("not found")
 	}
-	return &item, nil
+	return item, nil
 }
 
 func (repo *RepoMap) List() []Id {
@@ -32,4 +32,3 @@ func (repo *RepoMap) List() []Id {
 	}
 	return ids
 }
-

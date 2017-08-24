@@ -51,5 +51,5 @@ func (r *record) Fullname() string {
 
 type Repo interface {
 	Create(user Record) (Id, error)
-	GetById(id Id) (*Record, error)
+	GetById(id Id) (Record, error)
 }

@@ -6,7 +6,7 @@ import (
 )
 
 // declare that we implement Repo interface
-var userRepo user.Repo = new(userRepoMap)
+var userRepo user.Repo = &userRepoMap{make(map[user.Id]user.Record)}
 
 func GetUserRepo() user.Repo {
 	return userRepo
@@ -22,12 +22,12 @@ func (repo *userRepoMap) Create(i user.Record) (user.Id, error) {
 	return newId, nil
 }
 
-func (repo *userRepoMap) GetById(id user.Id) (*user.Record, error) {
+func (repo *userRepoMap) GetById(id user.Id) (user.Record, error) {
 	item, found := repo.records[id]
 	if !found {
 		return nil, errors.New("not found")
 	}
-	return &item, nil
+	return item, nil
 }
 
 func (repo *userRepoMap) List() []user.Id {
@@ -39,4 +39,3 @@ func (repo *userRepoMap) List() []user.Id {
 	}
 	return ids
 }
-

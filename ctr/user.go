@@ -24,8 +24,12 @@ func (p *userController) AddUser(email string, country string, firstname string)
 	return id, nil
 }
 
-func (p *userController) GetUser(id user.Id) (user.Record, error) {
-	panic("implement me")
+func (p *userController) GetUser(id user.Id) (user user.Record, err error) {
+	user, err = userRepo.GetById(id)
+	if err != nil {
+		return nil, fmt.Errorf("user %v not available: %v", id, err)
+	}
+	return user, nil
 }
 
 func (p *userController) DeleteUser(id user.Id) error {
