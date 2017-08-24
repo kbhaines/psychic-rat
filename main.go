@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/url"
 	"psychic-rat/mdl/item"
-	"psychic-rat/mdl/pubuser"
+	"psychic-rat/mdl/user"
 	"psychic-rat/ctr"
 	"psychic-rat/mdl/company"
 )
@@ -67,7 +67,7 @@ func unableToParseForm(err error, writer http.ResponseWriter) {
 	log.Print(err)
 }
 
-func parsePledgePost(values url.Values) (itemId item.Id, userId pubuser.Id, err error) {
+func parsePledgePost(values url.Values) (itemId item.Id, userId user.Id, err error) {
 	const (
 		Item = "item"
 	)
@@ -77,21 +77,20 @@ func parsePledgePost(values url.Values) (itemId item.Id, userId pubuser.Id, err 
 		return itemId, userId, fmt.Errorf("missing values, only got %v", params)
 	}
 
-	return item.Id(params[Item]), pubuser.Id(0), nil
+	return item.Id(params[Item]), user.Id(0), nil
 }
 
-func extractFormParams(values url.Values, params ...string) (map[string]string, bool) {
-	results := map[string]string{}
-	resultOk := true
+func extractFormParams(values url.Values, params ...string) (results map[string]string, gotAllParams bool) {
+	gotAllParams = true
 	for _, p := range (params) {
 		v, ok := values[p]
 		if ! ok {
-			resultOk = false
+			gotAllParams = false
 			continue
 		}
 		results[p] = v[0]
 	}
-	return results, resultOk
+	return results, gotAllParams
 }
 
 func handleGet(writer http.ResponseWriter, request *http.Request) {

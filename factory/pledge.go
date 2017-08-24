@@ -1,7 +1,7 @@
 package factory
 
 import (
-	"psychic-rat/mdl/pubuser"
+	"psychic-rat/mdl/user"
 	"psychic-rat/mdl/pledge"
 	"errors"
 )
@@ -31,7 +31,7 @@ func (repo *pledgeMapRepo) GetById(id pledge.Id) (pledge.Record, error) {
 	return item, nil
 }
 
-func (repo *pledgeMapRepo) GetByUser(id pubuser.Id) []pledge.Id {
+func (repo *pledgeMapRepo) GetByUser(id user.Id) []pledge.Id {
 	results := make([]pledge.Id, 16)
 	for _, pledge := range repo.records {
 		if id == pledge.UserId() {

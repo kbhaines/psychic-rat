@@ -2,7 +2,7 @@ package ctr
 
 import (
 	"psychic-rat/mdl/item"
-	"psychic-rat/mdl/pubuser"
+	"psychic-rat/mdl/user"
 	"psychic-rat/mdl/pledge"
 	"time"
 	"psychic-rat/factory"
@@ -10,19 +10,19 @@ import (
 )
 
 type PledgeController interface {
-	AddPledge(itemId item.Id, userId pubuser.Id) error
+	AddPledge(itemId item.Id, userId user.Id) error
 }
 
 var itemRepo = factory.GetItemRepo()
 var pledgeRepo = factory.GetPledgeRepo()
-var userRepo = factory.GetPubUserRepo()
+var userRepo = factory.GetUserRepo()
 
 var _ PledgeController = &pledgeController{}
 
 type pledgeController struct{}
 
 
-func (p *pledgeController) AddPledge(itemId item.Id, userId pubuser.Id) error {
+func (p *pledgeController) AddPledge(itemId item.Id, userId user.Id) error {
 	_, err := itemRepo.GetById(itemId)
 	if err != nil {
 		return fmt.Errorf("error retrieving item %v: %v", itemId, err)
