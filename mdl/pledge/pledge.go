@@ -3,8 +3,8 @@ package pledge
 import (
 	"time"
 	"psychic-rat/mdl/user"
-	"psychic-rat/mdl/item"
 	"github.com/satori/go.uuid"
+	"psychic-rat/mdl/item"
 )
 
 type Id string
@@ -14,12 +14,6 @@ type Record interface {
 	UserId() user.Id
 	ItemId() item.Id
 	TimeStamp() time.Time
-}
-
-type Repo interface {
-	Create(pledge Record) (Id, error)
-	GetById(id Id) (Record, error)
-	GetByUser(id user.Id) []Id
 }
 
 type record struct {

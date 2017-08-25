@@ -4,6 +4,7 @@ import (
 	"psychic-rat/mdl/company"
 	"fmt"
 	"psychic-rat/mdl/item"
+	"psychic-rat/repo/itemrepo"
 )
 
 type ItemController interface {
@@ -15,6 +16,8 @@ type itemController struct{}
 
 var _ ItemController = &itemController{}
 
+var itemRepo = itemrepo.GetItemRepoMapImpl()
+
 func (i *itemController) AddItem(make string, model string, company company.Id) error {
 	item := item.New(make, model, company)
 	err := checkDuplicate(item)
@@ -22,7 +25,7 @@ func (i *itemController) AddItem(make string, model string, company company.Id) 
 		return fmt.Errorf("duplicate check failed for new item %s/%s/%s: %v", make, model, company, err)
 	}
 
-	_, err = itemRepo.Create(item)
+	err = itemRepo.Create(item)
 	if err != nil {
 		return fmt.Errorf("couldn't create item %v: %v", item, err)
 	}

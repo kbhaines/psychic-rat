@@ -3,6 +3,7 @@ package ctr
 import (
 	"psychic-rat/mdl/user"
 	"fmt"
+	"psychic-rat/repo"
 )
 
 type UserController interface {
@@ -15,9 +16,11 @@ type userController struct {}
 
 var _ UserController = &userController{}
 
+var userRepo repo.Users
+
 func (p *userController) AddUser(email string, country string, firstname string) (id user.Id, err error) {
 	user := user.New(email, country, firstname)
-	id, err = userRepo.Create(user)
+	err = userRepo.Create(user)
 	if err != nil {
 		return id, fmt.Errorf("failed to create %v: %v", user, err)
 	}

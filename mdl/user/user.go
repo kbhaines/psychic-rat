@@ -49,7 +49,3 @@ func (r *record) Fullname() string {
 	return r.fullname
 }
 
-type Repo interface {
-	Create(user Record) (Id, error)
-	GetById(id Id) (Record, error)
-}

@@ -1,26 +1,23 @@
 package ctr
 
 import (
-	"psychic-rat/mdl/item"
 	"psychic-rat/mdl/user"
 	"psychic-rat/mdl/pledge"
 	"time"
-	"psychic-rat/factory"
 	"fmt"
+	"psychic-rat/mdl/item"
+	"psychic-rat/repo/pledgerepo"
 )
 
 type PledgeController interface {
 	AddPledge(itemId item.Id, userId user.Id) error
 }
 
-var itemRepo = factory.GetItemRepo()
-var pledgeRepo = factory.GetPledgeRepo()
-var userRepo = factory.GetUserRepo()
+var pledgeRepo = pledgerepo.GetPledgeRepoMapImpl()
 
 var _ PledgeController = &pledgeController{}
 
 type pledgeController struct{}
-
 
 func (p *pledgeController) AddPledge(itemId item.Id, userId user.Id) error {
 	_, err := itemRepo.GetById(itemId)

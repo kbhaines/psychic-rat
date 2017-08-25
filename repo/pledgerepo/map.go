@@ -1,26 +1,30 @@
-package factory
+package pledgerepo
 
 import (
-	"psychic-rat/mdl/user"
+	"psychic-rat/repo"
 	"psychic-rat/mdl/pledge"
 	"errors"
+	"psychic-rat/mdl/user"
+	"fmt"
 )
 
-func GetPledgeRepo() pledge.Repo {
+func GetPledgeRepoMapImpl() repo.Pledges {
 	return pledgeRepo
 }
 
 // declare that we implement pledgeMapRepo interface
-var pledgeRepo pledge.Repo = &pledgeMapRepo{ make(map[pledge.Id]pledge.Record)}
+var pledgeRepo repo.Pledges = &pledgeMapRepo{make(map[pledge.Id]pledge.Record)}
 
 type pledgeMapRepo struct {
 	records map[pledge.Id]pledge.Record
 }
 
-func (repo *pledgeMapRepo) Create(i pledge.Record) (pledge.Id, error) {
-	newId := pledge.Id(len(repo.records))
-	repo.records[newId] = i
-	return newId, nil
+func (repo *pledgeMapRepo) Create(i pledge.Record) error {
+	if _, found := repo.records[i.Id()]; found {
+		return fmt.Errorf("pledge with id %v exists", i.Id())
+	}
+	repo.records[i.Id()] = i
+	return nil
 }
 
 func (repo *pledgeMapRepo) GetById(id pledge.Id) (pledge.Record, error) {
@@ -33,9 +37,9 @@ func (repo *pledgeMapRepo) GetById(id pledge.Id) (pledge.Record, error) {
 
 func (repo *pledgeMapRepo) GetByUser(id user.Id) []pledge.Id {
 	results := make([]pledge.Id, 16)
-	for _, pledge := range repo.records {
-		if id == pledge.UserId() {
-			results = append(results, pledge.Id())
+	for _, p := range repo.records {
+		if id == p.UserId() {
+			results = append(results, p.Id())
 		}
 	}
 	return results

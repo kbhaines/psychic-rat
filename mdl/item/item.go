@@ -2,8 +2,8 @@ package item
 
 import (
 	"psychic-rat/mdl/company"
-	"github.com/satori/go.uuid"
 	"fmt"
+	"github.com/satori/go.uuid"
 )
 
 type Id string
@@ -15,15 +15,9 @@ type Record interface {
 	Company() company.Id
 }
 
-type Repo interface {
-	Create(item Record) (Id, error)
-	GetById(id Id) (Record, error)
-	GetAllByCompany(companyId company.Id) []Record
-	List() []Id
-}
-
 func New(make string, model string, company company.Id) Record {
-	return &record{id: Id(uuid.NewV4().String()), make: make, model: model, company: company}
+	id := Id(uuid.NewV4().String())
+	return &record{id: id, make: make, model: model, company: company}
 }
 
 type record struct {
