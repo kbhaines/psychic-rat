@@ -4,6 +4,8 @@ import "errors"
 import (
 	"psychic-rat/mdl/item"
 	"psychic-rat/mdl/company"
+	"psychic-rat/mdl/user"
+	"fmt"
 )
 
 func GetItemRepo() item.Repo {
@@ -18,6 +20,9 @@ type repoMap struct {
 }
 
 func (repo *repoMap) Create(i item.Record) (item.Id, error) {
+	if _,found := repo.records[i.Id()]; found {
+		return item.Id(0), fmt.Errorf("item with id %v already exists", i.Id())
+	}
 	repo.records[i.Id()] = i
 	return i.Id(), nil
 }
