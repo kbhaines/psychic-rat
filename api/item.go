@@ -5,9 +5,11 @@ import (
 	"psychic-rat/ctr"
 	"net/http"
 	"psychic-rat/mdl/company"
+	"psychic-rat/mdl/item"
+	"encoding/json"
 )
 
-func itemHandler(writer http.ResponseWriter, request *http.Request) {
+func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		unsupportedMethod(writer)
 		return
@@ -22,17 +24,48 @@ func itemHandler(writer http.ResponseWriter, request *http.Request) {
 		errorResponse(writer, fmt.Errorf("no company specified"))
 		return
 	}
-	//items := getItemsForCompany(companyId)
+	json, err := json.Marshal(getItemsForCompany(company.Id(companyId)))
+	if err != nil {
+		logInternalError(writer, err)
+		return
+	}
+	fmt.Fprintf(writer, "%s", json)
 }
 
-type itemElements struct {
-	Id string `json:"id"`
-	Make string `json:"make"`
-	Model string `json:"model"`
+type items struct {
+	Items []item.Record `json:"items""`
 }
 
-func getItemsForCompany(companyId company.Id) (items []itemElements) {
-	return items
+type itemElement struct {
+	IId    item.Id `json:"id"`
+	MMake  string `json:"make"`
+	MModel string `json:"model"`
+}
+
+func (i *itemElement) Id() item.Id {
+	return i.IId
+}
+
+func (i *itemElement) Make() string {
+	return i.MMake
+}
+
+func (i *itemElement) Model() string {
+	return i.MModel
+}
+
+func (i *itemElement) Company() (c company.Id) {
+	return
+}
+
+func getItemsForCompany(companyId company.Id) items {
+	is := ctr.GetController().Item().ListItems(func(i item.Record) item.Record {
+		if companyId == i.Company() {
+			return &itemElement{i.Id(), i.Make(), i.Model()}
+		}
+		return nil
+	})
+	return items{is}
 }
 
 //func createItem() {
@@ -53,7 +86,7 @@ func getItemsForCompany(companyId company.Id) (items []itemElements) {
 //
 //}
 
-func handleItemGet(writer http.ResponseWriter, request *http.Request) {
-	items := ctr.GetController().Item().ListItems()
-	fmt.Fprintf(writer, "items: %v", items)
-}
+//func handleItemGet(writer http.ResponseWriter, request *http.Request) {
+//	items := ctr.GetController().Item().ListItems()
+//	fmt.Fprintf(writer, "items: %v", items)
+//}

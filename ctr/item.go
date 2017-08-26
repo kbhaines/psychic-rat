@@ -7,9 +7,11 @@ import (
 	"psychic-rat/repo/itemrepo"
 )
 
+type ItemFilter func(record item.Record) item.Record
+
 type ItemController interface {
 	AddItem(make string, model string, company company.Id) error
-	ListItems() []item.Record
+	ListItems(f ItemFilter) []item.Record
 }
 
 type itemController struct{}
@@ -32,13 +34,18 @@ func (i *itemController) AddItem(make string, model string, company company.Id) 
 	return nil
 }
 
-func (i *itemController) ListItems() (items []item.Record) {
+func (i *itemController) ListItems(filter ItemFilter) (items []item.Record) {
+	if filter == nil {
+		filter = func(i item.Record) item.Record { return i }
+	}
 	itemIds := itemRepo.List()
 	for _, i := range itemIds {
 		item, _ := itemRepo.GetById(i)
-		items = append(items, item)
+		if filtered := filter(item); filtered != nil {
+			items = append(items, filtered)
+		}
 	}
-	return
+	return items
 }
 
 func checkDuplicate(item item.Record) error {
