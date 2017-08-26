@@ -9,6 +9,7 @@ import (
 
 type ItemController interface {
 	AddItem(make string, model string, company company.Id) error
+	GetById(id item.Id) (item.Record, error)
 	ListItems(f ItemFilter) []item.Record
 }
 
@@ -56,4 +57,8 @@ func checkDuplicate(item item.Record) error {
 		}
 	}
 	return nil
+}
+
+func (i *itemController) GetById(id item.Id) (item.Record, error) {
+	return itemRepo.GetById(id)
 }

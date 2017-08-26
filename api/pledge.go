@@ -82,8 +82,12 @@ func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 func getUserPledges(id user.Id) pledgeListing {
 	ps := ctr.GetController().Pledge().ListPledges(func(p pledge.Record) pledge.Record {
 		if id == p.UserId() {
-			item := item.New("123","456","")
-			return &pledgeElement{p.Id(), item, p.TimeStamp()}
+			item, err := ctr.GetController().Item().GetById(p.ItemId())
+			if err != nil {
+				panic(err)
+			}
+			i := &itemElement{ item.Id(), item.Make(), item.Model()}
+			return &pledgeElement{p.Id(), i, p.TimeStamp()}
 		} else {
 			return nil
 		}
