@@ -42,21 +42,10 @@ type itemElement struct {
 	MModel string `json:"model"`
 }
 
-func (i *itemElement) Id() item.Id {
-	return i.IId
-}
-
-func (i *itemElement) Make() string {
-	return i.MMake
-}
-
-func (i *itemElement) Model() string {
-	return i.MModel
-}
-
-func (i *itemElement) Company() (c company.Id) {
-	return
-}
+func (i *itemElement) Id() item.Id             { return i.IId }
+func (i *itemElement) Make() string            { return i.MMake }
+func (i *itemElement) Model() string           { return i.MModel }
+func (i *itemElement) Company() (c company.Id) { return }
 
 func getItemsForCompany(companyId company.Id) items {
 	is := ctr.GetController().Item().ListItems(func(i item.Record) item.Record {

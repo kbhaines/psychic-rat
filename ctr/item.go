@@ -7,12 +7,12 @@ import (
 	"psychic-rat/repo/itemrepo"
 )
 
-type ItemFilter func(record item.Record) item.Record
-
 type ItemController interface {
 	AddItem(make string, model string, company company.Id) error
 	ListItems(f ItemFilter) []item.Record
 }
+
+type ItemFilter func(record item.Record) item.Record
 
 type itemController struct{}
 

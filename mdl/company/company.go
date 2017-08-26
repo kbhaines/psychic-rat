@@ -12,14 +12,7 @@ type record struct {
 	name string
 }
 
-func New(id Id, name string) Record {
-	return &record{id, name}
-}
+func New(id Id, name string) Record { return &record{id, name} }
 
-func (r *record) Id() Id {
-	return r.id
-}
-
-func (r *record) Name() string {
-	return r.name
-}
+func (r *record) Id() Id       { return r.id }
+func (r *record) Name() string { return r.name }

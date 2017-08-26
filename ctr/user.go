@@ -3,7 +3,7 @@ package ctr
 import (
 	"psychic-rat/mdl/user"
 	"fmt"
-	"psychic-rat/repo"
+	"psychic-rat/repo/userrepo"
 )
 
 type UserController interface {
@@ -12,11 +12,11 @@ type UserController interface {
 	DeleteUser(id user.Id) error
 }
 
-type userController struct {}
+type userController struct{}
 
 var _ UserController = &userController{}
 
-var userRepo repo.Users
+var userRepo = userrepo.GetUserRepoMapImpl()
 
 func (p *userController) AddUser(email string, country string, firstname string) (id user.Id, err error) {
 	user := user.New(email, country, firstname)
@@ -38,5 +38,3 @@ func (p *userController) GetUser(id user.Id) (user user.Record, err error) {
 func (p *userController) DeleteUser(id user.Id) error {
 	panic("implement me")
 }
-
-

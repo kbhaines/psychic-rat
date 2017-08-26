@@ -25,6 +25,7 @@ func main() {
 
 	http.HandleFunc("/api/v1/company", api.CompanyHandler)
 	http.HandleFunc("/api/v1/item", api.ItemHandler)
+	http.HandleFunc("/api/v1/pledge", api.PledgeHandler)
 	
 	http.ListenAndServe("localhost:8080", nil)
 }

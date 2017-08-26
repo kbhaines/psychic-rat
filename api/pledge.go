@@ -7,23 +7,66 @@ import (
 	"net/url"
 	"psychic-rat/mdl/item"
 	"psychic-rat/mdl/user"
+	"encoding/json"
+	"io/ioutil"
+	"psychic-rat/mdl/pledge"
+	"time"
 )
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
 
-func pledgeHandler(writer http.ResponseWriter, request *http.Request) {
+func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 
-	handlerMaps := map[string]MethodHandler{
-		http.MethodPost: handlePledgePost,
-	}
+	switch request.Method {
+	case http.MethodPost:
+		doPostRequest(writer, request)
 
-	fmt.Printf("%v", request)
-	v, ok := handlerMaps[request.Method]
-	if ! ok {
+	case http.MethodGet:
+		doGetRequest(writer, request)
+
+	default:
 		unsupportedMethod(writer)
+	}
+}
+
+type pledgeRequest struct {
+	ItemId item.Id `json:"itemId"`
+	userId user.Id
+}
+
+type pledgeListing struct {
+	Pledges []pledgeElement `json:"pledges"`
+}
+
+type pledgeElement struct {
+	PledgeId  pledge.Id `json:"id"`
+	Item      item.Record `json:"item"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func doPostRequest(writer http.ResponseWriter, request *http.Request) {
+
+	pledge := pledgeRequest{userId: 0}
+
+	defer request.Body.Close()
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		logInternalError(writer, err)
 		return
 	}
-	v(writer, request)
+	err = json.Unmarshal(body, &pledge)
+	if err != nil {
+		logInternalError(writer, err)
+	}
+	if err = ctr.GetController().Pledge().AddPledge(pledge.ItemId, pledge.userId); err != nil {
+		logInternalError(writer, err)
+	}
+
+	fmt.Fprintf(writer, "added")
+}
+
+func doGetRequest(writer http.ResponseWriter, request *http.Request) {
+
 }
 
 func handlePledgePost(writer http.ResponseWriter, request *http.Request) {
