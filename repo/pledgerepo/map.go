@@ -45,12 +45,9 @@ func (repo *pledgeMapRepo) GetByUser(id user.Id) []pledge.Id {
 	return results
 }
 
-func (repo *pledgeMapRepo) List() []pledge.Id {
-	ids := make([]pledge.Id, len(repo.records))
-	i := 0
-	for id := range repo.records {
-		ids[i] = id
-		i++
+func (repo *pledgeMapRepo) List() (pledges []pledge.Record) {
+	for _, p := range repo.records {
+		pledges = append(pledges, p)
 	}
-	return ids
+	return pledges
 }

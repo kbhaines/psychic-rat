@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"fmt"
 	"psychic-rat/ctr"
-	"net/url"
 	"psychic-rat/mdl/item"
 	"psychic-rat/mdl/user"
 	"encoding/json"
@@ -34,18 +33,7 @@ type pledgeRequest struct {
 	userId user.Id
 }
 
-type pledgeListing struct {
-	Pledges []pledgeElement `json:"pledges"`
-}
-
-type pledgeElement struct {
-	PledgeId  pledge.Id `json:"id"`
-	Item      item.Record `json:"item"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
 func doPostRequest(writer http.ResponseWriter, request *http.Request) {
-
 	pledge := pledgeRequest{userId: 0}
 
 	defer request.Body.Close()
@@ -57,44 +45,52 @@ func doPostRequest(writer http.ResponseWriter, request *http.Request) {
 	err = json.Unmarshal(body, &pledge)
 	if err != nil {
 		logInternalError(writer, err)
+		return
 	}
 	if err = ctr.GetController().Pledge().AddPledge(pledge.ItemId, pledge.userId); err != nil {
 		logInternalError(writer, err)
+		return
 	}
+	userPledges := getUserPledges(pledge.userId)
+	json, err := json.Marshal(userPledges)
+	fmt.Fprintf(writer, "%s", json)
+}
 
-	fmt.Fprintf(writer, "added")
+type pledgeListing struct {
+	Pledges []pledge.Record `json:"pledges"`
+}
+
+type pledgeElement struct {
+	PledgeId  pledge.Id `json:"id"`
+	Item      item.Record `json:"item"`
+	Timestamp time.Time `json:"timestamp"`
+}
+
+func (p *pledgeElement) Id() pledge.Id        { return p.Id() }
+func (p *pledgeElement) UserId() user.Id      { return p.UserId() }
+func (p *pledgeElement) ItemId() item.Id      { return item.Id(0) }
+func (p *pledgeElement) TimeStamp() time.Time { return p.Timestamp }
+
+func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
+	if b {
+		return ifTrue
+	} else {
+		return ifFalse
+	}
+}
+
+func getUserPledges(id user.Id) pledgeListing {
+	ps := ctr.GetController().Pledge().ListPledges(func(p pledge.Record) pledge.Record {
+		if id == p.UserId() {
+			item := item.New("123","456","")
+			return &pledgeElement{p.Id(), item, p.TimeStamp()}
+		} else {
+			return nil
+		}
+	})
+	return pledgeListing{ps}
 }
 
 func doGetRequest(writer http.ResponseWriter, request *http.Request) {
 
-}
-
-func handlePledgePost(writer http.ResponseWriter, request *http.Request) {
-	if err := request.ParseForm(); err != nil {
-		unableToParseForm(err, writer)
-		return
-	}
-	itemId, userId, err := parsePledgePost(request.Form)
-	if err != nil {
-		fmt.Fprintf(writer, "error: %v", err)
-		return
-	}
-
-	err = ctr.GetController().Pledge().AddPledge(itemId, userId)
-	if err != nil {
-		fmt.Fprintf(writer, "error: %v", err)
-	}
-}
-
-func parsePledgePost(values url.Values) (itemId item.Id, userId user.Id, err error) {
-	const (
-		Item = "item"
-	)
-
-	params, ok := extractFormParams(values, Item)
-	if ! ok {
-		return itemId, userId, fmt.Errorf("missing values, only got %v", params)
-	}
-
-	return item.Id(params[Item]), user.Id(0), nil
 }
