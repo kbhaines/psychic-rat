@@ -11,7 +11,10 @@ import (
 
 type PledgeController interface {
 	AddPledge(itemId item.Id, userId user.Id) error
+	ListPledges(filter PledgeFilter) []pledge.Record
 }
+
+type PledgeFilter func (record pledge.Record) pledge.Record
 
 var pledgeRepo = pledgerepo.GetPledgeRepoMapImpl()
 
@@ -31,4 +34,17 @@ func (p *pledgeController) AddPledge(itemId item.Id, userId user.Id) error {
 	newPledge := pledge.New(userId, itemId, time.Now())
 	pledgeRepo.Create(newPledge)
 	return nil
+}
+
+func (p *pledgeController) ListPledges(filter PledgeFilter) (pledges []pledge.Record) {
+	if filter == nil {
+		filter = func(i pledge.Record) pledge.Record { return i }
+	}
+	ps := pledgeRepo.List()
+	for _, p := range ps {
+		if filtered := filter(p); filtered != nil {
+			pledges = append(pledges, filtered)
+		}
+	}
+	return pledges
 }

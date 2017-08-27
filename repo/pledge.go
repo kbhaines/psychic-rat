@@ -9,4 +9,5 @@ type Pledges interface {
 	Create(pledge pledge.Record) error
 	GetById(id pledge.Id) (pledge.Record, error)
 	GetByUser(id user.Id) []pledge.Id
+	List() []pledge.Record
 }
