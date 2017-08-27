@@ -17,16 +17,13 @@ import (
 	"sort"
 )
 
-type MethodHandler func(http.ResponseWriter, *http.Request)
-
 func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
-
 	switch request.Method {
 	case http.MethodPost:
-		doPostRequest(writer, request)
+		handlePost(writer, request)
 
 	case http.MethodGet:
-		doGetRequest(writer, request)
+		handleGet(writer, request)
 
 	default:
 		unsupportedMethod(writer)
@@ -37,13 +34,13 @@ type pledgeRequest struct {
 	ItemId item.Id `json:"itemId"`
 }
 
-func doPostRequest(writer http.ResponseWriter, request *http.Request) {
+func handlePost(writer http.ResponseWriter, request *http.Request) {
 	pledge := pledgeRequest{}
 
 	defer request.Body.Close()
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		logInternalError(writer, err)
+		logInternalError(writer, err);
 		return
 	}
 	err = json.Unmarshal(body, &pledge)
@@ -80,12 +77,13 @@ type pledgeElement struct {
 	Item      item.Record `json:"item"`
 	Timestamp time.Time `json:"timestamp"`
 }
+
 func (p *pledgeElement) Id() pledge.Id        { return p.Id() }
 func (p *pledgeElement) UserId() user.Id      { return p.UserId() }
 func (p *pledgeElement) ItemId() item.Id      { return item.Id(0) }
 func (p *pledgeElement) TimeStamp() time.Time { return p.Timestamp }
 
-func (p *pledgeElement) String() string       { return fmt.Sprintf("id:%v time:%v", p.PledgeId, p.Timestamp) }
+func (p *pledgeElement) String() string { return fmt.Sprintf("id:%v time:%v", p.PledgeId, p.Timestamp) }
 
 func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 	if b {
@@ -112,7 +110,7 @@ func getUserPledges(id user.Id) pledgeListing {
 	return pledgeListing{ps}
 }
 
-func doGetRequest(writer http.ResponseWriter, request *http.Request) {
+func handleGet(writer http.ResponseWriter, request *http.Request) {
 	userId := getCurrentUserId()
 	writeUserPledges(writer, userId)
 }

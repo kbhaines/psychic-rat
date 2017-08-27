@@ -8,6 +8,8 @@ import (
 	"psychic-rat/mdl/user"
 )
 
+type MethodHandler func(http.ResponseWriter, *http.Request)
+
 type HandlerMap struct {
 	PathExpr string
 	Method   string
