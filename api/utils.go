@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"log"
 	"net/url"
+	"psychic-rat/mdl/user"
 )
 
 type HandlerMap struct {
@@ -43,4 +44,8 @@ func errorResponse(writer http.ResponseWriter, err error) {
 
 func logInternalError(writer http.ResponseWriter, err error) {
 	fmt.Fprintf(writer, "internal error; contact developer: %v", err)
+}
+
+func getCurrentUserId() user.Id {
+	return user.Id(0)
 }

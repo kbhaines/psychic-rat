@@ -10,11 +10,11 @@ import (
 )
 
 type PledgeController interface {
-	AddPledge(itemId item.Id, userId user.Id) error
+	AddPledge(itemId item.Id, userId user.Id) (pledge.Id, error)
 	ListPledges(filter PledgeFilter) []pledge.Record
 }
 
-type PledgeFilter func (record pledge.Record) pledge.Record
+type PledgeFilter func(record pledge.Record) pledge.Record
 
 var pledgeRepo = pledgerepo.GetPledgeRepoMapImpl()
 
@@ -22,18 +22,18 @@ var _ PledgeController = &pledgeController{}
 
 type pledgeController struct{}
 
-func (p *pledgeController) AddPledge(itemId item.Id, userId user.Id) error {
-	_, err := itemRepo.GetById(itemId)
+func (p *pledgeController) AddPledge(itemId item.Id, userId user.Id) (newId pledge.Id, err error) {
+	_, err = itemRepo.GetById(itemId)
 	if err != nil {
-		return fmt.Errorf("error retrieving item %v: %v", itemId, err)
+		return newId, fmt.Errorf("error retrieving item %v: %v", itemId, err)
 	}
 	_, err = userRepo.GetById(userId)
 	if userId != 0 && err != nil {
-		return fmt.Errorf("error retrieving user %v: %v", userId, err)
+		return newId, fmt.Errorf("error retrieving user %v: %v", userId, err)
 	}
 	newPledge := pledge.New(userId, itemId, time.Now())
 	pledgeRepo.Create(newPledge)
-	return nil
+	return newPledge.Id(), nil
 }
 
 func (p *pledgeController) ListPledges(filter PledgeFilter) (pledges []pledge.Record) {

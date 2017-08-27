@@ -23,9 +23,9 @@ func main() {
 	items.Create(item.New("tablet", "tab4", company.Id("2")))
 	items.Create(item.New("tablet", "tab8", company.Id("2")))
 
-	http.HandleFunc("/api/v1/company", api.CompanyHandler)
-	http.HandleFunc("/api/v1/item", api.ItemHandler)
-	http.HandleFunc("/api/v1/pledge", api.PledgeHandler)
-	
+	for _, h := range api.UriHandlers {
+		http.HandleFunc(h.Uri, h.Handler)
+	}
+
 	http.ListenAndServe("localhost:8080", nil)
 }

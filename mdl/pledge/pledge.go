@@ -16,6 +16,12 @@ type Record interface {
 	TimeStamp() time.Time
 }
 
+type ByTimeStamp []Record
+
+func (b ByTimeStamp) Len() int           { return len(b) }
+func (b ByTimeStamp) Less(i, j int) bool { return b[i].TimeStamp().Before(b[j].TimeStamp()) }
+func (b ByTimeStamp) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
+
 type record struct {
 	id        Id
 	userId    user.Id

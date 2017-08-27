@@ -12,7 +12,10 @@ import (
 	"time"
 )
 
-import "log"
+import (
+	"log"
+	"sort"
+)
 
 type MethodHandler func(http.ResponseWriter, *http.Request)
 
@@ -32,11 +35,10 @@ func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 
 type pledgeRequest struct {
 	ItemId item.Id `json:"itemId"`
-	userId user.Id
 }
 
 func doPostRequest(writer http.ResponseWriter, request *http.Request) {
-	pledge := pledgeRequest{userId: 0}
+	pledge := pledgeRequest{}
 
 	defer request.Body.Close()
 	body, err := ioutil.ReadAll(request.Body)
@@ -49,13 +51,23 @@ func doPostRequest(writer http.ResponseWriter, request *http.Request) {
 		logInternalError(writer, err)
 		return
 	}
-	if err = ctr.GetController().Pledge().AddPledge(pledge.ItemId, pledge.userId); err != nil {
+	userId := getCurrentUserId()
+	_, err = ctr.GetController().Pledge().AddPledge(pledge.ItemId, userId)
+	if err != nil {
 		logInternalError(writer, err)
 		return
 	}
-	userPledges := getUserPledges(pledge.userId)
+	writeUserPledges(writer, userId)
+}
+
+func writeUserPledges(writer http.ResponseWriter, userId user.Id) {
+	userPledges := getUserPledges(userId)
 	log.Printf("pledges: %v", userPledges.Pledges)
 	json, err := json.Marshal(userPledges)
+	if err != nil {
+		logInternalError(writer, err)
+		return
+	}
 	fmt.Fprintf(writer, "%s", json)
 }
 
@@ -68,11 +80,11 @@ type pledgeElement struct {
 	Item      item.Record `json:"item"`
 	Timestamp time.Time `json:"timestamp"`
 }
-
 func (p *pledgeElement) Id() pledge.Id        { return p.Id() }
 func (p *pledgeElement) UserId() user.Id      { return p.UserId() }
 func (p *pledgeElement) ItemId() item.Id      { return item.Id(0) }
 func (p *pledgeElement) TimeStamp() time.Time { return p.Timestamp }
+
 func (p *pledgeElement) String() string       { return fmt.Sprintf("id:%v time:%v", p.PledgeId, p.Timestamp) }
 
 func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
@@ -96,9 +108,11 @@ func getUserPledges(id user.Id) pledgeListing {
 			return nil
 		}
 	})
+	sort.Sort(pledge.ByTimeStamp(ps))
 	return pledgeListing{ps}
 }
 
 func doGetRequest(writer http.ResponseWriter, request *http.Request) {
-
+	userId := getCurrentUserId()
+	writeUserPledges(writer, userId)
 }
