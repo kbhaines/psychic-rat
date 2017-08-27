@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+import "log"
+
 type MethodHandler func(http.ResponseWriter, *http.Request)
 
 func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
@@ -52,6 +54,7 @@ func doPostRequest(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	userPledges := getUserPledges(pledge.userId)
+	log.Printf("pledges: %v", userPledges.Pledges)
 	json, err := json.Marshal(userPledges)
 	fmt.Fprintf(writer, "%s", json)
 }
@@ -70,6 +73,7 @@ func (p *pledgeElement) Id() pledge.Id        { return p.Id() }
 func (p *pledgeElement) UserId() user.Id      { return p.UserId() }
 func (p *pledgeElement) ItemId() item.Id      { return item.Id(0) }
 func (p *pledgeElement) TimeStamp() time.Time { return p.Timestamp }
+func (p *pledgeElement) String() string       { return fmt.Sprintf("id:%v time:%v", p.PledgeId, p.Timestamp) }
 
 func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 	if b {
@@ -86,7 +90,7 @@ func getUserPledges(id user.Id) pledgeListing {
 			if err != nil {
 				panic(err)
 			}
-			i := &itemElement{ item.Id(), item.Make(), item.Model()}
+			i := &itemElement{item.Id(), item.Make(), item.Model()}
 			return &pledgeElement{p.Id(), i, p.TimeStamp()}
 		} else {
 			return nil
