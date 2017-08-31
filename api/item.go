@@ -33,10 +33,6 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 type itemReport struct {
-	Items []item.Record `json:"items"`
-}
-
-type unmarshalItemReport struct {
 	Items []itemElement `json:"items"`
 }
 
@@ -58,11 +54,15 @@ func getItemsForCompany(companyId company.Id) itemReport {
 		}
 		return nil
 	})
-	return itemReport{is}
+	report := itemReport{}
+	for i, v := range is {
+		report.Items[i] = itemElement{v.Id(), v.Make(), v.Model()}
+	}
+	return report
 }
 
 func ItemsFromJson(bytes []byte) ([]item.Record, error) {
-	var items unmarshalItemReport
+	var items itemReport
 	if err := json.Unmarshal(bytes, &items); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal items: %v", err)
 	}
