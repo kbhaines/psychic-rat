@@ -68,7 +68,7 @@ func getItemsForCompany(companyId company.Id) items {
 //		fmt.Fprintf(writer, "form parameters missing: got %v", params)
 //	}
 //
-//	err := ctr.GetController().Item().AddItem(params[Make], params[Model], company.Id(params[Company]))
+//	err := ctr.GetController().Item().AddItem(params[Make], params[Model], company.id(params[Company]))
 //	if err != nil {
 //		errorResponse(writer, err)
 //	}
