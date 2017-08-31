@@ -42,28 +42,6 @@ func getCompanies() (response []companyElement) {
 	return response
 }
 
-
-func anythingFromJson(bytes []byte, t1, t2 interface{}) error {
-	if err := json.Unmarshal(bytes, &t1); err != nil {
-		return fmt.Errorf("failed to unmarshal: %v", err)
-	}
-	readVals := t1.([]interface{})
-	writeVals := t2.([]interface{})
-	for r := range readVals {
-		writeVals[r] = readVals[r]
-	}
-	return nil
-}
-
-
-func CompaniesFromJson2(bytes []byte) ([]company.Record, error) {
-	elems := make([]companyElement, 1)
-	recs := make([]company.Record, 1)
-	anythingFromJson(bytes, elems, recs)
-	return nil, nil
-}
-
-
 func CompaniesFromJson(bytes []byte) ([]company.Record, error) {
 	companies := make([]companyElement, 1)
 	if err := json.Unmarshal(bytes, &companies); err != nil {
