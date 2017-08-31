@@ -2,6 +2,9 @@ package api
 
 import (
 	"net/http"
+	"io"
+	"encoding/json"
+	"fmt"
 )
 
 const (
@@ -21,3 +24,13 @@ var UriHandlers = []UriHandler{
 	{ItemApi, ItemHandler},
 	{PledgeApi, PledgeHandler},
 }
+
+
+func ToJson(writer io.Writer, v interface{}) {
+	js, err := json.Marshal(v)
+	if err != nil {
+		panic(fmt.Sprintf("unable to convert %T (%v)to json", v, v))
+	}
+	fmt.Fprintf(writer, "%s", js)
+}
+

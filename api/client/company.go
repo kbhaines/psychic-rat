@@ -1,16 +1,18 @@
 package client
 
 import (
-	"psychic-rat/mdl/company"
-	"net/url"
 	"fmt"
-	"net/http"
-	api2 "psychic-rat/api"
 	"io/ioutil"
+	"net/http"
+	"net/url"
+	api2 "psychic-rat/api"
+	"psychic-rat/mdl/company"
+	"psychic-rat/mdl/item"
 )
 
 type Api interface {
 	GetCompanies() ([]company.Record, error)
+	GetItems(companyId company.Id) ([]item.Record, error)
 }
 
 type api struct {
@@ -40,4 +42,17 @@ func (a *api) GetCompanies() ([]company.Record, error) {
 		return nil, fmt.Errorf("error reading conpany response: %v", err)
 	}
 	return api2.CompaniesFromJson(bytes)
+}
+
+func (a api) GetItems(id company.Id) ([]item.Record, error) {
+	resp, err := http.Get(a.url.String() + api2.ItemApi + fmt.Sprintf("?company=%v", id))
+	if err != nil {
+		return nil, fmt.Errorf("get items failed: %v", err)
+	}
+	defer resp.Body.Close()
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading item response: %v", err)
+	}
+	return api2.ItemsFromJson(bytes)
 }

@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"psychic-rat/mdl/company"
-	"io"
 )
 
 type companyElement struct {
@@ -22,15 +21,7 @@ func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 		unsupportedMethod(writer)
 		return
 	}
-	CompaniesToJson(writer)
-}
-
-func CompaniesToJson(writer io.Writer) {
-	js, err := json.Marshal(getCompanies())
-	if err != nil {
-		panic("unable to convert companies to json")
-	}
-	fmt.Fprintf(writer, "%s", js)
+	ToJson(writer, getCompanies())
 }
 
 func getCompanies() (response []companyElement) {
@@ -53,3 +44,4 @@ func CompaniesFromJson(bytes []byte) ([]company.Record, error) {
 	}
 	return results, nil
 }
+

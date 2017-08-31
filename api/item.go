@@ -1,12 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
-	"psychic-rat/ctr"
 	"net/http"
+	"psychic-rat/ctr"
 	"psychic-rat/mdl/company"
 	"psychic-rat/mdl/item"
-	"encoding/json"
 )
 
 func ItemHandler(writer http.ResponseWriter, request *http.Request) {
@@ -32,14 +32,18 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-type items struct {
-	Items []item.Record `json:"items""`
+type itemReport struct {
+	Items []item.Record `json:"items"`
+}
+
+type unmarshalItemReport struct {
+	Items []itemElement `json:"items"`
 }
 
 type itemElement struct {
 	IId    item.Id `json:"id"`
-	MMake  string `json:"make"`
-	MModel string `json:"model"`
+	MMake  string  `json:"make"`
+	MModel string  `json:"model"`
 }
 
 func (i *itemElement) Id() item.Id             { return i.IId }
@@ -47,14 +51,26 @@ func (i *itemElement) Make() string            { return i.MMake }
 func (i *itemElement) Model() string           { return i.MModel }
 func (i *itemElement) Company() (c company.Id) { return }
 
-func getItemsForCompany(companyId company.Id) items {
+func getItemsForCompany(companyId company.Id) itemReport {
 	is := ctr.GetController().Item().ListItems(func(i item.Record) item.Record {
 		if companyId == i.Company() {
 			return &itemElement{i.Id(), i.Make(), i.Model()}
 		}
 		return nil
 	})
-	return items{is}
+	return itemReport{is}
+}
+
+func ItemsFromJson(bytes []byte) ([]item.Record, error) {
+	var items unmarshalItemReport
+	if err := json.Unmarshal(bytes, &items); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal items: %v", err)
+	}
+	results := make([]item.Record, len(items.Items))
+	for i, v := range items.Items {
+		results[i] = &itemElement{v.Id(), v.Make(), v.Model()}
+	}
+	return results, nil
 }
 
 //func createItem() {
