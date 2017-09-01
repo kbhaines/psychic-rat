@@ -9,7 +9,7 @@ import (
 )
 
 type CompanyListing struct {
-	Companies []CompanyElement
+	Companies []CompanyElement `json:"companies"`
 }
 
 type CompanyElement struct {
