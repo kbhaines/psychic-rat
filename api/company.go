@@ -1,20 +1,21 @@
 package api
 
 import (
-	"net/http"
-	"psychic-rat/ctr"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"psychic-rat/ctr"
 	"psychic-rat/mdl/company"
 )
 
-type companyElement struct {
-	Cid   company.Id  `json:"id"`
-	Cname string      `json:"name"`
+type CompanyListing struct {
+	Companies []CompanyElement
 }
 
-func (c *companyElement) Id() company.Id { return c.Cid }
-func (c *companyElement) Name() string   { return c.Cname }
+type CompanyElement struct {
+	Id   company.Id `json:"id"`
+	Name string     `json:"name"`
+}
 
 func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
@@ -24,24 +25,19 @@ func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 	ToJson(writer, getCompanies())
 }
 
-func getCompanies() (response []companyElement) {
+func getCompanies() CompanyListing {
 	companies := ctr.GetController().Company().GetCompanies()
-	for _, c := range companies {
-		rec := companyElement{c.Id(), c.Name()}
-		response = append(response, rec)
+	resp := CompanyListing{make([]CompanyElement, len(companies))}
+	for i, c := range companies {
+		resp.Companies[i] = CompanyElement{c.Id(), c.Name()}
 	}
-	return response
+	return resp
 }
 
-func CompaniesFromJson(bytes []byte) ([]company.Record, error) {
-	companies := make([]companyElement, 1)
+func CompaniesFromJson(bytes []byte) (CompanyListing, error) {
+	companies := CompanyListing{}
 	if err := json.Unmarshal(bytes, &companies); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal companies: %v", err)
+		return companies, fmt.Errorf("failed to unmarshal companies: %v", err)
 	}
-	results := make([]company.Record, len(companies))
-	for i := range companies {
-		results[i] = &companies[i]
-	}
-	return results, nil
+	return companies, nil
 }
-

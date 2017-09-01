@@ -1,14 +1,14 @@
 package api
 
 import (
-	"net/http"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"psychic-rat/ctr"
 	"psychic-rat/mdl/item"
-	"psychic-rat/mdl/user"
-	"encoding/json"
-	"io/ioutil"
 	"psychic-rat/mdl/pledge"
+	"psychic-rat/mdl/user"
 	"time"
 )
 
@@ -16,6 +16,20 @@ import (
 	"log"
 	"sort"
 )
+
+type PledgeListing struct {
+	Pledges []PledgeElement `json:"pledges"`
+}
+
+type PledgeElement struct {
+	PledgeId  pledge.Id   `json:"id"`
+	Item      ItemElement `json:"item"`
+	Timestamp time.Time   `json:"timestamp"`
+}
+
+type PledgeRequest struct {
+	ItemId item.Id `json:"itemId"`
+}
 
 func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {
@@ -30,17 +44,17 @@ func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-type pledgeRequest struct {
-	ItemId item.Id `json:"itemId"`
+func NewPledgeRequest(itemId item.Id) PledgeRequest {
+	return PledgeRequest{itemId}
 }
 
 func handlePost(writer http.ResponseWriter, request *http.Request) {
-	pledge := pledgeRequest{}
+	pledge := PledgeRequest{}
 
 	defer request.Body.Close()
 	body, err := ioutil.ReadAll(request.Body)
 	if err != nil {
-		logInternalError(writer, err);
+		logInternalError(writer, err)
 		return
 	}
 	err = json.Unmarshal(body, &pledge)
@@ -68,22 +82,7 @@ func writeUserPledges(writer http.ResponseWriter, userId user.Id) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-type pledgeListing struct {
-	Pledges []pledge.Record `json:"pledges"`
-}
-
-type pledgeElement struct {
-	PledgeId  pledge.Id `json:"id"`
-	Item      item.Record `json:"item"`
-	Timestamp time.Time `json:"timestamp"`
-}
-
-func (p *pledgeElement) Id() pledge.Id        { return p.Id() }
-func (p *pledgeElement) UserId() user.Id      { return p.UserId() }
-func (p *pledgeElement) ItemId() item.Id      { return item.Id(0) }
-func (p *pledgeElement) TimeStamp() time.Time { return p.Timestamp }
-
-func (p *pledgeElement) String() string { return fmt.Sprintf("id:%v time:%v", p.PledgeId, p.Timestamp) }
+func (p *PledgeElement) String() string { return fmt.Sprintf("id:%v time:%v", p.PledgeId, p.Timestamp) }
 
 func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 	if b {
@@ -93,21 +92,20 @@ func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 	}
 }
 
-func getUserPledges(id user.Id) pledgeListing {
+func getUserPledges(id user.Id) PledgeListing {
 	ps := ctr.GetController().Pledge().ListPledges(func(p pledge.Record) pledge.Record {
-		if id == p.UserId() {
-			item, err := ctr.GetController().Item().GetById(p.ItemId())
-			if err != nil {
-				panic(err)
-			}
-			i := &itemElement{item.Id(), item.Make(), item.Model()}
-			return &pledgeElement{p.Id(), i, p.TimeStamp()}
-		} else {
-			return nil
-		}
+		return ifElse(id == p.UserId(), p, nil).(pledge.Record)
 	})
 	sort.Sort(pledge.ByTimeStamp(ps))
-	return pledgeListing{ps}
+	ps2 := make([]PledgeElement, len(ps))
+	for i, p := range ps {
+		item, err := ctr.GetController().Item().GetById(p.ItemId())
+		if err != nil {
+			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemId(), p.Id()))
+		}
+		ps2[i] = PledgeElement{p.Id(), ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
+	}
+	return PledgeListing{ps2}
 }
 
 func handleGet(writer http.ResponseWriter, request *http.Request) {

@@ -32,45 +32,44 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-type itemReport struct {
-	Items []itemElement `json:"items"`
+type ItemReport struct {
+	Items []ItemElement `json:"items"`
 }
 
-type itemElement struct {
-	IId    item.Id `json:"id"`
-	MMake  string  `json:"make"`
-	MModel string  `json:"model"`
+type ItemElement struct {
+	Id    item.Id `json:"id"`
+	Make  string  `json:"make"`
+	Model string  `json:"model"`
 }
 
-func (i *itemElement) Id() item.Id             { return i.IId }
-func (i *itemElement) Make() string            { return i.MMake }
-func (i *itemElement) Model() string           { return i.MModel }
-func (i *itemElement) Company() (c company.Id) { return }
+func ifElse(b bool, t, f interface{}) interface{} {
+	if b {
+		return t
+	}
+	return f
+}
 
-func getItemsForCompany(companyId company.Id) itemReport {
+func getItemsForCompany(companyId company.Id) ItemReport {
 	is := ctr.GetController().Item().ListItems(func(i item.Record) item.Record {
 		if companyId == i.Company() {
-			return &itemElement{i.Id(), i.Make(), i.Model()}
+			return i
+		} else {
+			return nil
 		}
-		return nil
 	})
-	report := itemReport{}
+	report := ItemReport{make([]ItemElement, len(is))}
 	for i, v := range is {
-		report.Items[i] = itemElement{v.Id(), v.Make(), v.Model()}
+		report.Items[i] = ItemElement{v.Id(), v.Make(), v.Model()}
 	}
 	return report
 }
 
-func ItemsFromJson(bytes []byte) ([]item.Record, error) {
-	var items itemReport
+func ItemsFromJson(bytes []byte) (ItemReport, error) {
+	var items ItemReport
 	if err := json.Unmarshal(bytes, &items); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal items: %v", err)
+		return items, fmt.Errorf("failed to unmarshal items: %v", err)
 	}
-	results := make([]item.Record, len(items.Items))
-	for i, v := range items.Items {
-		results[i] = &itemElement{v.Id(), v.Make(), v.Model()}
-	}
-	return results, nil
+	return items, nil
 }
 
 //func createItem() {
