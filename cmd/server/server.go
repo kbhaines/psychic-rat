@@ -1,14 +1,40 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
-	"psychic-rat/api"
-	"psychic-rat/repo/companyrepo"
+	"psychic-rat/api/rest"
 	"psychic-rat/mdl/company"
-	"psychic-rat/repo/itemrepo"
 	"psychic-rat/mdl/item"
+	"psychic-rat/repo/companyrepo"
+	"psychic-rat/repo/itemrepo"
 )
 
+type UriHandler struct {
+	Uri     string
+	Handler http.HandlerFunc
+}
+
+var UriHandlers = []UriHandler{
+	{rest.CompanyApi, CompanyHandler},
+	{rest.ItemApi, ItemHandler},
+	{rest.PledgeApi, PledgeHandler},
+}
+
+func ToJson(writer io.Writer, v interface{}) {
+	fmt.Fprintf(writer, "%s", ToJsonString(v))
+}
+
+func ToJsonString(v interface{}) string {
+	js, err := json.Marshal(v)
+	if err != nil {
+		panic(fmt.Sprintf("unable to convert %T (%v)to json", v, v))
+	}
+	return string(js)
+
+}
 
 func main() {
 	companies := companyrepo.GetCompanyRepoMapImpl()
@@ -23,7 +49,7 @@ func main() {
 	items.Create(item.New("tablet", "tab4", company.Id("2")))
 	items.Create(item.New("tablet", "tab8", company.Id("2")))
 
-	for _, h := range api.UriHandlers {
+	for _, h := range UriHandlers {
 		http.HandleFunc(h.Uri, h.Handler)
 	}
 

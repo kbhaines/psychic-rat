@@ -26,7 +26,7 @@ type ItemFilter func(record item.Record) item.Record
 type itemRepoApi struct{}
 
 func (i *itemRepoApi) ListItems(filter ItemFilter) (ItemReport, error) {
-	itemRepo := itemrepo.GetItemRepoMapImpl()
+	itemrepo.GetItemRepoMapImpl()
 	if filter == nil {
 		filter = func(i item.Record) item.Record { return i }
 	}
