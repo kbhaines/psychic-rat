@@ -3,10 +3,16 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"psychic-rat/ctr"
+	"psychic-rat/api/rest"
 	"psychic-rat/mdl/company"
+	"psychic-rat/repo/companyrepo"
 )
+
+type CompanyApi interface {
+	GetCompanies() (CompanyListing, error)
+}
 
 type CompanyListing struct {
 	Companies []CompanyElement `json:"companies"`
@@ -17,24 +23,54 @@ type CompanyElement struct {
 	Name string     `json:"name"`
 }
 
-func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodGet {
-		unsupportedMethod(writer)
-		return
-	}
-	ToJson(writer, getCompanies())
+type CompanyId string
+
+////////////////////////////////////////////////////////////////////////////////
+// CompanyApi implementations
+
+////////////////////////////////////////////////////////////////////////////////
+// Repo implementation
+
+func GetRepoCompanyApi() CompanyApi {
+	return &companyApiRepoImpl{}
 }
 
-func getCompanies() CompanyListing {
-	companies := ctr.GetController().Company().GetCompanies()
-	resp := CompanyListing{make([]CompanyElement, len(companies))}
+type companyApiRepoImpl struct{}
+
+func (c *companyApiRepoImpl) GetCompanies() (CompanyListing, error) {
+	companies := companyrepo.GetCompanyRepoMapImpl().GetCompanies()
+	results := CompanyListing{make([]CompanyElement, len(companies))}
 	for i, c := range companies {
-		resp.Companies[i] = CompanyElement{c.Id(), c.Name()}
+		results.Companies[i] = CompanyElement{c.Id(), c.Name()}
 	}
-	return resp
+	return results, nil
 }
 
-func CompaniesFromJson(bytes []byte) (CompanyListing, error) {
+////////////////////////////////////////////////////////////////////////////////
+// RESTful implementation
+
+func GetRestfulCompanyApi(baseUrl string) CompanyApi {
+	return &restfulCompanyApi{baseUrl}
+}
+
+type restfulCompanyApi struct {
+	url string
+}
+
+func (r *restfulCompanyApi) GetCompanies() (CompanyListing, error) {
+	resp, err := http.Get(r.url + rest.CompanyApi)
+	if err != nil {
+		return CompanyListing{}, fmt.Errorf("get companies failed: %v", err)
+	}
+	defer resp.Body.Close()
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return CompanyListing{}, fmt.Errorf("error reading company response: %v", err)
+	}
+	return companiesFromJson(bytes)
+}
+
+func companiesFromJson(bytes []byte) (CompanyListing, error) {
 	companies := CompanyListing{}
 	if err := json.Unmarshal(bytes, &companies); err != nil {
 		return companies, fmt.Errorf("failed to unmarshal companies: %v", err)

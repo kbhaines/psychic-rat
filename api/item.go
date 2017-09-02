@@ -1,35 +1,14 @@
 package api
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"psychic-rat/ctr"
-	"psychic-rat/mdl/company"
 	"psychic-rat/mdl/item"
+	"psychic-rat/repo/itemrepo"
 )
 
-func ItemHandler(writer http.ResponseWriter, request *http.Request) {
-	if request.Method != http.MethodGet {
-		unsupportedMethod(writer)
-		return
-	}
-	if err := request.ParseForm(); err != nil {
-		unableToParseForm(err, writer)
-		return
-	}
-
-	companyId := request.Form.Get("company")
-	if companyId == "" {
-		errorResponse(writer, fmt.Errorf("no company specified"))
-		return
-	}
-	json, err := json.Marshal(getItemsForCompany(company.Id(companyId)))
-	if err != nil {
-		logInternalError(writer, err)
-		return
-	}
-	fmt.Fprintf(writer, "%s", json)
+type ItemApi interface {
+	//AddItem(make string, model string, company company.Id) error
+	ListItems(f ItemFilter) (ItemReport, error)
+	GetById(id item.Id) (ItemElement, error)
 }
 
 type ItemReport struct {
@@ -42,36 +21,32 @@ type ItemElement struct {
 	Model string  `json:"model"`
 }
 
-func ifElse(b bool, t, f interface{}) interface{} {
-	if b {
-		return t
+type ItemFilter func(record item.Record) item.Record
+
+type itemRepoApi struct{}
+
+func (i *itemRepoApi) ListItems(filter ItemFilter) (ItemReport, error) {
+	itemRepo := itemrepo.GetItemRepoMapImpl()
+	if filter == nil {
+		filter = func(i item.Record) item.Record { return i }
 	}
-	return f
+	return ItemReport{}, nil
 }
 
-func getItemsForCompany(companyId company.Id) ItemReport {
-	is := ctr.GetController().Item().ListItems(func(i item.Record) item.Record {
-		if companyId == i.Company() {
-			return i
-		} else {
-			return nil
-		}
-	})
-	report := ItemReport{make([]ItemElement, len(is))}
-	for i, v := range is {
-		report.Items[i] = ItemElement{v.Id(), v.Make(), v.Model()}
-	}
-	return report
+func (i *itemRepoApi) GetById(id item.Id) (ItemElement, error) {
+	item, err := itemrepo.GetItemRepoMapImpl().GetById(id)
+	return ItemElement{item.Id(), item.Make(), item.Model()}, err
 }
 
-func ItemsFromJson(bytes []byte) (ItemReport, error) {
-	var items ItemReport
-	if err := json.Unmarshal(bytes, &items); err != nil {
-		return items, fmt.Errorf("failed to unmarshal items: %v", err)
-	}
-	return items, nil
-}
-
+//func checkDuplicate(item item.Record) error {
+//	itemsToCheck := itemRepo.GetAllByCompany(item.Company())
+//	for _, i := range itemsToCheck {
+//		if item.Make() == i.Make() && item.Model() == i.Model() {
+//			return fmt.Errorf("existing item: %v", i)
+//		}
+//	}
+//	return nil
+//}
 //func createItem() {
 //	const (
 //		Make    = "make"
