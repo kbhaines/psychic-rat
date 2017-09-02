@@ -10,5 +10,5 @@ type Items interface {
 	GetById(id item.Id) (item.Record, error)
 	GetAllByCompany(companyId company.Id) []item.Record
 	Update(id item.Id, item item.Record)
-	List() []item.Id
+	List() []item.Record
 }

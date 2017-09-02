@@ -22,11 +22,12 @@ func main() {
 		fmt.Printf("%s %s\n", co.Id, co.Name)
 	}
 
-	//itemReport, err := api.GetItems(company.Id("1"))
-	//exitIfErr(err)
-	//for _, i := range itemReport.Items {
-	//	fmt.Printf("%s %s %s\n", i.Id, i.Make, i.Model)
-	//}
+	itemsApi := api.GetRestfulItemApi(localhost)
+	itemReport, err := api.GetItems(company.Id("1"))
+	exitIfErr(err)
+	for _, i := range itemReport.Items {
+		fmt.Printf("%s %s %s\n", i.Id, i.Make, i.Model)
+	}
 
 	//pledges, err := api.NewPledge(itemReport.Items[0].Id)
 	//exitIfErr(err)

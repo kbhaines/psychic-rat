@@ -1,13 +1,18 @@
 package api
 
 import (
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"psychic-rat/api/rest"
 	"psychic-rat/mdl/item"
 	"psychic-rat/repo/itemrepo"
 )
 
 type ItemApi interface {
 	//AddItem(make string, model string, company company.Id) error
-	ListItems(f ItemFilter) (ItemReport, error)
+	ListItems() (ItemReport, error)
 	GetById(id item.Id) (ItemElement, error)
 }
 
@@ -21,16 +26,26 @@ type ItemElement struct {
 	Model string  `json:"model"`
 }
 
-type ItemFilter func(record item.Record) item.Record
-
 type itemRepoApi struct{}
 
-func (i *itemRepoApi) ListItems(filter ItemFilter) (ItemReport, error) {
-	itemrepo.GetItemRepoMapImpl()
-	if filter == nil {
-		filter = func(i item.Record) item.Record { return i }
+////////////////////////////////////////////////////////////////////////////////
+// ItemApi implementations
+
+////////////////////////////////////////////////////////////////////////////////
+// Repo api
+
+func GetRepoItemApi() ItemApi {
+	return &itemRepoApi{}
+}
+
+func (i *itemRepoApi) ListItems() (ItemReport, error) {
+	repo := itemrepo.GetItemRepoMapImpl()
+	items := repo.List()
+	results := make([]ItemElement, len(items))
+	for i, item := range items {
+		results[i] = ItemElement{item.Id(), item.Make(), item.Model()}
 	}
-	return ItemReport{}, nil
+	return ItemReport{results}, nil
 }
 
 func (i *itemRepoApi) GetById(id item.Id) (ItemElement, error) {
@@ -65,7 +80,39 @@ func (i *itemRepoApi) GetById(id item.Id) (ItemElement, error) {
 //
 //}
 
-//func handleItemGet(writer http.ResponseWriter, request *http.Request) {
-//	items := ctr.GetController().Item().ListItems()
-//	fmt.Fprintf(writer, "items: %v", items)
-//}
+////////////////////////////////////////////////////////////////////////////////
+// Restful api
+
+type itemRestApi struct {
+	url string
+}
+
+func GetRestfulItemApi(url string) ItemApi {
+	return &itemRestApi{url}
+}
+
+func (a *itemRestApi) ListItems() (ItemReport, error) {
+	resp, err := http.Get(a.url + rest.ItemApi + fmt.Sprintf("?company=%v", "1"))
+	report := ItemReport{}
+	if err != nil {
+		return report, fmt.Errorf("get items failed: %v", err)
+	}
+	defer resp.Body.Close()
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return report, fmt.Errorf("error reading item response: %v", err)
+	}
+	return ItemsFromJson(bytes)
+}
+
+func (a *itemRestApi) GetById(id item.Id) (ItemElement, error) {
+	panic("Not implemented")
+}
+
+func ItemsFromJson(bytes []byte) (ItemReport, error) {
+	var items ItemReport
+	if err := json.Unmarshal(bytes, &items); err != nil {
+		return items, fmt.Errorf("failed to unmarshal items: %v", err)
+	}
+	return items, nil
+}

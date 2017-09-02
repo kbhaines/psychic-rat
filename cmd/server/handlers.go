@@ -8,15 +8,14 @@ import (
 	"net/http"
 	"net/url"
 	"psychic-rat/api"
-	"psychic-rat/ctr"
 	"psychic-rat/mdl/company"
-	"psychic-rat/mdl/item"
 	"psychic-rat/mdl/pledge"
 	"psychic-rat/mdl/user"
 	"sort"
 )
 
 var companyApi = api.GetRepoCompanyApi()
+var itemApi = api.GetRepoItemApi()
 
 func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
@@ -65,26 +64,11 @@ func ifElse(b bool, t, f interface{}) interface{} {
 }
 
 func getItemsForCompany(companyId company.Id) api.ItemReport {
-	is := ctr.GetController().Item().ListItems(func(i item.Record) item.Record {
-		if companyId == i.Company() {
-			return i
-		} else {
-			return nil
-		}
-	})
-	report := api.ItemReport{make([]api.ItemElement, len(is))}
-	for i, v := range is {
-		report.Items[i] = api.ItemElement{v.Id(), v.Make(), v.Model()}
+	items, err := itemApi.ListItems()
+	if err != nil {
+		panic(fmt.Sprintf("unable to get items", err))
 	}
-	return report
-}
-
-func ItemsFromJson(bytes []byte) (api.ItemReport, error) {
-	var items api.ItemReport
-	if err := json.Unmarshal(bytes, &items); err != nil {
-		return items, fmt.Errorf("failed to unmarshal items: %v", err)
-	}
-	return items, nil
+	return items
 }
 
 // PLEDGES
@@ -102,10 +86,6 @@ func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 }
 
-func NewPledgeRequest(itemId item.Id) api.PledgeRequest {
-	return api.PledgeRequest{itemId}
-}
-
 func handlePost(writer http.ResponseWriter, request *http.Request) {
 	pledge := api.PledgeRequest{}
 
@@ -121,7 +101,9 @@ func handlePost(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	userId := getCurrentUserId()
-	_, err = ctr.GetController().Pledge().AddPledge(pledge.ItemId, userId)
+
+	//pledgeId, err := 0, nil
+
 	if err != nil {
 		logInternalError(writer, err)
 		return
@@ -149,17 +131,15 @@ func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 }
 
 func getUserPledges(id user.Id) api.PledgeListing {
-	ps := ctr.GetController().Pledge().ListPledges(func(p pledge.Record) pledge.Record {
-		return ifElse(id == p.UserId(), p, nil).(pledge.Record)
-	})
+	ps := make([]pledge.Record, 0)
 	sort.Sort(pledge.ByTimeStamp(ps))
 	ps2 := make([]api.PledgeElement, len(ps))
-	for i, p := range ps {
-		item, err := ctr.GetController().Item().GetById(p.ItemId())
+	for _, p := range ps {
+		var err error
 		if err != nil {
 			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemId(), p.Id()))
 		}
-		ps2[i] = api.PledgeElement{p.Id(), api.ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
+		//ps2[i] = api.PledgeElement{p.Id(), api.ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
 	}
 	return api.PledgeListing{ps2}
 }

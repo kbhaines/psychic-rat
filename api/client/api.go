@@ -46,34 +46,3 @@ func (a *api) GetCompanies() (ap.CompanyListing, error) {
 	}
 	return ap.CompaniesFromJson(bytes)
 }
-
-func (a *api) GetItems(id company.Id) (ap.ItemReport, error) {
-	resp, err := http.Get(a.url.String() + ap.ItemApi + fmt.Sprintf("?company=%v", id))
-	report := ap.ItemReport{}
-	if err != nil {
-		return report, fmt.Errorf("get items failed: %v", err)
-	}
-	defer resp.Body.Close()
-	bytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return report, fmt.Errorf("error reading item response: %v", err)
-	}
-	return ap.ItemsFromJson(bytes)
-}
-
-func (a *api) NewPledge(itemId item.Id) (ap.PledgeListing, error) {
-	jsonString := ap.ToJsonString(ap.NewPledgeRequest(itemId))
-	body := strings.NewReader(jsonString)
-	resp, err := http.Post(a.url.String()+ap.PledgeApi, "application/json", body)
-	listing := ap.PledgeListing{}
-	if resp.StatusCode != http.StatusOK {
-		return listing, fmt.Errorf("request returned: %d", resp.StatusCode)
-	}
-	defer resp.Body.Close()
-	bytes, _ := ioutil.ReadAll(resp.Body)
-	err = json.Unmarshal(bytes, &listing)
-	if err != nil {
-		return listing, fmt.Errorf("unable to decode response: %v", err)
-	}
-	return listing, nil
-}

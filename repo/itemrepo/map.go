@@ -1,11 +1,11 @@
 package itemrepo
 
 import (
-	"psychic-rat/mdl/item"
-	"psychic-rat/mdl/company"
-	"psychic-rat/repo"
 	"errors"
 	"fmt"
+	"psychic-rat/mdl/company"
+	"psychic-rat/mdl/item"
+	"psychic-rat/repo"
 )
 
 func GetItemRepoMapImpl() repo.Items {
@@ -47,14 +47,14 @@ func (r *repoMap) Update(id item.Id, item item.Record) {
 	panic("implement me")
 }
 
-func (r *repoMap) List() []item.Id {
-	itemIds := make([]item.Id, len(r.records))
+func (r *repoMap) List() []item.Record {
+	items := make([]item.Record, len(r.records))
 	i := 0
-	for id := range r.records {
-		itemIds[i] = id
+	for _, item := range r.records {
+		items[i] = item
 		i++
 	}
-	return itemIds
+	return items
 }
 
 func (r *repoMap) GetAllByCompany(companyId company.Id) (items []item.Record) {
