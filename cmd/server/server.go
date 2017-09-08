@@ -21,6 +21,10 @@ var UriHandlers = []UriHandler{
 	{rest.CompanyApi, CompanyHandler},
 	{rest.ItemApi, ItemHandler},
 	{rest.PledgeApi, PledgeHandler},
+	{rest.HomePage, HomePageHandler},
+	{rest.SignInPage, SignInPageHandler},
+	{rest.PledgePage, PledgePageHandler},
+	{rest.ThanksPage, ThanksPageHandler},
 }
 
 func ToJson(writer io.Writer, v interface{}) {
@@ -33,7 +37,6 @@ func ToJsonString(v interface{}) string {
 		panic(fmt.Sprintf("unable to convert %T (%v)to json", v, v))
 	}
 	return string(js)
-
 }
 
 func main() {

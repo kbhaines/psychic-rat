@@ -11,6 +11,11 @@ const (
 	CompanyApi = ApiRoot + "/company"
 	ItemApi    = ApiRoot + "/item"
 	PledgeApi  = ApiRoot + "/pledge"
+
+	HomePage   = "/"
+	SignInPage = "/signin"
+	PledgePage = "/pledge"
+	ThanksPage = "/thanks"
 )
 
 func ToJson(writer io.Writer, v interface{}) {
