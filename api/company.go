@@ -12,6 +12,7 @@ import (
 
 type CompanyApi interface {
 	GetCompanies() (CompanyListing, error)
+	GetById(company.Id) (CompanyElement, error)
 }
 
 type CompanyListing struct {
@@ -46,6 +47,14 @@ func (c *companyApiRepoImpl) GetCompanies() (CompanyListing, error) {
 	return results, nil
 }
 
+func (c *companyApiRepoImpl) GetById(id company.Id) (CompanyElement, error) {
+	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(id)
+	if err != nil {
+		return CompanyElement{}, err
+	}
+	return CompanyElement{id, co.Name()}, nil
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // RESTful implementation
 
@@ -76,4 +85,25 @@ func companiesFromJson(bytes []byte) (CompanyListing, error) {
 		return companies, fmt.Errorf("failed to unmarshal companies: %v", err)
 	}
 	return companies, nil
+}
+
+func (r *restfulCompanyApi) GetById(id company.Id) (CompanyElement, error) {
+	resp, err := http.Get(r.url + rest.CompanyApi + fmt.Sprintf("?company=%v", id))
+	if err != nil {
+		return CompanyElement{}, fmt.Errorf("could not retrieve company %v : %v", id, err)
+	}
+	defer resp.Body.Close()
+	bytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return CompanyElement{}, fmt.Errorf("error reading company element from response: %v", err)
+	}
+	return companyFromJson(bytes)
+}
+
+func companyFromJson(bytes []byte) (CompanyElement, error) {
+	co := CompanyElement{}
+	if err := json.Unmarshal(bytes, &co); err != nil {
+		return co, fmt.Errorf("failed to unmarshal company: %v", err)
+	}
+	return co, nil
 }

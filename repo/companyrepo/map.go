@@ -1,9 +1,9 @@
 package companyrepo
 
 import (
+	"fmt"
 	"psychic-rat/mdl/company"
 	"psychic-rat/repo"
-	"fmt"
 )
 
 // declare that we implement Repo interface
@@ -30,4 +30,11 @@ func (r *repoMap) GetCompanies() (companies []company.Record) {
 		companies = append(companies, c)
 	}
 	return companies
+}
+
+func (r *repoMap) GetById(id company.Id) (company.Record, error) {
+	if rec, exists := r.records[id]; exists {
+		return rec, nil
+	}
+	return nil, fmt.Errorf("company id %v not found", id)
 }

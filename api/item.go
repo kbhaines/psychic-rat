@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl/item"
+	"psychic-rat/repo/companyrepo"
 	"psychic-rat/repo/itemrepo"
 )
 
@@ -21,9 +22,10 @@ type ItemReport struct {
 }
 
 type ItemElement struct {
-	Id    item.Id `json:"id"`
-	Make  string  `json:"make"`
-	Model string  `json:"model"`
+	Id      item.Id `json:"id"`
+	Make    string  `json:"make"`
+	Model   string  `json:"model"`
+	Company string  `json:"company"`
 }
 
 type itemRepoApi struct{}
@@ -41,16 +43,25 @@ func GetRepoItemApi() ItemApi {
 func (i *itemRepoApi) ListItems() (ItemReport, error) {
 	repo := itemrepo.GetItemRepoMapImpl()
 	items := repo.List()
+	companies := companyrepo.GetCompanyRepoMapImpl()
 	results := make([]ItemElement, len(items))
 	for i, item := range items {
-		results[i] = ItemElement{item.Id(), item.Make(), item.Model()}
+		company, _ := companies.GetById(item.Company())
+		results[i] = ItemElement{item.Id(), item.Make(), item.Model(), company.Name()}
 	}
 	return ItemReport{results}, nil
 }
 
 func (i *itemRepoApi) GetById(id item.Id) (ItemElement, error) {
 	item, err := itemrepo.GetItemRepoMapImpl().GetById(id)
-	return ItemElement{item.Id(), item.Make(), item.Model()}, err
+	if err != nil {
+		return ItemElement{}, err
+	}
+	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(item.Company())
+	if err != nil {
+		return ItemElement{}, err
+	}
+	return ItemElement{item.Id(), item.Make(), item.Model(), co.Name()}, err
 }
 
 //func checkDuplicate(item item.Record) error {

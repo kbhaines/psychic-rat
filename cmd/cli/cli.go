@@ -23,10 +23,10 @@ func main() {
 	}
 
 	itemsApi := api.GetRestfulItemApi(localhost)
-	itemReport, err := api.GetItems(company.Id("1"))
+	itemReport, err := itemsApi.ListItems()
 	exitIfErr(err)
 	for _, i := range itemReport.Items {
-		fmt.Printf("%s %s %s\n", i.Id, i.Make, i.Model)
+		fmt.Printf("%s %s %s %s\n", i.Id, i.Company, i.Make, i.Model)
 	}
 
 	//pledges, err := api.NewPledge(itemReport.Items[0].Id)
