@@ -1,4 +1,4 @@
-{{ template "header.html" }}
+{{ template "header.html.tmpl" . }}
 <h1>Sign in</h1>
 <p>Hello {{ .Username }}</p>
 
@@ -7,4 +7,4 @@
 <li> <a href="/logout">Log out</a></li>
 <li> <a href="/pledge">Pledge Support</a></li>
 </ul>
-{{ template "footer.html" }}
+{{ template "footer.html.tmpl" . }}
