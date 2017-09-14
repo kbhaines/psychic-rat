@@ -1,0 +1,28 @@
+{{ template "header.html" . }}
+<h1>Pledge</h1>
+<p> Hello {{ .Username }}
+
+<h2>Select the item you're going to boycott</h2>
+
+<form action="/pledge" method="post">
+
+<select name="item" required>
+    {{ range .Items }}
+    <option value="{{.Id}}"> {{ .Company }} {{ .Make }} {{ .Model }} </option>
+    {{ end }}
+</select>
+
+<input type="submit" value="Submit">
+
+</form>
+
+
+<h2>Options</h2>
+
+<ul>
+<li> <a href="/signin">Sign In</a></li>
+<li> <a href="/logout">Log out</a></li>
+<li> <a href="/pledge">Pledge Support</a></li>
+</ul>
+
+{{ template "footer.html" . }}
