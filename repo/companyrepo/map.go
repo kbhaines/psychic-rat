@@ -7,17 +7,17 @@ import (
 )
 
 // declare that we implement Repo interface
-var companyRepo repo.Companies = &repoMap{make(map[company.Id]company.Record)}
+var companyRepo repo.Companies = &repoMap{make(map[company.Id]company.CompanyRecord)}
 
 func GetCompanyRepoMapImpl() repo.Companies {
 	return companyRepo
 }
 
 type repoMap struct {
-	records map[company.Id]company.Record
+	records map[company.Id]company.CompanyRecord
 }
 
-func (r *repoMap) Create(i company.Record) error {
+func (r *repoMap) Create(i company.CompanyRecord) error {
 	if _, found := r.records[i.Id()]; found {
 		return fmt.Errorf("company id %v exists", i.Id())
 	}
@@ -25,14 +25,14 @@ func (r *repoMap) Create(i company.Record) error {
 	return nil
 }
 
-func (r *repoMap) GetCompanies() (companies []company.Record) {
+func (r *repoMap) GetCompanies() (companies []company.CompanyRecord) {
 	for _, c := range r.records {
 		companies = append(companies, c)
 	}
 	return companies
 }
 
-func (r *repoMap) GetById(id company.Id) (company.Record, error) {
+func (r *repoMap) GetById(id company.Id) (company.CompanyRecord, error) {
 	if rec, exists := r.records[id]; exists {
 		return rec, nil
 	}

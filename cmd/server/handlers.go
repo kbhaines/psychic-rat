@@ -131,7 +131,7 @@ func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 }
 
 func getUserPledges(id user.Id) api.PledgeListing {
-	ps := make([]pledge.Record, 0)
+	ps := make([]pledge.PledgeRecord, 0)
 	sort.Sort(pledge.ByTimeStamp(ps))
 	ps2 := make([]api.PledgeElement, len(ps))
 	for _, p := range ps {

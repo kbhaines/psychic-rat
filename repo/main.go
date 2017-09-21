@@ -8,27 +8,27 @@ import (
 )
 
 type Companies interface {
-	Create(company company.Record) error
-	GetCompanies() []company.Record
-	GetById(company.Id) (company.Record, error)
+	Create(company company.CompanyRecord) error
+	GetCompanies() []company.CompanyRecord
+	GetById(company.Id) (company.CompanyRecord, error)
 }
 
 type Items interface {
-	Create(item item.Record) error
-	GetById(id item.Id) (item.Record, error)
-	GetAllByCompany(companyId company.Id) []item.Record
-	Update(id item.Id, item item.Record)
-	List() []item.Record
+	Create(item item.ItemRecord) error
+	GetById(id item.Id) (item.ItemRecord, error)
+	GetAllByCompany(companyId company.Id) []item.ItemRecord
+	Update(id item.Id, item item.ItemRecord)
+	List() []item.ItemRecord
 }
 
 type Pledges interface {
-	Create(pledge pledge.Record) error
-	GetById(id pledge.Id) (pledge.Record, error)
+	Create(pledge pledge.PledgeRecord) error
+	GetById(id pledge.Id) (pledge.PledgeRecord, error)
 	GetByUser(id user.Id) []pledge.Id
-	List() []pledge.Record
+	List() []pledge.PledgeRecord
 }
 
 type Users interface {
-	Create(user user.Record) error
-	GetById(id user.Id) (user.Record, error)
+	Create(user user.UserRecord) error
+	GetById(id user.Id) (user.UserRecord, error)
 }

@@ -1,11 +1,11 @@
 package pledgerepo
 
 import (
-	"psychic-rat/repo"
-	"psychic-rat/mdl/pledge"
 	"errors"
-	"psychic-rat/mdl/user"
 	"fmt"
+	"psychic-rat/mdl/pledge"
+	"psychic-rat/mdl/user"
+	"psychic-rat/repo"
 )
 
 func GetPledgeRepoMapImpl() repo.Pledges {
@@ -13,13 +13,13 @@ func GetPledgeRepoMapImpl() repo.Pledges {
 }
 
 // declare that we implement pledgeMapRepo interface
-var pledgeRepo repo.Pledges = &pledgeMapRepo{make(map[pledge.Id]pledge.Record)}
+var pledgeRepo repo.Pledges = &pledgeMapRepo{make(map[pledge.Id]pledge.PledgeRecord)}
 
 type pledgeMapRepo struct {
-	records map[pledge.Id]pledge.Record
+	records map[pledge.Id]pledge.PledgeRecord
 }
 
-func (repo *pledgeMapRepo) Create(i pledge.Record) error {
+func (repo *pledgeMapRepo) Create(i pledge.PledgeRecord) error {
 	if _, found := repo.records[i.Id()]; found {
 		return fmt.Errorf("pledge with id %v exists", i.Id())
 	}
@@ -27,7 +27,7 @@ func (repo *pledgeMapRepo) Create(i pledge.Record) error {
 	return nil
 }
 
-func (repo *pledgeMapRepo) GetById(id pledge.Id) (pledge.Record, error) {
+func (repo *pledgeMapRepo) GetById(id pledge.Id) (pledge.PledgeRecord, error) {
 	item, found := repo.records[id]
 	if !found {
 		return nil, errors.New("not found")
@@ -45,7 +45,7 @@ func (repo *pledgeMapRepo) GetByUser(id user.Id) []pledge.Id {
 	return results
 }
 
-func (repo *pledgeMapRepo) List() (pledges []pledge.Record) {
+func (repo *pledgeMapRepo) List() (pledges []pledge.PledgeRecord) {
 	for _, p := range repo.records {
 		pledges = append(pledges, p)
 	}

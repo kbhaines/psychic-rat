@@ -12,22 +12,22 @@ func GetItemRepoMapImpl() repo.Items {
 	return itemRepo
 }
 
-var itemRepo repo.Items = &repoMap{make(map[item.Id]item.Record)}
+var itemRepo repo.Items = &repoMap{make(map[item.Id]item.ItemRecord)}
 
 type repoMap struct {
-	records map[item.Id]item.Record
+	records map[item.Id]item.ItemRecord
 }
 
 type record struct {
 	id item.Id
-	item.Record
+	item.ItemRecord
 }
 
 func (r record) RepoId() item.Id {
 	return r.id
 }
 
-func (r *repoMap) Create(i item.Record) error {
+func (r *repoMap) Create(i item.ItemRecord) error {
 	if _, found := r.records[i.Id()]; found {
 		return fmt.Errorf("item %v already exists", i.Id())
 	}
@@ -35,7 +35,7 @@ func (r *repoMap) Create(i item.Record) error {
 	return nil
 }
 
-func (r *repoMap) GetById(id item.Id) (item.Record, error) {
+func (r *repoMap) GetById(id item.Id) (item.ItemRecord, error) {
 	item, found := r.records[id]
 	if !found {
 		return nil, errors.New("not found")
@@ -43,12 +43,12 @@ func (r *repoMap) GetById(id item.Id) (item.Record, error) {
 	return record{id, item}, nil
 }
 
-func (r *repoMap) Update(id item.Id, item item.Record) {
+func (r *repoMap) Update(id item.Id, item item.ItemRecord) {
 	panic("implement me")
 }
 
-func (r *repoMap) List() []item.Record {
-	items := make([]item.Record, len(r.records))
+func (r *repoMap) List() []item.ItemRecord {
+	items := make([]item.ItemRecord, len(r.records))
 	i := 0
 	for _, item := range r.records {
 		items[i] = item
@@ -57,7 +57,7 @@ func (r *repoMap) List() []item.Record {
 	return items
 }
 
-func (r *repoMap) GetAllByCompany(companyId company.Id) (items []item.Record) {
+func (r *repoMap) GetAllByCompany(companyId company.Id) (items []item.ItemRecord) {
 	for id, r := range r.records {
 		if r.Company() == companyId {
 			items = append(items, record{id, r})

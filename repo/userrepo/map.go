@@ -2,23 +2,23 @@ package userrepo
 
 import (
 	"errors"
-	"psychic-rat/repo"
 	"fmt"
 	"psychic-rat/mdl/user"
+	"psychic-rat/repo"
 )
 
 // declare that we implement Repo interface
-var userRepo repo.Users = &userRepoMap{make(map[user.Id]user.Record)}
+var userRepo repo.Users = &userRepoMap{make(map[user.Id]user.UserRecord)}
 
 func GetUserRepoMapImpl() repo.Users {
 	return userRepo
 }
 
 type userRepoMap struct {
-	records map[user.Id]user.Record
+	records map[user.Id]user.UserRecord
 }
 
-func (repo *userRepoMap) Create(i user.Record) error {
+func (repo *userRepoMap) Create(i user.UserRecord) error {
 	if _, found := repo.records[i.Id()]; found {
 		return fmt.Errorf("user id %v already exists", i.Id())
 	}
@@ -26,7 +26,7 @@ func (repo *userRepoMap) Create(i user.Record) error {
 	return nil
 }
 
-func (repo *userRepoMap) GetById(id user.Id) (user.Record, error) {
+func (repo *userRepoMap) GetById(id user.Id) (user.UserRecord, error) {
 	item, found := repo.records[id]
 	if !found {
 		return nil, errors.New("not found")
