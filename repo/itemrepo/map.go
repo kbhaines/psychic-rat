@@ -3,8 +3,7 @@ package itemrepo
 import (
 	"errors"
 	"fmt"
-	"psychic-rat/mdl/company"
-	"psychic-rat/mdl/item"
+	"psychic-rat/mdl"
 	"psychic-rat/repo"
 )
 
@@ -12,43 +11,43 @@ func GetItemRepoMapImpl() repo.Items {
 	return itemRepo
 }
 
-var itemRepo repo.Items = &repoMap{make(map[item.Id]item.ItemRecord)}
+var itemRepo repo.Items = &repoMap{make(map[mdl.Id]mdl.ItemRecord)}
 
 type repoMap struct {
-	records map[item.Id]item.ItemRecord
+	records map[mdl.Id]mdl.ItemRecord
 }
 
 type record struct {
-	id item.Id
-	item.ItemRecord
+	id mdl.Id
+	mdl.ItemRecord
 }
 
-func (r record) RepoId() item.Id {
+func (r record) RepoId() mdl.Id {
 	return r.id
 }
 
-func (r *repoMap) Create(i item.ItemRecord) error {
-	if _, found := r.records[i.Id()]; found {
-		return fmt.Errorf("item %v already exists", i.Id())
+func (r *repoMap) Create(i mdl.ItemRecord) error {
+	if _, found := r.records[i.Id]; found {
+		return fmt.Errorf("item %v already exists", i.Id)
 	}
-	r.records[i.Id()] = i
+	r.records[i.Id] = i
 	return nil
 }
 
-func (r *repoMap) GetById(id item.Id) (item.ItemRecord, error) {
+func (r *repoMap) GetById(id mdl.Id) (*mdl.ItemRecord, error) {
 	item, found := r.records[id]
 	if !found {
 		return nil, errors.New("not found")
 	}
-	return record{id, item}, nil
+	return &item, nil
 }
 
-func (r *repoMap) Update(id item.Id, item item.ItemRecord) {
+func (r *repoMap) Update(id mdl.Id, item mdl.ItemRecord) {
 	panic("implement me")
 }
 
-func (r *repoMap) List() []item.ItemRecord {
-	items := make([]item.ItemRecord, len(r.records))
+func (r *repoMap) List() []mdl.ItemRecord {
+	items := make([]mdl.ItemRecord, len(r.records))
 	i := 0
 	for _, item := range r.records {
 		items[i] = item
@@ -57,10 +56,10 @@ func (r *repoMap) List() []item.ItemRecord {
 	return items
 }
 
-func (r *repoMap) GetAllByCompany(companyId company.Id) (items []item.ItemRecord) {
-	for id, r := range r.records {
-		if r.Company() == companyId {
-			items = append(items, record{id, r})
+func (r *repoMap) GetAllByCompany(companyId mdl.Id) (items []mdl.ItemRecord) {
+	for _, r := range r.records {
+		if r.CompanyId == companyId {
+			items = append(items, r)
 		}
 	}
 	return items

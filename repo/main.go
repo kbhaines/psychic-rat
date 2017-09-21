@@ -1,34 +1,29 @@
 package repo
 
-import (
-	"psychic-rat/mdl/company"
-	"psychic-rat/mdl/item"
-	"psychic-rat/mdl/pledge"
-	"psychic-rat/mdl/user"
-)
+import "psychic-rat/mdl"
 
 type Companies interface {
-	Create(company company.CompanyRecord) error
-	GetCompanies() []company.CompanyRecord
-	GetById(company.Id) (company.CompanyRecord, error)
+	Create(company mdl.CompanyRecord) error
+	GetCompanies() []mdl.CompanyRecord
+	GetById(mdl.Id) (*mdl.CompanyRecord, error)
 }
 
 type Items interface {
-	Create(item item.ItemRecord) error
-	GetById(id item.Id) (item.ItemRecord, error)
-	GetAllByCompany(companyId company.Id) []item.ItemRecord
-	Update(id item.Id, item item.ItemRecord)
-	List() []item.ItemRecord
+	Create(item mdl.ItemRecord) error
+	GetById(id mdl.Id) (*mdl.ItemRecord, error)
+	GetAllByCompany(companyId mdl.Id) []mdl.ItemRecord
+	Update(id mdl.Id, item mdl.ItemRecord)
+	List() []mdl.ItemRecord
 }
 
 type Pledges interface {
-	Create(pledge pledge.PledgeRecord) error
-	GetById(id pledge.Id) (pledge.PledgeRecord, error)
-	GetByUser(id user.Id) []pledge.Id
-	List() []pledge.PledgeRecord
+	Create(pledge mdl.PledgeRecord) error
+	GetById(id mdl.Id) (*mdl.PledgeRecord, error)
+	GetByUser(id mdl.Id) []mdl.Id
+	List() []mdl.PledgeRecord
 }
 
 type Users interface {
-	Create(user user.UserRecord) error
-	GetById(id user.Id) (user.UserRecord, error)
+	Create(user mdl.UserRecord) error
+	GetById(id mdl.Id) (*mdl.UserRecord, error)
 }
