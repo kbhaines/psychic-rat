@@ -10,29 +10,13 @@ import (
 	"psychic-rat/repo/companyrepo"
 )
 
-type CompanyApi interface {
-	GetCompanies() (CompanyListing, error)
-	GetById(mdl.Id) (CompanyElement, error)
-}
-
-type CompanyListing struct {
-	Companies []CompanyElement `json:"companies"`
-}
-
-type CompanyElement struct {
-	Id   mdl.Id `json:"id"`
-	Name string `json:"name"`
-}
-
-type CompanyId string
-
 ////////////////////////////////////////////////////////////////////////////////
 // CompanyApi implementations
 
 ////////////////////////////////////////////////////////////////////////////////
 // Repo implementation
 
-func GetRepoCompanyApi() CompanyApi {
+func getRepoCompanyApi() CompanyApi {
 	return &companyApiRepoImpl{}
 }
 

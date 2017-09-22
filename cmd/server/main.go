@@ -47,9 +47,10 @@ var (
 )
 
 func init() {
-	companyApi = api.GetRepoCompanyApi()
-	itemApi = api.GetRepoItemApi()
-	pledgeApi = api.GetRepoPledgeApiImpl()
+	a := api.Get()
+	companyApi = a.Company
+	itemApi = a.Item
+	pledgeApi = a.Pledge
 }
 
 func main() {

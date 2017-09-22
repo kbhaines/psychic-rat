@@ -30,7 +30,6 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
-	itemApi := api.GetRepoItemApi()
 	report, err := itemApi.ListItems()
 	if err != nil {
 		log.Fatal(err)

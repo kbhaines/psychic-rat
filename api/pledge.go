@@ -16,25 +16,6 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type PledgeApi interface {
-	NewPledge(itemId mdl.Id, userId mdl.Id) (mdl.Id, error)
-	//ListPledges() PledgeListing
-}
-
-type PledgeListing struct {
-	Pledges []PledgeElement `json:"pledges"`
-}
-
-type PledgeElement struct {
-	PledgeId  mdl.Id      `json:"id"`
-	Item      ItemElement `json:"item"`
-	Timestamp time.Time   `json:"timestamp"`
-}
-
-type PledgeRequest struct {
-	ItemId mdl.Id `json:"itemId"`
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // Implementations
 
@@ -43,7 +24,7 @@ type PledgeRequest struct {
 
 type pledgeApiRepoImpl struct{}
 
-func GetRepoPledgeApiImpl() PledgeApi {
+func getRepoPledgeApi() PledgeApi {
 	return &pledgeApiRepoImpl{}
 }
 

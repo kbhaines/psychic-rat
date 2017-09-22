@@ -11,34 +11,17 @@ import (
 	"psychic-rat/repo/itemrepo"
 )
 
-type ItemApi interface {
-	//AddItem(make string, model string, company company.Id) error
-	ListItems() (ItemReport, error)
-	GetById(id mdl.Id) (ItemElement, error)
-}
-
-type ItemReport struct {
-	Items []ItemElement `json:"items"`
-}
-
-type ItemElement struct {
-	Id      mdl.Id `json:"id"`
-	Make    string `json:"make"`
-	Model   string `json:"model"`
-	Company string `json:"company"`
-}
-
-type itemRepoApi struct{}
-
 ////////////////////////////////////////////////////////////////////////////////
 // ItemApi implementations
 
 ////////////////////////////////////////////////////////////////////////////////
 // Repo api
 
-func GetRepoItemApi() ItemApi {
+func getRepoItemApi() ItemApi {
 	return &itemRepoApi{}
 }
+
+type itemRepoApi struct{}
 
 func (i *itemRepoApi) ListItems() (ItemReport, error) {
 	repo := itemrepo.GetItemRepoMapImpl()
