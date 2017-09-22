@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"psychic-rat/api"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
 	"psychic-rat/repo/companyrepo"
@@ -37,6 +38,18 @@ func ToJsonString(v interface{}) string {
 		panic(fmt.Sprintf("unable to convert %T (%v)to json", v, v))
 	}
 	return string(js)
+}
+
+var (
+	companyApi api.CompanyApi
+	itemApi    api.ItemApi
+	pledgeApi  api.PledgeApi
+)
+
+func init() {
+	companyApi = api.GetRepoCompanyApi()
+	itemApi = api.GetRepoItemApi()
+	pledgeApi = api.GetRepoPledgeApiImpl()
 }
 
 func main() {

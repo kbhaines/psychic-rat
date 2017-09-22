@@ -12,9 +12,6 @@ import (
 	"sort"
 )
 
-var companyApi = api.GetRepoCompanyApi()
-var itemApi = api.GetRepoItemApi()
-
 func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 	if request.Method != http.MethodGet {
 		unsupportedMethod(writer)
