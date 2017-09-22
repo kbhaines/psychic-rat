@@ -1,19 +1,18 @@
-package itemrepo
+package repo
 
 import (
 	"errors"
 	"fmt"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
-func GetItemRepoMapImpl() repo.Items {
+func getItemRepoMapImpl() Items {
 	return itemRepo
 }
 
-var itemRepo repo.Items = &repoMap{make(map[mdl.Id]mdl.ItemRecord)}
+var itemRepo Items = &itemRepoMap{make(map[mdl.Id]mdl.ItemRecord)}
 
-type repoMap struct {
+type itemRepoMap struct {
 	records map[mdl.Id]mdl.ItemRecord
 }
 
@@ -26,7 +25,7 @@ func (r record) RepoId() mdl.Id {
 	return r.id
 }
 
-func (r *repoMap) Create(i mdl.ItemRecord) error {
+func (r *itemRepoMap) Create(i mdl.ItemRecord) error {
 	if _, found := r.records[i.Id]; found {
 		return fmt.Errorf("item %v already exists", i.Id)
 	}
@@ -34,7 +33,7 @@ func (r *repoMap) Create(i mdl.ItemRecord) error {
 	return nil
 }
 
-func (r *repoMap) GetById(id mdl.Id) (*mdl.ItemRecord, error) {
+func (r *itemRepoMap) GetById(id mdl.Id) (*mdl.ItemRecord, error) {
 	item, found := r.records[id]
 	if !found {
 		return nil, errors.New("not found")
@@ -42,11 +41,11 @@ func (r *repoMap) GetById(id mdl.Id) (*mdl.ItemRecord, error) {
 	return &item, nil
 }
 
-func (r *repoMap) Update(id mdl.Id, item mdl.ItemRecord) {
+func (r *itemRepoMap) Update(id mdl.Id, item mdl.ItemRecord) {
 	panic("implement me")
 }
 
-func (r *repoMap) List() []mdl.ItemRecord {
+func (r *itemRepoMap) List() []mdl.ItemRecord {
 	items := make([]mdl.ItemRecord, len(r.records))
 	i := 0
 	for _, item := range r.records {
@@ -56,7 +55,7 @@ func (r *repoMap) List() []mdl.ItemRecord {
 	return items
 }
 
-func (r *repoMap) GetAllByCompany(companyId mdl.Id) (items []mdl.ItemRecord) {
+func (r *itemRepoMap) GetAllByCompany(companyId mdl.Id) (items []mdl.ItemRecord) {
 	for _, r := range r.records {
 		if r.CompanyId == companyId {
 			items = append(items, r)

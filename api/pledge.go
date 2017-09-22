@@ -7,9 +7,7 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
-	"psychic-rat/repo/itemrepo"
-	"psychic-rat/repo/pledgerepo"
-	"psychic-rat/repo/userrepo"
+	"psychic-rat/repo"
 	"strings"
 	"time"
 
@@ -29,16 +27,16 @@ func getRepoPledgeApi() PledgeApi {
 }
 
 func (p *pledgeApiRepoImpl) NewPledge(itemId mdl.Id, userId mdl.Id) (newId mdl.Id, err error) {
-	_, err = itemrepo.GetItemRepoMapImpl().GetById(itemId)
+	_, err = repo.Get().Pledge.GetById(itemId)
 	if err != nil {
 		return newId, fmt.Errorf("error retrieving item %v: %v", itemId, err)
 	}
-	_, err = userrepo.GetUserRepoMapImpl().GetById(userId)
+	_, err = repo.Get().User.GetById(userId)
 	if userId != mdl.Id(0) && err != nil {
 		return newId, fmt.Errorf("error retrieving user %v: %v", userId, err)
 	}
 	newPledge := mdl.PledgeRecord{Id: mdl.Id(uuid.NewV4().String()), UserId: userId, ItemId: itemId, Timestamp: time.Now()}
-	pledgerepo.GetPledgeRepoMapImpl().Create(newPledge)
+	repo.Get().Pledge.Create(newPledge)
 	return newPledge.Id, nil
 }
 

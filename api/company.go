@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
-	"psychic-rat/repo/companyrepo"
+	"psychic-rat/repo"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -23,7 +23,7 @@ func getRepoCompanyApi() CompanyApi {
 type companyApiRepoImpl struct{}
 
 func (c *companyApiRepoImpl) GetCompanies() (CompanyListing, error) {
-	companies := companyrepo.GetCompanyRepoMapImpl().GetCompanies()
+	companies := repo.Get().Company.GetCompanies()
 	results := CompanyListing{make([]CompanyElement, len(companies))}
 	for i, c := range companies {
 		results.Companies[i] = CompanyElement{c.Id, c.Name}
@@ -32,7 +32,7 @@ func (c *companyApiRepoImpl) GetCompanies() (CompanyListing, error) {
 }
 
 func (c *companyApiRepoImpl) GetById(id mdl.Id) (CompanyElement, error) {
-	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(id)
+	co, err := repo.Get().Company.GetById(id)
 	if err != nil {
 		return CompanyElement{}, err
 	}

@@ -8,8 +8,7 @@ import (
 	"psychic-rat/api"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
-	"psychic-rat/repo/companyrepo"
-	"psychic-rat/repo/itemrepo"
+	"psychic-rat/repo"
 )
 
 type UriHandler struct {
@@ -51,21 +50,22 @@ func init() {
 	companyApi = a.Company
 	itemApi = a.Item
 	pledgeApi = a.Pledge
-}
 
-func main() {
-	companies := companyrepo.GetCompanyRepoMapImpl()
+	companies := repo.Get().Company
 	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
 	companies.Create(mdl.NewCompany(mdl.Id("2"), "bigco2"))
 	companies.Create(mdl.NewCompany(mdl.Id("3"), "bigco3"))
 
-	items := itemrepo.GetItemRepoMapImpl()
+	items := repo.Get().Item
 	items.Create(mdl.NewItem("phone", "abc", mdl.Id("1")))
 	items.Create(mdl.NewItem("phone", "xyz", mdl.Id("1")))
 	items.Create(mdl.NewItem("tablet", "gt1", mdl.Id("1")))
 	items.Create(mdl.NewItem("tablet", "tab4", mdl.Id("2")))
 	items.Create(mdl.NewItem("tablet", "tab8", mdl.Id("2")))
 
+}
+
+func main() {
 	for _, h := range UriHandlers {
 		http.HandleFunc(h.Uri, h.Handler)
 	}

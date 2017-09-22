@@ -7,8 +7,7 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
-	"psychic-rat/repo/companyrepo"
-	"psychic-rat/repo/itemrepo"
+	"psychic-rat/repo"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -24,23 +23,22 @@ func getRepoItemApi() ItemApi {
 type itemRepoApi struct{}
 
 func (i *itemRepoApi) ListItems() (ItemReport, error) {
-	repo := itemrepo.GetItemRepoMapImpl()
-	items := repo.List()
-	companies := companyrepo.GetCompanyRepoMapImpl()
+	items := repo.Get().Item.List()
+	coRepo := repo.Get().Company
 	results := make([]ItemElement, len(items))
 	for i, item := range items {
-		company, _ := companies.GetById(item.CompanyId)
+		company, _ := coRepo.GetById(item.CompanyId)
 		results[i] = ItemElement{item.Id, item.Make, item.Model, company.Name}
 	}
 	return ItemReport{results}, nil
 }
 
 func (i *itemRepoApi) GetById(id mdl.Id) (ItemElement, error) {
-	item, err := itemrepo.GetItemRepoMapImpl().GetById(id)
+	item, err := repo.Get().Item.GetById(id)
 	if err != nil {
 		return ItemElement{}, err
 	}
-	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(item.CompanyId)
+	co, err := repo.Get().Company.GetById(item.CompanyId)
 	if err != nil {
 		return ItemElement{}, err
 	}

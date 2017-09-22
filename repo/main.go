@@ -1,6 +1,8 @@
 package repo
 
-import "psychic-rat/mdl"
+import (
+	"psychic-rat/mdl"
+)
 
 type Companies interface {
 	Create(company mdl.CompanyRecord) error
@@ -26,4 +28,26 @@ type Pledges interface {
 type Users interface {
 	Create(user mdl.UserRecord) error
 	GetById(id mdl.Id) (*mdl.UserRecord, error)
+}
+
+type Repos struct {
+	Company Companies
+	Item    Items
+	Pledge  Pledges
+	User    Users
+}
+
+var repos Repos
+
+func init() {
+	repos = Repos{
+		Company: getCompanyRepoMapImpl(),
+		Item:    getItemRepoMapImpl(),
+		Pledge:  getPledgeRepoMapImpl(),
+		User:    getUserRepoMapImpl(),
+	}
+}
+
+func Get() Repos {
+	return repos
 }

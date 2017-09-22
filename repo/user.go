@@ -1,16 +1,15 @@
-package userrepo
+package repo
 
 import (
 	"errors"
 	"fmt"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
 // declare that we implement Repo interface
-var userRepo repo.Users = &userRepoMap{make(map[mdl.Id]mdl.UserRecord)}
+var userRepo Users = &userRepoMap{make(map[mdl.Id]mdl.UserRecord)}
 
-func GetUserRepoMapImpl() repo.Users {
+func getUserRepoMapImpl() Users {
 	return userRepo
 }
 
