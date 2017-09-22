@@ -8,9 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"psychic-rat/api"
-	"psychic-rat/mdl/company"
-	"psychic-rat/mdl/pledge"
-	"psychic-rat/mdl/user"
+	"psychic-rat/mdl"
 	"sort"
 )
 
@@ -48,7 +46,7 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 		errorResponse(writer, fmt.Errorf("no company specified"))
 		return
 	}
-	json, err := json.Marshal(getItemsForCompany(company.Id(companyId)))
+	json, err := json.Marshal(getItemsForCompany(mdl.Id(companyId)))
 	if err != nil {
 		logInternalError(writer, err)
 		return
@@ -63,7 +61,7 @@ func ifElse(b bool, t, f interface{}) interface{} {
 	return f
 }
 
-func getItemsForCompany(companyId company.Id) api.ItemReport {
+func getItemsForCompany(companyId mdl.Id) api.ItemReport {
 	items, err := itemApi.ListItems()
 	if err != nil {
 		panic(fmt.Sprintf("unable to get items", err))
@@ -111,7 +109,7 @@ func handlePost(writer http.ResponseWriter, request *http.Request) {
 	writeUserPledges(writer, userId)
 }
 
-func writeUserPledges(writer http.ResponseWriter, userId user.Id) {
+func writeUserPledges(writer http.ResponseWriter, userId mdl.Id) {
 	userPledges := getUserPledges(userId)
 	log.Printf("pledges: %v", userPledges.Pledges)
 	json, err := json.Marshal(userPledges)
@@ -130,14 +128,14 @@ func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 	}
 }
 
-func getUserPledges(id user.Id) api.PledgeListing {
-	ps := make([]pledge.PledgeRecord, 0)
-	sort.Sort(pledge.ByTimeStamp(ps))
+func getUserPledges(id mdl.Id) api.PledgeListing {
+	ps := make([]mdl.PledgeRecord, 0)
+	sort.Sort(mdl.ByTimeStamp(ps))
 	ps2 := make([]api.PledgeElement, len(ps))
 	for _, p := range ps {
 		var err error
 		if err != nil {
-			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemId(), p.Id()))
+			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemId, p.Id))
 		}
 		//ps2[i] = api.PledgeElement{p.Id(), api.ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
 	}
@@ -180,6 +178,6 @@ func logInternalError(writer http.ResponseWriter, err error) {
 	fmt.Fprintf(writer, "internal error; contact developer: %v", err)
 }
 
-func getCurrentUserId() user.Id {
-	return user.Id(0)
+func getCurrentUserId() mdl.Id {
+	return mdl.Id(0)
 }

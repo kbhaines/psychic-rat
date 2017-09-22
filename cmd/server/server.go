@@ -6,8 +6,7 @@ import (
 	"io"
 	"net/http"
 	"psychic-rat/api/rest"
-	"psychic-rat/mdl/company"
-	"psychic-rat/mdl/item"
+	"psychic-rat/mdl"
 	"psychic-rat/repo/companyrepo"
 	"psychic-rat/repo/itemrepo"
 )
@@ -42,16 +41,16 @@ func ToJsonString(v interface{}) string {
 
 func main() {
 	companies := companyrepo.GetCompanyRepoMapImpl()
-	companies.Create(company.New(company.Id("1"), "bigco1"))
-	companies.Create(company.New(company.Id("2"), "bigco2"))
-	companies.Create(company.New(company.Id("3"), "bigco3"))
+	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
+	companies.Create(mdl.NewCompany(mdl.Id("2"), "bigco2"))
+	companies.Create(mdl.NewCompany(mdl.Id("3"), "bigco3"))
 
 	items := itemrepo.GetItemRepoMapImpl()
-	items.Create(item.New("phone", "abc", company.Id("1")))
-	items.Create(item.New("phone", "xyz", company.Id("1")))
-	items.Create(item.New("tablet", "gt1", company.Id("1")))
-	items.Create(item.New("tablet", "tab4", company.Id("2")))
-	items.Create(item.New("tablet", "tab8", company.Id("2")))
+	items.Create(mdl.NewItem("phone", "abc", mdl.Id("1")))
+	items.Create(mdl.NewItem("phone", "xyz", mdl.Id("1")))
+	items.Create(mdl.NewItem("tablet", "gt1", mdl.Id("1")))
+	items.Create(mdl.NewItem("tablet", "tab4", mdl.Id("2")))
+	items.Create(mdl.NewItem("tablet", "tab8", mdl.Id("2")))
 
 	for _, h := range UriHandlers {
 		http.HandleFunc(h.Uri, h.Handler)

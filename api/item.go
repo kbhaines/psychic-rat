@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"psychic-rat/api/rest"
-	"psychic-rat/mdl/item"
+	"psychic-rat/mdl"
 	"psychic-rat/repo/companyrepo"
 	"psychic-rat/repo/itemrepo"
 )
@@ -14,7 +14,7 @@ import (
 type ItemApi interface {
 	//AddItem(make string, model string, company company.Id) error
 	ListItems() (ItemReport, error)
-	GetById(id item.Id) (ItemElement, error)
+	GetById(id mdl.Id) (ItemElement, error)
 }
 
 type ItemReport struct {
@@ -22,10 +22,10 @@ type ItemReport struct {
 }
 
 type ItemElement struct {
-	Id      item.Id `json:"id"`
-	Make    string  `json:"make"`
-	Model   string  `json:"model"`
-	Company string  `json:"company"`
+	Id      mdl.Id `json:"id"`
+	Make    string `json:"make"`
+	Model   string `json:"model"`
+	Company string `json:"company"`
 }
 
 type itemRepoApi struct{}
@@ -46,28 +46,28 @@ func (i *itemRepoApi) ListItems() (ItemReport, error) {
 	companies := companyrepo.GetCompanyRepoMapImpl()
 	results := make([]ItemElement, len(items))
 	for i, item := range items {
-		company, _ := companies.GetById(item.Company())
-		results[i] = ItemElement{item.Id(), item.Make(), item.Model(), company.Name()}
+		company, _ := companies.GetById(item.CompanyId)
+		results[i] = ItemElement{item.Id, item.Make, item.Model, company.Name}
 	}
 	return ItemReport{results}, nil
 }
 
-func (i *itemRepoApi) GetById(id item.Id) (ItemElement, error) {
+func (i *itemRepoApi) GetById(id mdl.Id) (ItemElement, error) {
 	item, err := itemrepo.GetItemRepoMapImpl().GetById(id)
 	if err != nil {
 		return ItemElement{}, err
 	}
-	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(item.Company())
+	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(item.CompanyId)
 	if err != nil {
 		return ItemElement{}, err
 	}
-	return ItemElement{item.Id(), item.Make(), item.Model(), co.Name()}, err
+	return ItemElement{item.Id, item.Make, item.Model, co.Name}, err
 }
 
-//func checkDuplicate(item item.Record) error {
-//	itemsToCheck := itemRepo.GetAllByCompany(item.Company())
+//func checkDuplicate(item mdl.Record) error {
+//	itemsToCheck := itemRepo.GetAllByCompany(mdl.Company())
 //	for _, i := range itemsToCheck {
-//		if item.Make() == i.Make() && item.Model() == i.Model() {
+//		if mdl.Make() == i.Make() && mdl.Model() == i.Model() {
 //			return fmt.Errorf("existing item: %v", i)
 //		}
 //	}
@@ -116,7 +116,7 @@ func (a *itemRestApi) ListItems() (ItemReport, error) {
 	return ItemsFromJson(bytes)
 }
 
-func (a *itemRestApi) GetById(id item.Id) (ItemElement, error) {
+func (a *itemRestApi) GetById(id mdl.Id) (ItemElement, error) {
 	panic("Not implemented")
 }
 

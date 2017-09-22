@@ -6,13 +6,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"psychic-rat/api/rest"
-	"psychic-rat/mdl/company"
+	"psychic-rat/mdl"
 	"psychic-rat/repo/companyrepo"
 )
 
 type CompanyApi interface {
 	GetCompanies() (CompanyListing, error)
-	GetById(company.Id) (CompanyElement, error)
+	GetById(mdl.Id) (CompanyElement, error)
 }
 
 type CompanyListing struct {
@@ -20,8 +20,8 @@ type CompanyListing struct {
 }
 
 type CompanyElement struct {
-	Id   company.Id `json:"id"`
-	Name string     `json:"name"`
+	Id   mdl.Id `json:"id"`
+	Name string `json:"name"`
 }
 
 type CompanyId string
@@ -42,17 +42,17 @@ func (c *companyApiRepoImpl) GetCompanies() (CompanyListing, error) {
 	companies := companyrepo.GetCompanyRepoMapImpl().GetCompanies()
 	results := CompanyListing{make([]CompanyElement, len(companies))}
 	for i, c := range companies {
-		results.Companies[i] = CompanyElement{c.Id(), c.Name()}
+		results.Companies[i] = CompanyElement{c.Id, c.Name}
 	}
 	return results, nil
 }
 
-func (c *companyApiRepoImpl) GetById(id company.Id) (CompanyElement, error) {
+func (c *companyApiRepoImpl) GetById(id mdl.Id) (CompanyElement, error) {
 	co, err := companyrepo.GetCompanyRepoMapImpl().GetById(id)
 	if err != nil {
 		return CompanyElement{}, err
 	}
-	return CompanyElement{id, co.Name()}, nil
+	return CompanyElement{id, co.Name}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,7 +87,7 @@ func companiesFromJson(bytes []byte) (CompanyListing, error) {
 	return companies, nil
 }
 
-func (r *restfulCompanyApi) GetById(id company.Id) (CompanyElement, error) {
+func (r *restfulCompanyApi) GetById(id mdl.Id) (CompanyElement, error) {
 	resp, err := http.Get(r.url + rest.CompanyApi + fmt.Sprintf("?company=%v", id))
 	if err != nil {
 		return CompanyElement{}, fmt.Errorf("could not retrieve company %v : %v", id, err)
