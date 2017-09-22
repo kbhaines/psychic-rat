@@ -12,16 +12,14 @@ type variables struct {
 	Items    []api.ItemElement
 }
 
-func renderPage(writer http.ResponseWriter, templateName string, variables interface{}) {
-	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
-	//tpt.ExecuteTemplate(writer, "header.html", variables)
-	tpt.Execute(writer, variables)
-	//tpt.ExecuteTemplate(writer, "footer.html", variables)
-}
-
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	vars := variables{Username: "Kevin"}
 	renderPage(writer, "home.html.tmpl", vars)
+}
+
+func renderPage(writer http.ResponseWriter, templateName string, variables interface{}) {
+	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
+	tpt.Execute(writer, variables)
 }
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
