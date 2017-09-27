@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	a "psychic-rat/api"
 	"psychic-rat/api/rest"
+	"psychic-rat/impl/repo"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ import (
 
 type pledgeApiRepoImpl struct{}
 
-func getRepoPledgeApi() PledgeApi {
+func getRepoPledgeApi() a.PledgeApi {
 	return &pledgeApiRepoImpl{}
 }
 
@@ -40,14 +41,14 @@ func (p *pledgeApiRepoImpl) NewPledge(itemId mdl.Id, userId mdl.Id) (newId mdl.I
 	return newPledge.Id, nil
 }
 
-func (p *pledgeApiRepoImpl) ListPledges() (PledgeListing, error) {
-	return PledgeListing{}, nil
+func (p *pledgeApiRepoImpl) ListPledges() (a.PledgeListing, error) {
+	return a.PledgeListing{}, nil
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 // Restful implementation
 
-func GetRestfulPledgeApiImpl(url string) PledgeApi {
+func GetRestfulPledgeApiImpl(url string) a.PledgeApi {
 	return &restPledgeApiImpl{url}
 }
 
@@ -59,8 +60,8 @@ type pledgeResponse struct {
 	Id mdl.Id `json:"id"`
 }
 
-func NewPledgeRequest(itemId mdl.Id) PledgeRequest {
-	return PledgeRequest{itemId}
+func NewPledgeRequest(itemId mdl.Id) a.PledgeRequest {
+	return a.PledgeRequest{itemId}
 }
 
 func (a *restPledgeApiImpl) NewPledge(itemId mdl.Id, userId mdl.Id) (mdl.Id, error) {

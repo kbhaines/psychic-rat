@@ -63,17 +63,3 @@ type Api struct {
 	Item    ItemApi
 	Pledge  PledgeApi
 }
-
-func init() {
-	api = Api{
-		Company: getRepoCompanyApi(),
-		Item:    getRepoItemApi(),
-		Pledge:  getRepoPledgeApi(),
-	}
-}
-
-var api Api
-
-func Get() Api {
-	return api
-}

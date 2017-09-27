@@ -36,18 +36,3 @@ type Repos struct {
 	Pledge  Pledges
 	User    Users
 }
-
-var repos Repos
-
-func init() {
-	repos = Repos{
-		Company: getCompanyRepoMapImpl(),
-		Item:    getItemRepoMapImpl(),
-		Pledge:  getPledgeRepoMapImpl(),
-		User:    getUserRepoMapImpl(),
-	}
-}
-
-func Get() Repos {
-	return repos
-}
