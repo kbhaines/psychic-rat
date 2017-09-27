@@ -17,3 +17,12 @@ func GetPledgeRepoMapImpl() repo.Pledges {
 func GetUserRepoMapImpl() repo.Users {
 	return userRepo
 }
+
+func GetRepos() repo.Repos {
+	return repo.Repos{
+		Company: companyRepo,
+		Item:    itemRepo,
+		Pledge:  pledgeRepo,
+		User:    userRepo,
+	}
+}

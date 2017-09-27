@@ -17,10 +17,6 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Repo implementation
 
-func GetRepoCompanyApi(repos repo.Repos) a.CompanyApi {
-	return &companyApiRepoImpl{repos: repos}
-}
-
 type companyApiRepoImpl struct {
 	repos repo.Repos
 }

@@ -1,30 +1,21 @@
 package impl
 
-import a "psychic-rat/api"
+import "psychic-rat/api"
 import "psychic-rat/repo"
-import "psychic-rat/impl/repo"
+import irepo "psychic-rat/impl/repo"
+import iapi "psychic-rat/impl/api"
 
 func init() {
-	repos = repo.Repos{
-		Company: GetCompanyRepoMapImpl(),
-		Item:    GetItemRepoMapImpl(),
-		Pledge:  GetPledgeRepoMapImpl(),
-		User:    GetUserRepoMapImpl(),
-	}
-
-	api = a.Api{
-		Company: GetRepoCompanyApi(repos),
-		Item:    GetRepoItemApi(repos),
-		Pledge:  GetRepoPledgeApi(repos),
-	}
+	repos = irepo.GetRepos()
+	apis = iapi.GetApis(repos)
 
 }
 
-var api a.Api
+var apis api.Api
 var repos repo.Repos
 
-func Get() a.Api {
-	return api
+func Get() api.Api {
+	return apis
 }
 
 func GetRepos() repo.Repos {
