@@ -17,7 +17,7 @@ func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 		unsupportedMethod(writer)
 		return
 	}
-	companies, err := companyApi.GetCompanies()
+	companies, err := apis.Company.GetCompanies()
 	if err != nil {
 		errorResponse(writer, err)
 		return
@@ -59,7 +59,7 @@ func ifElse(b bool, t, f interface{}) interface{} {
 }
 
 func getItemsForCompany(companyId mdl.Id) api.ItemReport {
-	items, err := itemApi.ListItems()
+	items, err := apis.Item.ListItems()
 	if err != nil {
 		panic(fmt.Sprintf("unable to get items", err))
 	}

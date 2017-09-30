@@ -39,17 +39,10 @@ func ToJsonString(v interface{}) string {
 	return string(js)
 }
 
-var (
-	companyApi api.CompanyApi
-	itemApi    api.ItemApi
-	pledgeApi  api.PledgeApi
-)
+var apis api.Api
 
 func init() {
-	a := impl.Get()
-	companyApi = a.Company
-	itemApi = a.Item
-	pledgeApi = a.Pledge
+	apis = impl.Get()
 
 	companies := impl.GetRepos().Company
 	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))

@@ -28,7 +28,7 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
-	report, err := itemApi.ListItems()
+	report, err := apis.Item.ListItems()
 	if err != nil {
 		log.Fatal(err)
 	}
