@@ -43,9 +43,7 @@ func ToJsonString(v interface{}) string {
 	return string(js)
 }
 
-func init() {
-	apis = impl.GetApi()
-
+func setupMockData() {
 	companies := impl.GetRepos().Company
 	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
 	companies.Create(mdl.NewCompany(mdl.Id("2"), "bigco2"))
@@ -57,6 +55,10 @@ func init() {
 	items.Create(mdl.NewItem("tablet", "gt1", mdl.Id("1")))
 	items.Create(mdl.NewItem("tablet", "tab4", mdl.Id("2")))
 	items.Create(mdl.NewItem("tablet", "tab8", mdl.Id("2")))
+}
+
+func init() {
+	apis = impl.GetApi()
 }
 
 func main() {
