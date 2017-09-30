@@ -16,16 +16,20 @@ type UriHandler struct {
 	Handler http.HandlerFunc
 }
 
-var UriHandlers = []UriHandler{
-	{rest.CompanyApi, CompanyHandler},
-	{rest.ItemApi, ItemHandler},
-	{rest.PledgeApi, PledgeHandler},
+var (
+	UriHandlers = []UriHandler{
+		{rest.CompanyApi, CompanyHandler},
+		{rest.ItemApi, ItemHandler},
+		{rest.PledgeApi, PledgeHandler},
 
-	{rest.HomePage, HomePageHandler},
-	{rest.SignInPage, SignInPageHandler},
-	{rest.PledgePage, PledgePageHandler},
-	{rest.ThanksPage, ThanksPageHandler},
-}
+		{rest.HomePage, HomePageHandler},
+		{rest.SignInPage, SignInPageHandler},
+		{rest.PledgePage, PledgePageHandler},
+		{rest.ThanksPage, ThanksPageHandler},
+	}
+
+	apis api.Api
+)
 
 func ToJson(writer io.Writer, v interface{}) {
 	fmt.Fprintf(writer, "%s", ToJsonString(v))
@@ -39,10 +43,8 @@ func ToJsonString(v interface{}) string {
 	return string(js)
 }
 
-var apis api.Api
-
 func init() {
-	apis = impl.Get()
+	apis = impl.GetApi()
 
 	companies := impl.GetRepos().Company
 	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
