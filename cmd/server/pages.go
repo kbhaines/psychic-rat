@@ -12,12 +12,16 @@ type variables struct {
 	Items    []api.ItemElement
 }
 
+type renderFunction func(writer http.ResponseWriter, templateName string, variables interface{})
+
+var renderPage renderFunction = renderPageUsingTemplate
+
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	vars := variables{Username: "Kevin"}
 	renderPage(writer, "home.html.tmpl", vars)
 }
 
-func renderPage(writer http.ResponseWriter, templateName string, variables interface{}) {
+func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
 	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
 	tpt.Execute(writer, variables)
 }

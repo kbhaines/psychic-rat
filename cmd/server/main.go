@@ -58,10 +58,11 @@ func setupMockData() {
 }
 
 func init() {
-	apis = impl.GetApi()
 }
 
 func main() {
+	apis = impl.GetApi()
+	setupMockData()
 	for _, h := range UriHandlers {
 		http.HandleFunc(h.Uri, h.Handler)
 	}
