@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"psychic-rat/api"
+	"psychic-rat/impl"
 )
 
 func exitIfErr(err error) {
@@ -14,15 +14,15 @@ func exitIfErr(err error) {
 }
 
 func main() {
-	localhost := "http://localhost:8080"
-	company := api.GetRestfulCompanyApi(localhost)
+	//localhost := "http://localhost:8080"
+	company := impl.GetApi().Company
 	companies, err := company.GetCompanies()
 	exitIfErr(err)
 	for _, co := range companies.Companies {
 		fmt.Printf("%s %s\n", co.Id, co.Name)
 	}
 
-	itemsApi := api.GetRestfulItemApi(localhost)
+	itemsApi := impl.GetApi().Item
 	itemReport, err := itemsApi.ListItems()
 	exitIfErr(err)
 	for _, i := range itemReport.Items {

@@ -30,11 +30,11 @@ func (m *mockItemApi) GetById(id mdl.Id) (api.ItemElement, error) {
 func TestPledgeListItems(t *testing.T) {
 	apis = api.Api{Item: &mockItemApi{}}
 	expectedVars := variables{Username: "Kevin", Items: mockItemReport.Items}
-	renderPage = getRenderFunc(t, "pledge.html.tmpl", expectedVars)
+	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	PledgePageHandler(nil, nil)
 }
 
-func getRenderFunc(t *testing.T, expectedTemplate string, expectedVars variables) renderFunction {
+func getRenderMock(t *testing.T, expectedTemplate string, expectedVars variables) renderFunction {
 	return func(writer http.ResponseWriter, templateName string, templateVars interface{}) {
 		t.Logf("Rendering %s with %v", templateName, templateVars)
 		if templateName != expectedTemplate {
@@ -51,6 +51,6 @@ func getRenderFunc(t *testing.T, expectedTemplate string, expectedVars variables
 func TestHomePage(t *testing.T) {
 	apis = api.Api{Item: &mockItemApi{}}
 	expectedVars := variables{Username: "Kevin"}
-	renderPage = getRenderFunc(t, "home.html.tmpl", expectedVars)
+	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
 	HomePageHandler(nil, nil)
 }
