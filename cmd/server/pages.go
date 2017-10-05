@@ -21,19 +21,38 @@ type methodSelector map[string]handlerFunc
 
 var renderPage renderFunction = renderPageUsingTemplate
 
-func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
-	vars := variables{Username: "Kevin"}
-	renderPage(writer, "home.html.tmpl", vars)
-}
-
 func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
 	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
 	tpt.Execute(writer, variables)
 }
 
+func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
+	selector := map[string]handlerFunc{
+		"GET": func(writer http.ResponseWriter, request *http.Request) {
+			vars := variables{Username: "Kevin"}
+			renderPage(writer, "home.html.tmpl", vars)
+		},
+	}
+	execHandlerForMethod(selector, writer, request)
+}
+
+func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, request *http.Request) {
+	f, exists := selector[request.Method]
+	if !exists {
+		log.Print("invalid method in request ", request)
+		return
+	}
+	f(writer, request)
+}
+
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
-	vars := variables{Username: "Kevin"}
-	renderPage(writer, "signin.html.tmpl", vars)
+	selector := map[string]handlerFunc{
+		"GET": func(writer http.ResponseWriter, request *http.Request) {
+			vars := variables{Username: "Kevin"}
+			renderPage(writer, "signin.html.tmpl", vars)
+		},
+	}
+	execHandlerForMethod(selector, writer, request)
 }
 
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
@@ -81,19 +100,15 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
-	vars := variables{Username: "Kevin"}
-	renderPage(writer, "thanks.html.tmpl", vars)
+	selector := map[string]handlerFunc{
+		"GET": func(writer http.ResponseWriter, request *http.Request) {
+			vars := variables{Username: "Kevin"}
+			renderPage(writer, "thanks.html.tmpl", vars)
+		},
+	}
+	execHandlerForMethod(selector, writer, request)
 }
 
 func getUserIdFromRequest(request *http.Request) mdl.Id {
 	return mdl.Id("1234")
-}
-
-func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, request *http.Request) {
-	f, exists := selector[request.Method]
-	if !exists {
-		log.Print("invalid method in request ", request)
-		return
-	}
-	f(writer, request)
 }
