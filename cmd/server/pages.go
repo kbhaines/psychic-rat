@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"psychic-rat/api"
+	"psychic-rat/mdl"
 )
 
 type variables struct {
@@ -37,8 +38,38 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 		log.Fatal(err)
 	}
 
-	vars := variables{Username: "Kevin", Items: report.Items}
-	renderPage(writer, "pledge.html.tmpl", vars)
+	if request.Method == "GET" {
+		vars := variables{Username: "Kevin", Items: report.Items}
+		renderPage(writer, "pledge.html.tmpl", vars)
+		return
+	}
+
+	if request.Method == "POST" {
+		if err := request.ParseForm(); err != nil {
+			log.Print(err)
+			return
+		}
+		log.Printf("request = %+v\n", request)
+		log.Printf("request.Form= %+v\n", request.Form)
+		itemId := mdl.Id(request.FormValue("item"))
+		if itemId == "" {
+			log.Print("item field not passed")
+			return
+		}
+		if _, err := apis.Item.GetById(itemId); err != nil {
+			log.Printf("error looking up item %v : %v", itemId, err)
+			return
+		}
+		log.Printf("pledge item %v from user", itemId)
+		userId := mdl.Id("1234")
+		plId, err := apis.Pledge.NewPledge(itemId, userId)
+		if err != nil {
+			log.Print("unable to pledge : ", err)
+			return
+		}
+		log.Printf("pledge %v created", plId)
+		return
+	}
 }
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {

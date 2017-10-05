@@ -55,6 +55,9 @@ func setupMockData() {
 	items.Create(mdl.NewItem("tablet", "gt1", mdl.Id("1")))
 	items.Create(mdl.NewItem("tablet", "tab4", mdl.Id("2")))
 	items.Create(mdl.NewItem("tablet", "tab8", mdl.Id("2")))
+
+	users := impl.GetRepos().User
+	users.Create(mdl.UserRecord{Id: mdl.Id("1234"), Email: "kbh"})
 }
 
 func init() {
