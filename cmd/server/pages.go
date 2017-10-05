@@ -27,7 +27,7 @@ func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, va
 }
 
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := map[string]handlerFunc{
+	selector := methodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
 			vars := variables{Username: "Kevin"}
 			renderPage(writer, "home.html.tmpl", vars)
@@ -46,7 +46,7 @@ func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, r
 }
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := map[string]handlerFunc{
+	selector := methodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
 			vars := variables{Username: "Kevin"}
 			renderPage(writer, "signin.html.tmpl", vars)
@@ -56,7 +56,7 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := map[string]handlerFunc{
+	selector := methodSelector{
 		"GET":  pledgeGetHandler,
 		"POST": pledgePostHandler,
 	}
@@ -100,7 +100,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := map[string]handlerFunc{
+	selector := methodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
 			vars := variables{Username: "Kevin"}
 			renderPage(writer, "thanks.html.tmpl", vars)
