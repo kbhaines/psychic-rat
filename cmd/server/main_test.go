@@ -29,18 +29,18 @@ func (m *mockItemApi) GetById(id mdl.Id) (api.ItemElement, error) {
 
 func TestPledgeListItems(t *testing.T) {
 	apis = api.Api{Item: &mockItemApi{}}
-	expectedVars := variables{Username: "Kevin", Items: mockItemReport.Items}
+	expectedVars := pageVariables{Username: "Kevin", Items: mockItemReport.Items}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	PledgePageHandler(nil, nil)
 }
 
-func getRenderMock(t *testing.T, expectedTemplate string, expectedVars variables) renderFunction {
+func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) renderFunc {
 	return func(writer http.ResponseWriter, templateName string, templateVars interface{}) {
 		t.Logf("Rendering %s with %v", templateName, templateVars)
 		if templateName != expectedTemplate {
 			t.Errorf("wrong template, got %s but wanted %s", templateName, expectedTemplate)
 		}
-		if v, ok := templateVars.(variables); !ok {
+		if v, ok := templateVars.(pageVariables); !ok {
 			t.Errorf("did not match type")
 		} else if !reflect.DeepEqual(v, expectedVars) {
 			t.Errorf("wrong variables, got %v but wanted %v", v, expectedVars)
@@ -50,7 +50,7 @@ func getRenderMock(t *testing.T, expectedTemplate string, expectedVars variables
 
 func TestHomePage(t *testing.T) {
 	apis = api.Api{Item: &mockItemApi{}}
-	expectedVars := variables{Username: "Kevin"}
+	expectedVars := pageVariables{Username: "Kevin"}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
 	HomePageHandler(nil, nil)
 }

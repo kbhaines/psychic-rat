@@ -5,24 +5,29 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"os"
 	"psychic-rat/api"
 	"psychic-rat/mdl"
 
 	"github.com/gorilla/sessions"
 )
 
-type variables struct {
-	Username string
-	Items    []api.ItemElement
-}
+type (
+	pageVariables struct {
+		Username string
+		Items    []api.ItemElement
+	}
+	renderFunc     func(writer http.ResponseWriter, templateName string, variables interface{})
+	handlerFunc    func(http.ResponseWriter, *http.Request)
+	methodSelector map[string]handlerFunc
+)
 
-type renderFunction func(writer http.ResponseWriter, templateName string, variables interface{})
-
-type handlerFunc func(http.ResponseWriter, *http.Request)
-
-type methodSelector map[string]handlerFunc
-
-var renderPage renderFunction = renderPageUsingTemplate
+var (
+	renderPage = renderPageUsingTemplate
+	store      = sessions.NewCookieStore([]byte("something-very-secret"))
+	logDbg     = log.New(os.Stderr, "DBG:", 0).Print
+	logDbgf    = log.New(os.Stderr, "DBG:", 0).Printf
+)
 
 func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
 	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
@@ -32,7 +37,7 @@ func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, va
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
-			vars := variables{Username: "Kevin"}
+			vars := pageVariables{Username: "Kevin"}
 			renderPage(writer, "home.html.tmpl", vars)
 		},
 	}
@@ -55,8 +60,6 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	execHandlerForMethod(selector, writer, request)
 }
 
-var store = sessions.NewCookieStore([]byte("something-very-secret"))
-
 func signIn(writer http.ResponseWriter, request *http.Request) {
 	session, err := store.Get(request, "session")
 	if err != nil {
@@ -66,7 +69,7 @@ func signIn(writer http.ResponseWriter, request *http.Request) {
 
 	val := session.Values["userId"]
 	if _, ok := val.(string); !ok {
-		log.Printf("no user, attempting auth")
+		logDbg("no user, attempting auth")
 		if err := authUser(session, request); err != nil {
 			log.Printf("auth failed")
 			http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -74,14 +77,14 @@ func signIn(writer http.ResponseWriter, request *http.Request) {
 		}
 	}
 	userId := session.Values["userId"].(string)
-	log.Printf("user is %v", userId)
+	log.Printf("session user is %v", userId)
 
 	if err := session.Save(request, writer); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	vars := variables{Username: session.Values["userEmail"].(string)}
+	vars := pageVariables{Username: session.Values["userEmail"].(string)}
 	renderPage(writer, "signin.html.tmpl", vars)
 }
 
@@ -102,10 +105,14 @@ func authUser(session *sessions.Session, request *http.Request) error {
 	session.Values["userId"] = userId
 	session.Values["userEmail"] = user.Email
 	return nil
-
 }
 
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
+	if !isUserLoggedIn(request) {
+		logDbg("no user logged in")
+		return
+	}
+
 	selector := methodSelector{
 		"GET":  pledgeGetHandler,
 		"POST": pledgePostHandler,
@@ -113,12 +120,22 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 	execHandlerForMethod(selector, writer, request)
 }
 
+func isUserLoggedIn(request *http.Request) bool {
+	session, err := store.Get(request, "session")
+	if err != nil {
+		log.Print("could not retrieve session or create new")
+		return false
+	}
+	_, ok := session.Values["userId"].(string)
+	return ok
+}
+
 func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
 	report, err := apis.Item.ListItems()
 	if err != nil {
 		log.Fatal(err)
 	}
-	vars := variables{Username: "Kevin", Items: report.Items}
+	vars := pageVariables{Username: "Kevin", Items: report.Items}
 	renderPage(writer, "pledge.html.tmpl", vars)
 }
 
@@ -127,8 +144,8 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		log.Print(err)
 		return
 	}
-	log.Printf("request = %+v\n", request)
-	log.Printf("request.Form= %+v\n", request.Form)
+	logDbgf("request = %+v\n", request)
+	logDbgf("request.Form= %+v\n", request.Form)
 	itemId := mdl.Id(request.FormValue("item"))
 	if itemId == "" {
 		log.Print("item field not passed")
@@ -152,7 +169,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
-			vars := variables{Username: "Kevin"}
+			vars := pageVariables{Username: "Kevin"}
 			renderPage(writer, "thanks.html.tmpl", vars)
 		},
 	}
