@@ -27,11 +27,17 @@ func (m *mockItemApi) GetById(id mdl.Id) (api.ItemElement, error) {
 	panic("not implemented")
 }
 
+func mockSession(request *http.Request) bool {
+	return true
+}
+
 func TestPledgeListItems(t *testing.T) {
 	apis = api.Api{Item: &mockItemApi{}}
 	expectedVars := pageVariables{Username: "Kevin", Items: mockItemReport.Items}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
-	PledgePageHandler(nil, nil)
+	isUserLoggedIn = mockSession
+	req := &http.Request{Method: "GET"}
+	PledgePageHandler(nil, req)
 }
 
 func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) renderFunc {
@@ -52,5 +58,7 @@ func TestHomePage(t *testing.T) {
 	apis = api.Api{Item: &mockItemApi{}}
 	expectedVars := pageVariables{Username: "Kevin"}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
-	HomePageHandler(nil, nil)
+	isUserLoggedIn = mockSession
+	req := &http.Request{Method: "GET"}
+	HomePageHandler(nil, req)
 }

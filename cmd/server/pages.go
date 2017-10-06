@@ -23,10 +23,11 @@ type (
 )
 
 var (
-	renderPage = renderPageUsingTemplate
-	store      = sessions.NewCookieStore([]byte("something-very-secret"))
-	logDbg     = log.New(os.Stderr, "DBG:", 0).Print
-	logDbgf    = log.New(os.Stderr, "DBG:", 0).Printf
+	renderPage     = renderPageUsingTemplate
+	isUserLoggedIn = isUserLoggedInSession
+	store          = sessions.NewCookieStore([]byte("something-very-secret"))
+	logDbg         = log.New(os.Stderr, "DBG:", 0).Print
+	logDbgf        = log.New(os.Stderr, "DBG:", 0).Printf
 )
 
 func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
@@ -120,7 +121,7 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 	execHandlerForMethod(selector, writer, request)
 }
 
-func isUserLoggedIn(request *http.Request) bool {
+func isUserLoggedInSession(request *http.Request) bool {
 	session, err := store.Get(request, "session")
 	if err != nil {
 		log.Print("could not retrieve session or create new")
