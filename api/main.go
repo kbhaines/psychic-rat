@@ -58,8 +58,13 @@ type PledgeRequest struct {
 	ItemId mdl.Id `json:"itemId"`
 }
 
+type UserApi interface {
+	GetById(userId mdl.Id) (*mdl.UserRecord, error)
+}
+
 type Api struct {
 	Company CompanyApi
 	Item    ItemApi
 	Pledge  PledgeApi
+	User    UserApi
 }

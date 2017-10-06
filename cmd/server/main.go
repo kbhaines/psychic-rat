@@ -9,6 +9,8 @@ import (
 	"psychic-rat/api/rest"
 	"psychic-rat/impl"
 	"psychic-rat/mdl"
+
+	"github.com/gorilla/context"
 )
 
 type UriHandler struct {
@@ -57,7 +59,7 @@ func setupMockData() {
 	items.Create(mdl.NewItem("tablet", "tab8", mdl.Id("2")))
 
 	users := impl.GetRepos().User
-	users.Create(mdl.UserRecord{Id: mdl.Id("1234"), Email: "kbh"})
+	users.Create(mdl.UserRecord{Id: mdl.Id("1234"), Email: "kbh@x.y", FirstName: "Kevin"})
 }
 
 func init() {
@@ -70,5 +72,5 @@ func main() {
 		http.HandleFunc(h.Uri, h.Handler)
 	}
 
-	http.ListenAndServe("localhost:8080", nil)
+	http.ListenAndServe("localhost:8080", context.ClearHandler(http.DefaultServeMux))
 }

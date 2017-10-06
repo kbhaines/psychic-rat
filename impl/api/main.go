@@ -10,6 +10,7 @@ func GetApis(repos repo.Repos) a.Api {
 		Company: getRepoCompanyApi(repos),
 		Item:    getRepoItemApi(repos),
 		Pledge:  getRepoPledgeApi(repos),
+		User:    getRepoUserApi(repos),
 	}
 }
 
@@ -23,4 +24,8 @@ func getRepoItemApi(repos repo.Repos) a.ItemApi {
 
 func getRepoPledgeApi(repos repo.Repos) a.PledgeApi {
 	return &pledgeApiRepoImpl{repos: repos}
+}
+
+func getRepoUserApi(repos repo.Repos) a.UserApi {
+	return &userApiRepoImpl{repos: repos}
 }
