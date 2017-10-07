@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"psychic-rat/api"
 	"psychic-rat/mdl"
 	"reflect"
@@ -61,4 +62,36 @@ func TestHomePage(t *testing.T) {
 	isUserLoggedIn = mockSession
 	req := &http.Request{Method: "GET"}
 	HomePageHandler(nil, req)
+}
+
+var protectedPages = []handlerFunc{
+	PledgePageHandler,
+	ThanksPageHandler,
+}
+
+func TestProtectedPages(t *testing.T) {
+	req := &http.Request{Method: "GET"}
+	isUserLoggedIn = func(r *http.Request) bool { return false }
+	for _, page := range protectedPages {
+		writer := httptest.NewRecorder()
+		page(writer, req)
+		result := writer.Result()
+		if result.StatusCode != http.StatusForbidden {
+			t.Errorf("testing %v, got %v, but wanted %v", page, result.StatusCode, http.StatusForbidden)
+		}
+	}
+}
+
+func TestPledgeAuthFailure(t *testing.T) {
+	isUserLoggedIn = func(r *http.Request) bool { return false }
+
+	for _, method := range []string{"GET", "POST"} {
+		writer := httptest.NewRecorder()
+		req := &http.Request{Method: method}
+		PledgePageHandler(writer, req)
+		result := writer.Result()
+		if result.StatusCode != http.StatusForbidden {
+			t.Errorf("testing %v, got %v, but wanted %v", method, result.StatusCode, http.StatusForbidden)
+		}
+	}
 }

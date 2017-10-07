@@ -48,7 +48,7 @@ func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, request *http.Request) {
 	f, exists := selector[request.Method]
 	if !exists {
-		log.Print("invalid method in request ", request)
+		http.Error(writer, "", http.StatusMethodNotAllowed)
 		return
 	}
 	f(writer, request)
@@ -72,8 +72,8 @@ func signIn(writer http.ResponseWriter, request *http.Request) {
 	if _, ok := val.(string); !ok {
 		logDbg("no user, attempting auth")
 		if err := authUser(session, request); err != nil {
-			log.Printf("auth failed")
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			log.Print(err)
+			http.Error(writer, "authentication failed", http.StatusForbidden)
 			return
 		}
 	}
@@ -101,22 +101,28 @@ func authUser(session *sessions.Session, request *http.Request) error {
 
 	user, err := apis.User.GetById(mdl.Id(userId))
 	if err != nil {
-		return fmt.Errorf("can't get user %v : %v", userId, err)
+		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
 	session.Values["userId"] = userId
 	session.Values["userEmail"] = user.Email
 	return nil
 }
 
-func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
-	if !isUserLoggedIn(request) {
-		logDbg("no user logged in")
-		return
+func userLoginRequired(h handlerFunc) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isUserLoggedIn(r) {
+			log.Print("user not logged in")
+			http.Error(w, "", http.StatusForbidden)
+			return
+		}
+		h(w, r)
 	}
+}
 
+func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
-		"GET":  pledgeGetHandler,
-		"POST": pledgePostHandler,
+		"GET":  userLoginRequired(pledgeGetHandler),
+		"POST": userLoginRequired(pledgePostHandler),
 	}
 	execHandlerForMethod(selector, writer, request)
 }
@@ -124,7 +130,7 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 func isUserLoggedInSession(request *http.Request) bool {
 	session, err := store.Get(request, "session")
 	if err != nil {
-		log.Print("could not retrieve session or create new")
+		log.Print(err)
 		return false
 	}
 	_, ok := session.Values["userId"].(string)
@@ -134,7 +140,9 @@ func isUserLoggedInSession(request *http.Request) bool {
 func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
 	report, err := apis.Item.ListItems()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		http.Error(writer, "", http.StatusInternalServerError)
+		return
 	}
 	vars := pageVariables{Username: "Kevin", Items: report.Items}
 	renderPage(writer, "pledge.html.tmpl", vars)
@@ -143,21 +151,28 @@ func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
 func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	if err := request.ParseForm(); err != nil {
 		log.Print(err)
+		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
 	logDbgf("request = %+v\n", request)
 	logDbgf("request.Form= %+v\n", request.Form)
+
 	itemId := mdl.Id(request.FormValue("item"))
 	if itemId == "" {
-		log.Print("item field not passed")
+		http.Error(writer, "", http.StatusBadRequest)
 		return
 	}
+
 	if _, err := apis.Item.GetById(itemId); err != nil {
 		log.Printf("error looking up item %v : %v", itemId, err)
+		http.Error(writer, "", http.StatusBadRequest)
 		return
 	}
-	log.Printf("pledge item %v from user", itemId)
-	userId := getUserIdFromRequest(request)
+
+	session, _ := store.Get(request, "session")
+	userId := mdl.Id(session.Values["userId"].(string))
+
+	log.Printf("pledge item %v from user %v", itemId, userId)
 	plId, err := apis.Pledge.NewPledge(itemId, userId)
 	if err != nil {
 		log.Print("unable to pledge : ", err)
@@ -169,14 +184,10 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
-		"GET": func(writer http.ResponseWriter, request *http.Request) {
+		"GET": userLoginRequired(func(writer http.ResponseWriter, request *http.Request) {
 			vars := pageVariables{Username: "Kevin"}
 			renderPage(writer, "thanks.html.tmpl", vars)
-		},
+		}),
 	}
 	execHandlerForMethod(selector, writer, request)
-}
-
-func getUserIdFromRequest(request *http.Request) mdl.Id {
-	return mdl.Id("1234")
 }
