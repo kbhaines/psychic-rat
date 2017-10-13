@@ -4,30 +4,57 @@ package main
 
 import (
 	"net/http"
+	"net/http/cookiejar"
+	"net/url"
 	"testing"
 )
 
 var testUrl = "http://localhost:8080"
 
 func TestHomePage(t *testing.T) {
-	testPageStatus("/", http.StatusOK, t)
+	resp, err := http.Get(testUrl + "/")
+	testPageStatus(resp, err, http.StatusOK, t)
+}
+
+func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing.T) {
+	t.Helper()
+	if err != nil {
+		t.Fatalf("unexpected error", err)
+	}
+	if resp.StatusCode != expectedCode {
+		t.Fatalf("wanted %v, got %v. Response was %v", expectedCode, resp.StatusCode, resp)
+	}
 }
 
 func TestPledgeWithoutLogin(t *testing.T) {
-	testPageStatus("/pledge", http.StatusForbidden, t)
+	resp, err := http.Get(testUrl + "/pledge")
+	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
 func TestThankYouWithoutLogin(t *testing.T) {
-	testPageStatus("/thankyou", http.StatusForbidden, t)
+	resp, err := http.Get(testUrl + "/thankyou")
+	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
-func testPageStatus(page string, expectedCode int, t *testing.T) {
+func TestSignin(t *testing.T) {
+	loginUser("testuser1", t)
+}
+
+func loginUser(user string, t *testing.T) http.CookieJar {
 	t.Helper()
-	resp, err := http.Get(testUrl + page)
-	if err != nil {
-		t.Fatalf("unexpected error accessing %v", err, page)
+	resp, err := http.Get(testUrl + "/signin?u=" + user)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("unable to signin, error was %v, response %v", err, resp)
 	}
-	if resp.StatusCode != expectedCode {
-		t.Fatalf("wanted %v, got %v : was able to access %v page without login", expectedCode, resp.StatusCode, page)
-	}
+	jar, _ := cookiejar.New(nil)
+	url, _ := url.Parse(testUrl)
+	jar.SetCookies(url, resp.Cookies())
+	return jar
+}
+
+func TestPledgeWithLogin(t *testing.T) {
+	cookie := loginUser("testuser1", t)
+	client := http.Client{Jar: cookie}
+	resp, err := client.Get(testUrl + "/pledge")
+	testPageStatus(resp, err, http.StatusOK, t)
 }

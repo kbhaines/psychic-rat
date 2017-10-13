@@ -59,7 +59,7 @@ func setupMockData() {
 	items.Create(mdl.NewItem("tablet", "tab8", mdl.Id("2")))
 
 	users := impl.GetRepos().User
-	users.Create(mdl.UserRecord{Id: mdl.Id("1234"), Email: "kbh@x.y", FirstName: "Kevin"})
+	users.Create(mdl.UserRecord{Id: mdl.Id("testuser1"), Email: "testuser1@gmail.com", FirstName: "Kevin"})
 }
 
 func init() {
