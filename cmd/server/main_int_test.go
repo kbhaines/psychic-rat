@@ -32,7 +32,7 @@ func TestPledgeWithoutLogin(t *testing.T) {
 }
 
 func TestThankYouWithoutLogin(t *testing.T) {
-	resp, err := http.Get(testUrl + "/thankyou")
+	resp, err := http.Get(testUrl + "/thanks")
 	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
