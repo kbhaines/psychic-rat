@@ -23,7 +23,6 @@ func CompanyHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	ToJson(writer, companies)
-
 }
 
 //// ITEMS
