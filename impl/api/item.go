@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 	"psychic-rat/types"
 )
 
@@ -17,12 +16,12 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Repo api
 
-func NewItemApi(repos repo.Repos) *itemRepoApi {
+func NewItemApi(repos Repos) *itemRepoApi {
 	return &itemRepoApi{repos: repos}
 }
 
 type itemRepoApi struct {
-	repos repo.Repos
+	repos Repos
 }
 
 func (i *itemRepoApi) ListItems() (types.ItemReport, error) {

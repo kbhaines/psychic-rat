@@ -4,10 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
-var itemRepo repo.Items = &itemRepoMap{make(map[mdl.Id]mdl.ItemRecord)}
+var itemRepo = &itemRepoMap{make(map[mdl.Id]mdl.ItemRecord)}
 
 type itemRepoMap struct {
 	records map[mdl.Id]mdl.ItemRecord

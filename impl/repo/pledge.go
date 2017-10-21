@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
 // declare that we implement pledgeMapRepo interface
-var pledgeRepo repo.Pledges = &pledgeRepoMap{make(map[mdl.Id]mdl.PledgeRecord)}
+var pledgeRepo = &pledgeRepoMap{make(map[mdl.Id]mdl.PledgeRecord)}
 
 type pledgeRepoMap struct {
 	records map[mdl.Id]mdl.PledgeRecord

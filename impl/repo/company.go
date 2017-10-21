@@ -3,10 +3,9 @@ package repo
 import (
 	"fmt"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
-var companyRepo repo.Companies = &companyRepoMap{make(map[mdl.Id]mdl.CompanyRecord)}
+var companyRepo = &companyRepoMap{make(map[mdl.Id]mdl.CompanyRecord)}
 
 type companyRepoMap struct {
 	records map[mdl.Id]mdl.CompanyRecord

@@ -2,15 +2,14 @@ package api
 
 import (
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
-func NewUserApi(repos repo.Repos) *userApiRepoImpl {
+func NewUserApi(repos Repos) *userApiRepoImpl {
 	return &userApiRepoImpl{repos: repos}
 }
 
 type userApiRepoImpl struct {
-	repos repo.Repos
+	repos Repos
 }
 
 func (u *userApiRepoImpl) GetById(userId mdl.Id) (*mdl.UserRecord, error) {

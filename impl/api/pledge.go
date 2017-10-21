@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 	"psychic-rat/types"
 	"strings"
 	"time"
@@ -21,12 +20,12 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Repo implementation
 
-func NewPledgeApi(repos repo.Repos) *pledgeApiRepoImpl {
+func NewPledgeApi(repos Repos) *pledgeApiRepoImpl {
 	return &pledgeApiRepoImpl{repos: repos}
 }
 
 type pledgeApiRepoImpl struct {
-	repos repo.Repos
+	repos Repos
 }
 
 func (p *pledgeApiRepoImpl) NewPledge(itemId mdl.Id, userId mdl.Id) (newId mdl.Id, err error) {

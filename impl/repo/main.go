@@ -2,32 +2,22 @@ package repo
 
 import (
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
-func GetCompanyRepoMapImpl() repo.Companies {
+func GetCompanyRepoMapImpl() *companyRepoMap {
 	return companyRepo
 }
 
-func GetItemRepoMapImpl() repo.Items {
+func GetItemRepoMapImpl() *itemRepoMap {
 	return itemRepo
 }
 
-func GetPledgeRepoMapImpl() repo.Pledges {
+func GetPledgeRepoMapImpl() *pledgeRepoMap {
 	return pledgeRepo
 }
 
-func GetUserRepoMapImpl() repo.Users {
+func GetUserRepoMapImpl() *userRepoMap {
 	return userRepo
-}
-
-func GetRepos() repo.Repos {
-	return repo.Repos{
-		Company: companyRepo,
-		Item:    itemRepo,
-		Pledge:  pledgeRepo,
-		User:    userRepo,
-	}
 }
 
 func init() {
@@ -35,18 +25,15 @@ func init() {
 }
 
 func setupMockData() {
-	companies := GetRepos().Company
-	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
-	companies.Create(mdl.NewCompany(mdl.Id("2"), "bigco2"))
-	companies.Create(mdl.NewCompany(mdl.Id("3"), "bigco3"))
+	companyRepo.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
+	companyRepo.Create(mdl.NewCompany(mdl.Id("2"), "bigco2"))
+	companyRepo.Create(mdl.NewCompany(mdl.Id("3"), "bigco3"))
 
-	items := GetRepos().Item
-	items.Create(mdl.NewItem("1", "phone", "abc", mdl.Id("1")))
-	items.Create(mdl.NewItem("2", "phone", "xyz", mdl.Id("1")))
-	items.Create(mdl.NewItem("3", "tablet", "gt1", mdl.Id("1")))
-	items.Create(mdl.NewItem("4", "tablet", "tab4", mdl.Id("2")))
-	items.Create(mdl.NewItem("5", "tablet", "tab8", mdl.Id("2")))
+	itemRepo.Create(mdl.NewItem("1", "phone", "abc", mdl.Id("1")))
+	itemRepo.Create(mdl.NewItem("2", "phone", "xyz", mdl.Id("1")))
+	itemRepo.Create(mdl.NewItem("3", "tablet", "gt1", mdl.Id("1")))
+	itemRepo.Create(mdl.NewItem("4", "tablet", "tab4", mdl.Id("2")))
+	itemRepo.Create(mdl.NewItem("5", "tablet", "tab8", mdl.Id("2")))
 
-	users := GetRepos().User
-	users.Create(mdl.UserRecord{Id: mdl.Id("testuser1"), Email: "testuser1@gmail.com", FirstName: "Kevin"})
+	userRepo.Create(mdl.UserRecord{Id: mdl.Id("testuser1"), Email: "testuser1@gmail.com", FirstName: "Kevin"})
 }

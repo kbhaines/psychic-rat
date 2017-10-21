@@ -4,11 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"psychic-rat/mdl"
-	"psychic-rat/repo"
 )
 
 // declare that we implement Repo interface
-var userRepo repo.Users = &userRepoMap{make(map[mdl.Id]mdl.UserRecord)}
+var userRepo = &userRepoMap{make(map[mdl.Id]mdl.UserRecord)}
 
 type userRepoMap struct {
 	records map[mdl.Id]mdl.UserRecord
