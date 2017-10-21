@@ -50,13 +50,6 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-func ifElse(b bool, t, f interface{}) interface{} {
-	if b {
-		return t
-	}
-	return f
-}
-
 func getItemsForCompany(companyId mdl.Id) api.ItemReport {
 	items, err := apis.Item.ListItems()
 	if err != nil {
@@ -65,7 +58,7 @@ func getItemsForCompany(companyId mdl.Id) api.ItemReport {
 	return items
 }
 
-// PLEDGES
+//// PLEDGES
 
 func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 	switch request.Method {

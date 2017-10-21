@@ -2,8 +2,6 @@ package mdl
 
 import (
 	"time"
-
-	uuid "github.com/satori/go.uuid"
 )
 
 type Id string
@@ -24,8 +22,8 @@ type ItemRecord struct {
 	CompanyId Id
 }
 
-func NewItem(make, model string, companyId Id) ItemRecord {
-	return ItemRecord{Id: Id(uuid.NewV4().String()), Make: make, Model: model, CompanyId: companyId}
+func NewItem(id, make, model string, companyId Id) ItemRecord {
+	return ItemRecord{Id: Id(id), Make: make, Model: model, CompanyId: companyId}
 }
 
 type PledgeRecord struct {

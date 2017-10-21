@@ -58,3 +58,11 @@ func TestPledgeWithLogin(t *testing.T) {
 	resp, err := client.Get(testUrl + "/pledge")
 	testPageStatus(resp, err, http.StatusOK, t)
 }
+
+func TestHappyPathPledge(t *testing.T) {
+	cookie := loginUser("testuser1", t)
+	client := http.Client{Jar: cookie}
+	data := url.Values{"item": {"2"}}
+	resp, err := client.PostForm(testUrl+"/pledge", data)
+	testPageStatus(resp, err, http.StatusOK, t)
+}
