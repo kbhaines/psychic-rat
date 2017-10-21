@@ -29,6 +29,7 @@ type (
 		Pledge  PledgeApi
 		User    UserApi
 	}
+
 	ItemApi interface {
 		//AddItem(make string, model string, company company.Id) error
 		ListItems() (types.ItemReport, error)
