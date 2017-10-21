@@ -5,18 +5,45 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"psychic-rat/api"
 	"psychic-rat/api/rest"
-	"psychic-rat/impl"
 	"psychic-rat/mdl"
+	"psychic-rat/types"
 
 	"github.com/gorilla/context"
 )
 
-type UriHandler struct {
-	Uri     string
-	Handler http.HandlerFunc
-}
+type (
+	UriHandler struct {
+		Uri     string
+		Handler http.HandlerFunc
+	}
+
+	CompanyApi interface {
+		GetCompanies() (types.CompanyListing, error)
+		GetById(mdl.Id) (types.CompanyElement, error)
+	}
+
+	Api struct {
+		Company CompanyApi
+		Item    ItemApi
+		Pledge  PledgeApi
+		User    UserApi
+	}
+	ItemApi interface {
+		//AddItem(make string, model string, company company.Id) error
+		ListItems() (types.ItemReport, error)
+		GetById(id mdl.Id) (types.ItemElement, error)
+	}
+
+	PledgeApi interface {
+		NewPledge(itemId mdl.Id, userId mdl.Id) (mdl.Id, error)
+		//ListPledges() PledgeListing
+	}
+
+	UserApi interface {
+		GetById(userId mdl.Id) (*mdl.UserRecord, error)
+	}
+)
 
 var (
 	UriHandlers = []UriHandler{
@@ -30,7 +57,7 @@ var (
 		{rest.ThanksPage, ThanksPageHandler},
 	}
 
-	apis api.Api
+	apis Api
 )
 
 func ToJson(writer io.Writer, v interface{}) {
@@ -45,32 +72,9 @@ func ToJsonString(v interface{}) string {
 	return string(js)
 }
 
-func setupMockData() {
-	companies := impl.GetRepos().Company
-	companies.Create(mdl.NewCompany(mdl.Id("1"), "bigco1"))
-	companies.Create(mdl.NewCompany(mdl.Id("2"), "bigco2"))
-	companies.Create(mdl.NewCompany(mdl.Id("3"), "bigco3"))
-
-	items := impl.GetRepos().Item
-	items.Create(mdl.NewItem("1", "phone", "abc", mdl.Id("1")))
-	items.Create(mdl.NewItem("2", "phone", "xyz", mdl.Id("1")))
-	items.Create(mdl.NewItem("3", "tablet", "gt1", mdl.Id("1")))
-	items.Create(mdl.NewItem("4", "tablet", "tab4", mdl.Id("2")))
-	items.Create(mdl.NewItem("5", "tablet", "tab8", mdl.Id("2")))
-
-	users := impl.GetRepos().User
-	users.Create(mdl.UserRecord{Id: mdl.Id("testuser1"), Email: "testuser1@gmail.com", FirstName: "Kevin"})
-}
-
-func init() {
-}
-
 func main() {
-	apis = impl.GetApi()
-	setupMockData()
 	for _, h := range UriHandlers {
 		http.HandleFunc(h.Uri, h.Handler)
 	}
-
 	http.ListenAndServe("localhost:8080", context.ClearHandler(http.DefaultServeMux))
 }

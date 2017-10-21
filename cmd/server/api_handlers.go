@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"psychic-rat/api"
 	"psychic-rat/mdl"
+	"psychic-rat/types"
 	"sort"
 )
 
@@ -50,7 +50,7 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-func getItemsForCompany(companyId mdl.Id) api.ItemReport {
+func getItemsForCompany(companyId mdl.Id) types.ItemReport {
 	items, err := apis.Item.ListItems()
 	if err != nil {
 		panic(fmt.Sprintf("unable to get items", err))
@@ -74,7 +74,7 @@ func PledgeHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func handlePost(writer http.ResponseWriter, request *http.Request) {
-	pledge := api.PledgeRequest{}
+	pledge := types.PledgeRequest{}
 
 	defer request.Body.Close()
 	body, err := ioutil.ReadAll(request.Body)
@@ -117,18 +117,18 @@ func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
 	}
 }
 
-func getUserPledges(id mdl.Id) api.PledgeListing {
+func getUserPledges(id mdl.Id) types.PledgeListing {
 	ps := make([]mdl.PledgeRecord, 0)
 	sort.Sort(mdl.ByTimeStamp(ps))
-	ps2 := make([]api.PledgeElement, len(ps))
+	ps2 := make([]types.PledgeElement, len(ps))
 	for _, p := range ps {
 		var err error
 		if err != nil {
 			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemId, p.Id))
 		}
-		//ps2[i] = api.PledgeElement{p.Id(), api.ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
+		//ps2[i] = types.PledgeElement{p.Id(), types.ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
 	}
-	return api.PledgeListing{ps2}
+	return types.PledgeListing{ps2}
 }
 
 func handleGet(writer http.ResponseWriter, request *http.Request) {

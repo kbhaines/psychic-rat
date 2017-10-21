@@ -5,6 +5,10 @@ import (
 	"psychic-rat/repo"
 )
 
+func NewUserApi(repos repo.Repos) *userApiRepoImpl {
+	return &userApiRepoImpl{repos: repos}
+}
+
 type userApiRepoImpl struct {
 	repos repo.Repos
 }

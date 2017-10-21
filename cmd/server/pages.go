@@ -6,8 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"psychic-rat/api"
 	"psychic-rat/mdl"
+	"psychic-rat/types"
 
 	"github.com/gorilla/sessions"
 )
@@ -15,7 +15,7 @@ import (
 type (
 	pageVariables struct {
 		Username string
-		Items    []api.ItemElement
+		Items    []types.ItemElement
 	}
 	renderFunc     func(writer http.ResponseWriter, templateName string, variables interface{})
 	handlerFunc    func(http.ResponseWriter, *http.Request)

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	a "psychic-rat/api"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
 	"psychic-rat/repo"
+	"psychic-rat/types"
 )
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -17,31 +17,35 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 // Repo api
 
+func NewItemApi(repos repo.Repos) *itemRepoApi {
+	return &itemRepoApi{repos: repos}
+}
+
 type itemRepoApi struct {
 	repos repo.Repos
 }
 
-func (i *itemRepoApi) ListItems() (a.ItemReport, error) {
+func (i *itemRepoApi) ListItems() (types.ItemReport, error) {
 	items := i.repos.Item.List()
 	coRepo := i.repos.Company
-	results := make([]a.ItemElement, len(items))
+	results := make([]types.ItemElement, len(items))
 	for i, item := range items {
 		company, _ := coRepo.GetById(item.CompanyId)
-		results[i] = a.ItemElement{item.Id, item.Make, item.Model, company.Name}
+		results[i] = types.ItemElement{item.Id, item.Make, item.Model, company.Name}
 	}
-	return a.ItemReport{results}, nil
+	return types.ItemReport{results}, nil
 }
 
-func (i *itemRepoApi) GetById(id mdl.Id) (a.ItemElement, error) {
+func (i *itemRepoApi) GetById(id mdl.Id) (types.ItemElement, error) {
 	item, err := i.repos.Item.GetById(id)
 	if err != nil {
-		return a.ItemElement{}, err
+		return types.ItemElement{}, err
 	}
 	co, err := i.repos.Company.GetById(item.CompanyId)
 	if err != nil {
-		return a.ItemElement{}, err
+		return types.ItemElement{}, err
 	}
-	return a.ItemElement{item.Id, item.Make, item.Model, co.Name}, err
+	return types.ItemElement{item.Id, item.Make, item.Model, co.Name}, err
 }
 
 //func checkDuplicate(item mdl.Record) error {
@@ -78,13 +82,13 @@ type itemRestApi struct {
 	url string
 }
 
-func GetRestfulItemApi(url string) a.ItemApi {
+func GetRestfulItemApi(url string) *itemRestApi {
 	return &itemRestApi{url}
 }
 
-func (ia *itemRestApi) ListItems() (a.ItemReport, error) {
+func (ia *itemRestApi) ListItems() (types.ItemReport, error) {
 	resp, err := http.Get(ia.url + rest.ItemApi + fmt.Sprintf("?company=%v", "1"))
-	report := a.ItemReport{}
+	report := types.ItemReport{}
 	if err != nil {
 		return report, fmt.Errorf("get items failed: %v", err)
 	}
@@ -96,12 +100,12 @@ func (ia *itemRestApi) ListItems() (a.ItemReport, error) {
 	return ItemsFromJson(bytes)
 }
 
-func (a *itemRestApi) GetById(id mdl.Id) (a.ItemElement, error) {
+func (a *itemRestApi) GetById(id mdl.Id) (types.ItemElement, error) {
 	panic("Not implemented")
 }
 
-func ItemsFromJson(bytes []byte) (a.ItemReport, error) {
-	var items a.ItemReport
+func ItemsFromJson(bytes []byte) (types.ItemReport, error) {
+	var items types.ItemReport
 	if err := json.Unmarshal(bytes, &items); err != nil {
 		return items, fmt.Errorf("failed to unmarshal items: %v", err)
 	}
