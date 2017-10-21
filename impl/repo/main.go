@@ -36,4 +36,6 @@ func setupMockData() {
 	itemRepo.Create(mdl.NewItem("5", "tablet", "tab8", mdl.Id("2")))
 
 	userRepo.Create(mdl.UserRecord{Id: mdl.Id("testuser1"), Email: "testuser1@gmail.com", FirstName: "Kevin"})
+	userRepo.Create(mdl.UserRecord{Id: mdl.Id("testuser2"), Email: "testuser2@gmail.com", FirstName: "Brian"})
+	userRepo.Create(mdl.UserRecord{Id: mdl.Id("testuser3"), Email: "testuser3@gmail.com", FirstName: "Lynnette"})
 }

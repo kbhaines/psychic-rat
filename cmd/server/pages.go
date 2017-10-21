@@ -179,6 +179,11 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	log.Printf("pledge %v created", plId)
+	vars := struct {
+		Username string
+		PledgeId string
+	}{string(userId), string(plId)}
+	renderPage(writer, "thanks.html.tmpl", vars)
 	return
 }
 
