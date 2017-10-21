@@ -49,10 +49,10 @@ func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVaria
 		if templateName != expectedTemplate {
 			t.Errorf("wrong template, got %s but wanted %s", templateName, expectedTemplate)
 		}
-		if v, ok := templateVars.(pageVariables); !ok {
+		if vars, ok := templateVars.(pageVariables); !ok {
 			t.Errorf("did not match type")
-		} else if !reflect.DeepEqual(v, expectedVars) {
-			t.Errorf("wrong variables, got %v but wanted %v", v, expectedVars)
+		} else if !reflect.DeepEqual(vars, expectedVars) {
+			t.Errorf("wrong variables, got %v but wanted %v", vars, expectedVars)
 		}
 	}
 }
