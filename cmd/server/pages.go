@@ -56,7 +56,7 @@ func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, r
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
-		"GET": signIn,
+		"GET": signInAuth0,
 	}
 	execHandlerForMethod(selector, writer, request)
 }
@@ -86,6 +86,11 @@ func signIn(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	vars := pageVariables{Username: session.Values["userEmail"].(string)}
+	renderPage(writer, "signin.html.tmpl", vars)
+}
+
+func signInAuth0(writer http.ResponseWriter, request *http.Request) {
+	vars := pageVariables{Username: "test"}
 	renderPage(writer, "signin.html.tmpl", vars)
 }
 

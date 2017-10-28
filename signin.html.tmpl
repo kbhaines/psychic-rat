@@ -1,6 +1,43 @@
 {{ template "header.html.tmpl" . }}
+
+<script src="https://cdn.auth0.com/js/auth0/8.10.1/auth0.min.js"></script>
+
+<script>
+$(document).ready(function() {
+  var webAuth = new auth0.WebAuth({
+    domain: 'psychicrat.eu.auth0.com',
+    clientID: 'F5qMV1JakqXo9MYFIhceRMKmdcZMHL3h',
+    redirectUri: 'http://localhost:3000',
+    audience: 'https://psychicrat.eu.auth0.com/userinfo',
+    responseType: 'code',
+    scope: 'openid profile'
+  });
+
+  $('.btn-login').click(function(e) {
+    e.preventDefault();
+    webAuth.authorize();
+  });
+
+});
+
+
+function  authClick() {
+var webAuth = new auth0.WebAuth({
+    domain: 'psychicrat.eu.auth0.com',
+    clientID: 'F5qMV1JakqXo9MYFIhceRMKmdcZMHL3h',
+    redirectUri: 'http://localhost:8080/callback',
+    audience: 'https://psychicrat.eu.auth0.com/userinfo',
+    responseType: 'code',
+    scope: 'openid profile'
+  });
+    webAuth.authorize();
+}
+</script>
+
 <h1>Sign in</h1>
-<p>Hello {{ .Username }}</p>
+<p>Hello </p>
+
+<button onclick="authClick()" class=".btn-login">Login</button>
 
 <ul>
 <li> <a href="/">Home</a></li>

@@ -56,6 +56,7 @@ var (
 		{rest.SignInPage, SignInPageHandler},
 		{rest.PledgePage, PledgePageHandler},
 		{rest.ThanksPage, ThanksPageHandler},
+		{"/callback", CallbackHandler},
 	}
 
 	apis Api
