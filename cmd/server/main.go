@@ -43,6 +43,7 @@ type (
 
 	UserApi interface {
 		GetById(userId mdl.Id) (*mdl.UserRecord, error)
+		Create(mdl.UserRecord) error
 	}
 )
 

@@ -1,16 +1,17 @@
 {{ template "header.html.tmpl" . }}
 
+{{ if .Auth0Domain }}
 <script src="https://cdn.auth0.com/js/auth0/8.10.1/auth0.min.js"></script>
 
 <script>
 $(document).ready(function() {
   var webAuth = new auth0.WebAuth({
-    domain: 'psychicrat.eu.auth0.com',
-    clientID: 'F5qMV1JakqXo9MYFIhceRMKmdcZMHL3h',
-    redirectUri: 'http://localhost:3000',
-    audience: 'https://psychicrat.eu.auth0.com/userinfo',
-    responseType: 'code',
-    scope: 'openid profile'
+      domain: '{{ .Auth0Domain }}',
+      clientID: '{{ .Auth0ClientId }}',
+      redirectUri: '{{ .Auth0CallbackURL }}',
+      audience: 'https://{{ .Auth0Domain }}/userinfo',
+      responseType: 'code',
+      scope: 'openid profile'
   });
 
   $('.btn-login').click(function(e) {
@@ -23,16 +24,17 @@ $(document).ready(function() {
 
 function  authClick() {
 var webAuth = new auth0.WebAuth({
-    domain: 'psychicrat.eu.auth0.com',
-    clientID: 'F5qMV1JakqXo9MYFIhceRMKmdcZMHL3h',
-    redirectUri: 'http://localhost:8080/callback',
-    audience: 'https://psychicrat.eu.auth0.com/userinfo',
+    domain: '{{ .Auth0Domain }}',
+    clientID: '{{ .Auth0ClientId }}',
+    redirectUri: '{{ .Auth0CallbackURL }}',
+    audience: 'https://{{ .Auth0Domain }}/userinfo',
     responseType: 'code',
     scope: 'openid profile'
   });
     webAuth.authorize();
 }
 </script>
+{{ end }}
 
 <h1>Sign in</h1>
 <p>Hello </p>

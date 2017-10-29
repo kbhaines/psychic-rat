@@ -5,28 +5,28 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
-	"psychic-rat/api"
 	"psychic-rat/mdl"
+	"psychic-rat/types"
 	"reflect"
 	"testing"
 )
 
-var mockItemReport = api.ItemReport{
-	Items: []api.ItemElement{
-		api.ItemElement{Id: mdl.Id("123"), Make: "phone", Model: "x124", Company: "bigco1"},
-		api.ItemElement{Id: mdl.Id("124"), Make: "phone", Model: "x125", Company: "bigco2"},
-		api.ItemElement{Id: mdl.Id("125"), Make: "phone", Model: "x126", Company: "bigco2"},
-		api.ItemElement{Id: mdl.Id("126"), Make: "phone", Model: "x127", Company: "bigco3"},
+var mockItemReport = types.ItemReport{
+	Items: []types.ItemElement{
+		types.ItemElement{Id: mdl.Id("123"), Make: "phone", Model: "x124", Company: "bigco1"},
+		types.ItemElement{Id: mdl.Id("124"), Make: "phone", Model: "x125", Company: "bigco2"},
+		types.ItemElement{Id: mdl.Id("125"), Make: "phone", Model: "x126", Company: "bigco2"},
+		types.ItemElement{Id: mdl.Id("126"), Make: "phone", Model: "x127", Company: "bigco3"},
 	},
 }
 
 type mockItemApi struct{}
 
-func (m *mockItemApi) ListItems() (api.ItemReport, error) {
+func (m *mockItemApi) ListItems() (types.ItemReport, error) {
 	return mockItemReport, nil
 }
 
-func (m *mockItemApi) GetById(id mdl.Id) (api.ItemElement, error) {
+func (m *mockItemApi) GetById(id mdl.Id) (types.ItemElement, error) {
 	panic("not implemented")
 }
 
@@ -35,7 +35,7 @@ func mockSession(request *http.Request) bool {
 }
 
 func TestPledgeListItems(t *testing.T) {
-	apis = api.Api{Item: &mockItemApi{}}
+	apis = Api{Item: &mockItemApi{}}
 	expectedVars := pageVariables{Username: "Kevin", Items: mockItemReport.Items}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession
@@ -58,7 +58,7 @@ func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVaria
 }
 
 func TestHomePage(t *testing.T) {
-	apis = api.Api{Item: &mockItemApi{}}
+	apis = Api{Item: &mockItemApi{}}
 	expectedVars := pageVariables{Username: "Kevin"}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession

@@ -8,12 +8,10 @@ import (
 	"net/http"
 	"os"
 	"psychic-rat/api/rest"
+	"psychic-rat/mdl"
 
-	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
 )
-
-var auth0Store = sessions.NewCookieStore([]byte("something-very-secret"))
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -59,7 +57,10 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("profile = %+v\n", profile)
+
 	gob.Register(map[string]interface{}{})
+	gob.Register(mdl.Id(""))
+	gob.Register(mdl.UserRecord{})
 
 	session, err := auth0Store.Get(r, "auth-session")
 	if err != nil {
@@ -70,6 +71,21 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	session.Values["id_token"] = token.Extra("id_token")
 	session.Values["access_token"] = token.AccessToken
 	session.Values["profile"] = profile
+	userId := mdl.Id(profile["sub"].(string))
+	session.Values["userId"] = userId
+
+	userRecord, err := apis.User.GetById(userId)
+	if err != nil {
+		userRecord = &mdl.UserRecord{
+			Id:        userId,
+			Fullname:  profile["name"].(string),
+			FirstName: profile["given_name"].(string),
+			Country:   profile["locale"].(string),
+		}
+		apis.User.Create(*userRecord)
+	}
+	session.Values["userRecord"] = *userRecord
+
 	err = session.Save(r, w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

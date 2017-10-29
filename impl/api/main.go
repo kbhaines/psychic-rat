@@ -24,8 +24,8 @@ type Pledges interface {
 }
 
 type Users interface {
-	Create(user mdl.UserRecord) error
 	GetById(id mdl.Id) (*mdl.UserRecord, error)
+	Create(user mdl.UserRecord) error
 }
 
 type Repos struct {

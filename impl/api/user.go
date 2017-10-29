@@ -1,6 +1,8 @@
 package api
 
 import (
+	"fmt"
+	"log"
 	"psychic-rat/mdl"
 )
 
@@ -18,4 +20,13 @@ func (u *userApiRepoImpl) GetById(userId mdl.Id) (*mdl.UserRecord, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (u *userApiRepoImpl) Create(user mdl.UserRecord) error {
+	if _, err := u.GetById(user.Id); err == nil {
+		log.Printf("user %v already exists", user)
+		return fmt.Errorf("user %s already exists", user.Id)
+	}
+	log.Printf("creating user %v", user)
+	return u.repos.User.Create(user)
 }

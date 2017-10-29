@@ -13,9 +13,16 @@ import (
 )
 
 type (
+	auth0 struct {
+		Auth0ClientId    string
+		Auth0CallbackURL string
+		Auth0Domain      string
+	}
+
 	pageVariables struct {
-		Username string
-		Items    []types.ItemElement
+		auth0
+		Items []types.ItemElement
+		User  mdl.UserRecord
 	}
 	renderFunc     func(writer http.ResponseWriter, templateName string, variables interface{})
 	handlerFunc    func(http.ResponseWriter, *http.Request)
@@ -26,11 +33,12 @@ var (
 	renderPage     = renderPageUsingTemplate
 	isUserLoggedIn = isUserLoggedInSession
 	store          = sessions.NewCookieStore([]byte("something-very-secret"))
+	auth0Store     = sessions.NewCookieStore([]byte("something-very-secret"))
 	logDbg         = log.New(os.Stderr, "DBG:", 0).Print
 	logDbgf        = log.New(os.Stderr, "DBG:", 0).Printf
 )
 
-func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
+func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
 	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
 	tpt.Execute(writer, variables)
 }
@@ -38,11 +46,27 @@ func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, va
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
-			vars := pageVariables{Username: "Kevin"}
+			vars := (&pageVariables{}).withSessionVars(request)
 			renderPage(writer, "home.html.tmpl", vars)
 		},
 	}
 	execHandlerForMethod(selector, writer, request)
+}
+
+func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
+	session, err := auth0Store.Get(r, "auth-session")
+	if err != nil {
+		return pv
+	}
+	pv.User = session.Values["userRecord"].(mdl.UserRecord)
+	return pv
+}
+
+func (pv *pageVariables) withAuth0Vars() *pageVariables {
+	pv.auth0.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
+	pv.auth0.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
+	pv.auth0.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
+	return pv
 }
 
 func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, request *http.Request) {
@@ -61,7 +85,7 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	execHandlerForMethod(selector, writer, request)
 }
 
-func signIn(writer http.ResponseWriter, request *http.Request) {
+func signInSimple(writer http.ResponseWriter, request *http.Request) {
 	session, err := store.Get(request, "session")
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -84,13 +108,7 @@ func signIn(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	vars := pageVariables{Username: session.Values["userEmail"].(string)}
-	renderPage(writer, "signin.html.tmpl", vars)
-}
-
-func signInAuth0(writer http.ResponseWriter, request *http.Request) {
-	vars := pageVariables{Username: "test"}
+	vars := (&pageVariables{}).withSessionVars(request)
 	renderPage(writer, "signin.html.tmpl", vars)
 }
 
@@ -111,6 +129,12 @@ func authUser(session *sessions.Session, request *http.Request) error {
 	session.Values["userId"] = userId
 	session.Values["userEmail"] = user.Email
 	return nil
+
+}
+func signInAuth0(writer http.ResponseWriter, request *http.Request) {
+	vars := (&pageVariables{}).withAuth0Vars()
+	log.Printf("vars = %+v\n", vars)
+	renderPage(writer, "signin.html.tmpl", vars)
 }
 
 func userLoginRequired(h handlerFunc) handlerFunc {
@@ -149,7 +173,8 @@ func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
-	vars := pageVariables{Username: "Kevin", Items: report.Items}
+	vars := &pageVariables{Items: report.Items}
+	vars = vars.withSessionVars(request)
 	renderPage(writer, "pledge.html.tmpl", vars)
 }
 
@@ -188,14 +213,15 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		Username string
 		PledgeId string
 	}{string(userId), string(plId)}
-	renderPage(writer, "thanks.html.tmpl", vars)
+	_ = vars
+	//renderPage(writer, "thanks.html.tmpl", vars)
 	return
 }
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
 		"GET": userLoginRequired(func(writer http.ResponseWriter, request *http.Request) {
-			vars := pageVariables{Username: "Kevin"}
+			vars := (&pageVariables{}).withSessionVars(request)
 			renderPage(writer, "thanks.html.tmpl", vars)
 		}),
 	}
