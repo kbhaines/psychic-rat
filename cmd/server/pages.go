@@ -13,18 +13,18 @@ import (
 )
 
 type (
-	auth0 struct {
+	Auth0 struct {
 		Auth0ClientId    string
 		Auth0CallbackURL string
 		Auth0Domain      string
 	}
 
 	pageVariables struct {
-		auth0
+		Auth0
 		Items []types.ItemElement
 		User  mdl.UserRecord
 	}
-	renderFunc     func(writer http.ResponseWriter, templateName string, variables interface{})
+	renderFunc     func(writer http.ResponseWriter, templateName string, vars *pageVariables)
 	handlerFunc    func(http.ResponseWriter, *http.Request)
 	methodSelector map[string]handlerFunc
 )
@@ -58,14 +58,18 @@ func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 	if err != nil {
 		return pv
 	}
-	pv.User = session.Values["userRecord"].(mdl.UserRecord)
+	user, ok := session.Values["userRecord"]
+	if !ok {
+		return pv
+	}
+	pv.User = user.(mdl.UserRecord)
 	return pv
 }
 
 func (pv *pageVariables) withAuth0Vars() *pageVariables {
-	pv.auth0.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
-	pv.auth0.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
-	pv.auth0.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
+	pv.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
+	pv.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
+	pv.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
 	return pv
 }
 
@@ -162,7 +166,7 @@ func isUserLoggedInSession(request *http.Request) bool {
 		log.Print(err)
 		return false
 	}
-	_, ok := session.Values["userId"].(string)
+	_, ok := session.Values["userRecord"].(mdl.UserRecord)
 	return ok
 }
 

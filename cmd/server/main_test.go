@@ -36,7 +36,7 @@ func mockSession(request *http.Request) bool {
 
 func TestPledgeListItems(t *testing.T) {
 	apis = Api{Item: &mockItemApi{}}
-	expectedVars := pageVariables{Username: "Kevin", Items: mockItemReport.Items}
+	expectedVars := pageVariables{Items: mockItemReport.Items}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession
 	req := &http.Request{Method: "GET"}
@@ -44,22 +44,20 @@ func TestPledgeListItems(t *testing.T) {
 }
 
 func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) renderFunc {
-	return func(writer http.ResponseWriter, templateName string, templateVars interface{}) {
+	return func(writer http.ResponseWriter, templateName string, templateVars *pageVariables) {
 		t.Logf("Rendering %s with %v", templateName, templateVars)
 		if templateName != expectedTemplate {
 			t.Errorf("wrong template, got %s but wanted %s", templateName, expectedTemplate)
 		}
-		if vars, ok := templateVars.(pageVariables); !ok {
-			t.Errorf("did not match type")
-		} else if !reflect.DeepEqual(vars, expectedVars) {
-			t.Errorf("wrong variables, got %v but wanted %v", vars, expectedVars)
+		if !reflect.DeepEqual(*templateVars, expectedVars) {
+			t.Errorf("wrong variables, wanted %v, got %v", expectedVars, *templateVars)
 		}
 	}
 }
 
 func TestHomePage(t *testing.T) {
-	apis = Api{Item: &mockItemApi{}}
-	expectedVars := pageVariables{Username: "Kevin"}
+	apis = Api{}
+	expectedVars := pageVariables{}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession
 	req := &http.Request{Method: "GET"}
