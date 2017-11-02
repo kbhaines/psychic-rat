@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"fmt"
 	"html/template"
 	"log"
@@ -39,7 +40,7 @@ var (
 )
 
 func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
-	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl"))
+	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl", "navi.html.tmpl"))
 	tpt.Execute(writer, variables)
 }
 
@@ -54,7 +55,7 @@ func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
-	session, err := auth0Store.Get(r, "auth-session")
+	session, err := store.Get(r, "auth-session")
 	if err != nil {
 		return pv
 	}
@@ -84,20 +85,25 @@ func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, r
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
-		"GET": signInAuth0,
+		"GET": signInSimple,
 	}
 	execHandlerForMethod(selector, writer, request)
 }
 
+func init() {
+	gob.Register(mdl.Id(0))
+	gob.Register(mdl.UserRecord{})
+}
+
 func signInSimple(writer http.ResponseWriter, request *http.Request) {
-	session, err := store.Get(request, "session")
+	session, err := store.Get(request, "auth-session")
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	val := session.Values["userId"]
-	if _, ok := val.(string); !ok {
+	user := session.Values["userRecord"]
+	if _, ok := user.(mdl.UserRecord); !ok {
 		logDbg("no user, attempting auth")
 		if err := authUser(session, request); err != nil {
 			log.Print(err)
@@ -105,8 +111,6 @@ func signInSimple(writer http.ResponseWriter, request *http.Request) {
 			return
 		}
 	}
-	userId := session.Values["userId"].(string)
-	log.Printf("session user is %v", userId)
 
 	if err := session.Save(request, writer); err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
@@ -130,8 +134,7 @@ func authUser(session *sessions.Session, request *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
-	session.Values["userId"] = userId
-	session.Values["userEmail"] = user.Email
+	session.Values["userRecord"] = *user
 	return nil
 
 }
@@ -161,7 +164,7 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func isUserLoggedInSession(request *http.Request) bool {
-	session, err := store.Get(request, "session")
+	session, err := store.Get(request, "auth-session")
 	if err != nil {
 		log.Print(err)
 		return false
@@ -203,8 +206,10 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	session, _ := store.Get(request, "session")
-	userId := mdl.Id(session.Values["userId"].(string))
+	// TODO ignoring a couple of errors
+	session, _ := store.Get(request, "auth-session")
+	user, _ := session.Values["userRecord"].(mdl.UserRecord)
+	userId := user.Id
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
 	plId, err := apis.Pledge.NewPledge(itemId, userId)

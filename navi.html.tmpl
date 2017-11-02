@@ -1,0 +1,8 @@
+<ul>
+{{ if ne .User.Id "" }}
+<li> <a href="/pledge">Pledge Support</a></li>
+<li> <a href="/logout">Log out</a></li>
+{{ else }}
+<li> <a href="/signin">Sign In</a></li>
+{{end}}
+</ul>

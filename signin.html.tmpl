@@ -36,14 +36,16 @@ var webAuth = new auth0.WebAuth({
 </script>
 {{ end }}
 
+{{ if eq .User.Id "" }}
 <h1>Sign in</h1>
-<p>Hello </p>
 
-<button onclick="authClick()" class=".btn-login">Login</button>
+{{ if .Auth0Domain }}
+    <button onclick="authClick()" class=".btn-login">Login</button>
+{{ end }}
 
-<ul>
-<li> <a href="/">Home</a></li>
-<li> <a href="/logout">Log out</a></li>
-<li> <a href="/pledge">Pledge Support</a></li>
-</ul>
+{{ else }}
+    <h1> Already signed in as {{ .User.Fullname }} </h1>
+{{ end }}
+
+
 {{ template "footer.html.tmpl" . }}

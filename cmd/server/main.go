@@ -18,16 +18,16 @@ type (
 		Handler http.HandlerFunc
 	}
 
-	CompanyApi interface {
-		GetCompanies() (types.CompanyListing, error)
-		GetById(mdl.Id) (types.CompanyElement, error)
-	}
-
 	Api struct {
 		Company CompanyApi
 		Item    ItemApi
 		Pledge  PledgeApi
 		User    UserApi
+	}
+
+	CompanyApi interface {
+		GetCompanies() (types.CompanyListing, error)
+		GetById(mdl.Id) (types.CompanyElement, error)
 	}
 
 	ItemApi interface {
