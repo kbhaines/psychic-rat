@@ -1,13 +1,13 @@
 package main
 
 import (
-	"encoding/gob"
 	"fmt"
 	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"psychic-rat/mdl"
+	"psychic-rat/sess"
 	"psychic-rat/types"
 
 	"github.com/gorilla/sessions"
@@ -25,6 +25,7 @@ type (
 		Items []types.ItemElement
 		User  mdl.UserRecord
 	}
+
 	renderFunc     func(writer http.ResponseWriter, templateName string, vars *pageVariables)
 	handlerFunc    func(http.ResponseWriter, *http.Request)
 	methodSelector map[string]handlerFunc
@@ -33,7 +34,6 @@ type (
 var (
 	renderPage     = renderPageUsingTemplate
 	isUserLoggedIn = isUserLoggedInSession
-	store          = sessions.NewCookieStore([]byte("something-very-secret"))
 	auth0Store     = sessions.NewCookieStore([]byte("something-very-secret"))
 	logDbg         = log.New(os.Stderr, "DBG:", 0).Print
 	logDbgf        = log.New(os.Stderr, "DBG:", 0).Printf
@@ -55,15 +55,15 @@ func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
-	session, err := store.Get(r, "auth-session")
+	s := sess.NewSessionStore(r, nil)
+	user, err := s.Get()
 	if err != nil {
-		return pv
+		// todo - return error?
+		log.Fatal(err)
 	}
-	user, ok := session.Values["userRecord"]
-	if !ok {
-		return pv
+	if user != nil {
+		pv.User = *user
 	}
-	pv.User = user.(mdl.UserRecord)
 	return pv
 }
 
@@ -90,37 +90,28 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	execHandlerForMethod(selector, writer, request)
 }
 
-func init() {
-	gob.Register(mdl.Id(0))
-	gob.Register(mdl.UserRecord{})
-}
-
 func signInSimple(writer http.ResponseWriter, request *http.Request) {
-	session, err := store.Get(request, "auth-session")
+	s := sess.NewSessionStore(request, writer)
+	user, err := s.Get()
 	if err != nil {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	user := session.Values["userRecord"]
-	if _, ok := user.(mdl.UserRecord); !ok {
+	if user != nil {
 		logDbg("no user, attempting auth")
-		if err := authUser(session, request); err != nil {
+		if err := authUser(request, s); err != nil {
 			log.Print(err)
 			http.Error(writer, "authentication failed", http.StatusForbidden)
 			return
 		}
 	}
 
-	if err := session.Save(request, writer); err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
 	vars := (&pageVariables{}).withSessionVars(request)
 	renderPage(writer, "signin.html.tmpl", vars)
 }
 
-func authUser(session *sessions.Session, request *http.Request) error {
+func authUser(request *http.Request, session *sess.SessionStore) error {
 	if err := request.ParseForm(); err != nil {
 		return err
 	}
@@ -134,8 +125,7 @@ func authUser(session *sessions.Session, request *http.Request) error {
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
-	session.Values["userRecord"] = *user
-	return nil
+	return session.Save(*user)
 
 }
 func signInAuth0(writer http.ResponseWriter, request *http.Request) {
@@ -164,13 +154,13 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func isUserLoggedInSession(request *http.Request) bool {
-	session, err := store.Get(request, "auth-session")
+	s := sess.NewSessionStore(request, nil)
+	user, err := s.Get()
 	if err != nil {
 		log.Print(err)
 		return false
 	}
-	_, ok := session.Values["userRecord"].(mdl.UserRecord)
-	return ok
+	return user != nil
 }
 
 func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
@@ -207,8 +197,8 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 
 	// TODO ignoring a couple of errors
-	session, _ := store.Get(request, "auth-session")
-	user, _ := session.Values["userRecord"].(mdl.UserRecord)
+	s := sess.NewSessionStore(request, writer)
+	user, _ := s.Get()
 	userId := user.Id
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
