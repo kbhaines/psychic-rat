@@ -97,8 +97,7 @@ func signInSimple(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	if user != nil {
+	if user == nil {
 		logDbg("no user, attempting auth")
 		if err := authUser(request, s); err != nil {
 			log.Print(err)
@@ -128,6 +127,7 @@ func authUser(request *http.Request, session *sess.SessionStore) error {
 	return session.Save(*user)
 
 }
+
 func signInAuth0(writer http.ResponseWriter, request *http.Request) {
 	vars := (&pageVariables{}).withAuth0Vars()
 	log.Printf("vars = %+v\n", vars)

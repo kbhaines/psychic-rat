@@ -10,21 +10,25 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
-	return &SessionStore{r: r, w: w}
+func init() {
+	gob.Register(mdl.Id(0))
+	gob.Register(mdl.UserRecord{})
 }
 
-var store = sessions.NewCookieStore([]byte("something-very-secret"))
+func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
+	return &SessionStore{r: r, w: w, store: sessions.NewCookieStore([]byte("something-very-secret"))}
+}
 
 type (
 	SessionStore struct {
-		r *http.Request
-		w http.ResponseWriter
+		r     *http.Request
+		w     http.ResponseWriter
+		store sessions.Store
 	}
 )
 
 func (s *SessionStore) Get() (*mdl.UserRecord, error) {
-	session, err := store.Get(s.r, "auth-session")
+	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve from store: %v", err)
 	}
@@ -41,7 +45,7 @@ func (s *SessionStore) Get() (*mdl.UserRecord, error) {
 }
 
 func (s *SessionStore) Save(user mdl.UserRecord) error {
-	session, err := store.Get(s.r, "auth-session")
+	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
 		return fmt.Errorf("cannot retrieve from store: %v", err)
 	}
@@ -52,9 +56,4 @@ func (s *SessionStore) Save(user mdl.UserRecord) error {
 	}
 	log.Println("saved user %v in session", user)
 	return nil
-}
-
-func init() {
-	gob.Register(mdl.Id(0))
-	gob.Register(mdl.UserRecord{})
 }
