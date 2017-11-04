@@ -3,9 +3,11 @@
 package main
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -57,6 +59,23 @@ func TestPledgeWithLogin(t *testing.T) {
 	client := http.Client{Jar: cookie}
 	resp, err := client.Get(testUrl + "/pledge")
 	testPageStatus(resp, err, http.StatusOK, t)
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	strBody := string(body)
+	if !strings.Contains(strBody, "Kevin") {
+		t.Error("body does not contain greeting for user")
+	}
+	if !strings.Contains(strBody, "<select ") {
+		t.Error("body does not contain <select ")
+	}
+	if !strings.Contains(strBody, "<input type=\"submit\"") {
+		t.Error("body does not contain <input> for submit button")
+	}
+	// Todo : move mock data
+	// Todo: move to using handler-based testing
 }
 
 func TestHappyPathPledge(t *testing.T) {
