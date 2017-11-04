@@ -1,11 +1,10 @@
-// +build integration
-
 package main
 
 import (
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
+	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
@@ -14,8 +13,16 @@ import (
 var testUrl = "http://localhost:8080"
 
 func TestHomePage(t *testing.T) {
+	server := newServer()
+	defer server.Close()
 	resp, err := http.Get(testUrl + "/")
 	testPageStatus(resp, err, http.StatusOK, t)
+}
+
+func newServer() *httptest.Server {
+	server := httptest.NewServer(handler())
+	testUrl = server.URL
+	return server
 }
 
 func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing.T) {
@@ -29,16 +36,22 @@ func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing
 }
 
 func TestPledgeWithoutLogin(t *testing.T) {
+	server := newServer()
+	defer server.Close()
 	resp, err := http.Get(testUrl + "/pledge")
 	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
 func TestThankYouWithoutLogin(t *testing.T) {
+	server := newServer()
+	defer server.Close()
 	resp, err := http.Get(testUrl + "/thanks")
 	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
 func TestSignin(t *testing.T) {
+	server := newServer()
+	defer server.Close()
 	loginUser("testuser1", t)
 }
 
@@ -55,6 +68,9 @@ func loginUser(user string, t *testing.T) http.CookieJar {
 }
 
 func TestPledgeWithLogin(t *testing.T) {
+	server := newServer()
+	defer server.Close()
+
 	cookie := loginUser("testuser1", t)
 	client := http.Client{Jar: cookie}
 	resp, err := client.Get(testUrl + "/pledge")
@@ -79,6 +95,8 @@ func TestPledgeWithLogin(t *testing.T) {
 }
 
 func TestHappyPathPledge(t *testing.T) {
+	server := newServer()
+	defer server.Close()
 	cookie := loginUser("testuser1", t)
 	client := http.Client{Jar: cookie}
 	data := url.Values{"item": {"2"}}

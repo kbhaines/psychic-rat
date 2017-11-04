@@ -40,7 +40,7 @@ func (s *SessionStore) Get() (*mdl.UserRecord, error) {
 	if !ok {
 		return nil, fmt.Errorf("conversion error: %v", err)
 	}
-	log.Println("loaded user %v from session", userRecord)
+	log.Printf("loaded user %v from session", userRecord)
 	return &userRecord, nil
 }
 
@@ -54,6 +54,6 @@ func (s *SessionStore) Save(user mdl.UserRecord) error {
 		http.Error(s.w, err.Error(), http.StatusInternalServerError)
 		return err
 	}
-	log.Println("saved user %v in session", user)
+	log.Printf("saved user %v in session", user)
 	return nil
 }

@@ -55,7 +55,7 @@ func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVaria
 	}
 }
 
-func TestHomePage(t *testing.T) {
+func TestHomePageTemplate(t *testing.T) {
 	apis = Api{}
 	expectedVars := pageVariables{}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)

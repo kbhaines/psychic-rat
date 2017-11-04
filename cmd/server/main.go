@@ -75,9 +75,14 @@ func ToJsonString(v interface{}) string {
 	return string(js)
 }
 
-func main() {
+func handler() http.Handler {
+	hmux := http.NewServeMux()
 	for _, h := range UriHandlers {
-		http.HandleFunc(h.Uri, h.Handler)
+		hmux.HandleFunc(h.Uri, h.Handler)
 	}
-	http.ListenAndServe("localhost:8080", context.ClearHandler(http.DefaultServeMux))
+	return hmux
+}
+
+func main() {
+	http.ListenAndServe("localhost:8080", context.ClearHandler(handler()))
 }
