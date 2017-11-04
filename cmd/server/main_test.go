@@ -35,7 +35,7 @@ func mockSession(request *http.Request) bool {
 }
 
 func TestPledgeListItems(t *testing.T) {
-	apis = Api{Item: &mockItemApi{}}
+	apis = API{Item: &mockItemApi{}}
 	expectedVars := pageVariables{Items: mockItemReport.Items}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession
@@ -56,7 +56,7 @@ func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVaria
 }
 
 func TestHomePageTemplate(t *testing.T) {
-	apis = Api{}
+	apis = API{}
 	expectedVars := pageVariables{}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession

@@ -53,7 +53,7 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 func getItemsForCompany(companyId mdl.Id) types.ItemReport {
 	items, err := apis.Item.ListItems()
 	if err != nil {
-		panic(fmt.Sprintf("unable to get items", err))
+		panic(fmt.Sprintf("unable to get items: %v", err))
 	}
 	return items
 }
@@ -107,14 +107,6 @@ func writeUserPledges(writer http.ResponseWriter, userId mdl.Id) {
 		return
 	}
 	fmt.Fprintf(writer, "%s", json)
-}
-
-func returnIfElse(b bool, ifTrue, ifFalse interface{}) interface{} {
-	if b {
-		return ifTrue
-	} else {
-		return ifFalse
-	}
 }
 
 func getUserPledges(id mdl.Id) types.PledgeListing {

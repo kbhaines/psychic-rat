@@ -85,7 +85,7 @@ func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, r
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
-		"GET": signInSimple,
+		"GET": signInAuth0,
 	}
 	execHandlerForMethod(selector, writer, request)
 }

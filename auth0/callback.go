@@ -1,7 +1,6 @@
-package main
+package auth0
 
 import (
-	"encoding/gob"
 	"encoding/json"
 	"io/ioutil"
 	"log"
@@ -9,9 +8,21 @@ import (
 	"os"
 	"psychic-rat/api/rest"
 	"psychic-rat/mdl"
+	"psychic-rat/sess"
 
 	"golang.org/x/oauth2"
 )
+
+type UserAPI interface {
+	GetById(mdl.Id) (*mdl.UserRecord, error)
+	Create(mdl.UserRecord) error
+}
+
+var userAPI UserAPI
+
+func Init(a UserAPI) {
+	userAPI = a
+}
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -36,7 +47,6 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Getting now the userInfo
 	client := conf.Client(oauth2.NoContext, token)
 	resp, err := client.Get("https://" + domain + "/userinfo")
 	if err != nil {
@@ -58,41 +68,35 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("profile = %+v\n", profile)
 
-	gob.Register(map[string]interface{}{})
-	gob.Register(mdl.Id(""))
-	gob.Register(mdl.UserRecord{})
+	//gob.Register(map[string]interface{}{})
+	//session.Values["id_token"] = token.Extra("id_token")
+	//session.Values["access_token"] = token.AccessToken
+	//session.Values["profile"] = profile
+	//session.Values["userId"] = userId
 
-	session, err := auth0Store.Get(r, "auth-session")
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	session.Values["id_token"] = token.Extra("id_token")
-	session.Values["access_token"] = token.AccessToken
-	session.Values["profile"] = profile
 	userId := mdl.Id(profile["sub"].(string))
-	session.Values["userId"] = userId
-
-	userRecord, err := apis.User.GetById(userId)
-	if err != nil {
+	userRecord, error := userAPI.GetById(userId)
+	if error != nil {
 		userRecord = &mdl.UserRecord{
 			Id:        userId,
 			Fullname:  profile["name"].(string),
 			FirstName: profile["given_name"].(string),
 			Country:   profile["locale"].(string),
 		}
-		apis.User.Create(*userRecord)
-	}
-	session.Values["userRecord"] = *userRecord
+		err := userAPI.Create(*userRecord)
+		if err != nil {
+			log.Fatal("unable to create a user %v :%v", userRecord, err)
+			return
+		}
 
-	err = session.Save(r, w)
+	}
+	store := sess.NewSessionStore(r, w)
+	store.Save(*userRecord)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Fatal("unable to save user into session: %v", err)
 		return
 	}
 
 	// Redirect to logged in page
 	http.Redirect(w, r, rest.HomePage, http.StatusSeeOther)
-
 }

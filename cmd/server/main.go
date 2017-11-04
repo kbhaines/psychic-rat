@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"psychic-rat/api/rest"
+	"psychic-rat/auth0"
 	"psychic-rat/mdl"
 	"psychic-rat/types"
 
@@ -14,11 +15,11 @@ import (
 
 type (
 	UriHandler struct {
-		Uri     string
+		URI     string
 		Handler http.HandlerFunc
 	}
 
-	Api struct {
+	API struct {
 		Company CompanyApi
 		Item    ItemApi
 		Pledge  PledgeApi
@@ -57,10 +58,10 @@ var (
 		{rest.SignInPage, SignInPageHandler},
 		{rest.PledgePage, PledgePageHandler},
 		{rest.ThanksPage, ThanksPageHandler},
-		{"/callback", CallbackHandler},
+		{"/callback", auth0.CallbackHandler},
 	}
 
-	apis Api
+	apis API
 )
 
 func ToJson(writer io.Writer, v interface{}) {
@@ -78,7 +79,7 @@ func ToJsonString(v interface{}) string {
 func handler() http.Handler {
 	hmux := http.NewServeMux()
 	for _, h := range UriHandlers {
-		hmux.HandleFunc(h.Uri, h.Handler)
+		hmux.HandleFunc(h.URI, h.Handler)
 	}
 	return hmux
 }
