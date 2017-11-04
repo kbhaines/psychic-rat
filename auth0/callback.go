@@ -18,24 +18,25 @@ type UserAPI interface {
 	Create(mdl.UserRecord) error
 }
 
-var userAPI UserAPI
+var (
+	userAPI   UserAPI
+	serverURL string
+)
 
-func Init(a UserAPI) {
+func Init(a UserAPI, server string) {
 	userAPI = a
+	serverURL = server
 }
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
-
-	domain := os.Getenv("AUTH0_DOMAIN")
-
 	conf := &oauth2.Config{
 		ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
 		ClientSecret: os.Getenv("AUTH0_CLIENT_SECRET"),
 		RedirectURL:  os.Getenv("AUTH0_CALLBACK_URL"),
 		Scopes:       []string{"openid", "profile", "user_metadata"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://" + domain + "/authorize",
-			TokenURL: "https://" + domain + "/oauth/token",
+			AuthURL:  serverURL + "/authorize",
+			TokenURL: serverURL + "/oauth/token",
 		},
 	}
 
@@ -43,13 +44,15 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
+		log.Printf("err = %+v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	client := conf.Client(oauth2.NoContext, token)
-	resp, err := client.Get("https://" + domain + "/userinfo")
+	resp, err := client.Get(serverURL + "/userinfo")
 	if err != nil {
+		log.Printf("err = %+v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -57,12 +60,14 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	raw, err := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
+		log.Printf("err = %+v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	var profile map[string]interface{}
 	if err = json.Unmarshal(raw, &profile); err != nil {
+		log.Printf("err = %+v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
