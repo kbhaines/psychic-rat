@@ -63,6 +63,10 @@ var (
 	}
 
 	apis API
+
+	flags struct {
+		enableAuth0, sqldb bool
+	}
 )
 
 func ToJson(writer io.Writer, v interface{}) {
@@ -83,10 +87,6 @@ func handler() http.Handler {
 		hmux.HandleFunc(h.URI, h.Handler)
 	}
 	return hmux
-}
-
-var flags struct {
-	enableAuth0, sqldb bool
 }
 
 func main() {

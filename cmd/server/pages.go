@@ -40,6 +40,7 @@ var (
 )
 
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
+	// TODO: nil is a smell. StoreReader/Writer interfaces.
 	s := sess.NewSessionStore(r, nil)
 	user, err := s.Get()
 	if err != nil {
@@ -155,6 +156,7 @@ func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func isUserLoggedInSession(request *http.Request) bool {
+	// TODO: nil is a smell. StoreReader/Writer interfaces.
 	s := sess.NewSessionStore(request, nil)
 	user, err := s.Get()
 	if err != nil {
