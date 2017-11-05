@@ -19,24 +19,23 @@ type UserAPI interface {
 }
 
 var (
-	userAPI   UserAPI
-	serverURL string
+	userAPI UserAPI
 )
 
-func Init(a UserAPI, server string) {
+func Init(a UserAPI) {
 	userAPI = a
-	serverURL = server
 }
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
+	domain := os.Getenv("AUTH0_DOMAIN")
 	conf := &oauth2.Config{
 		ClientID:     os.Getenv("AUTH0_CLIENT_ID"),
 		ClientSecret: os.Getenv("AUTH0_CLIENT_SECRET"),
 		RedirectURL:  os.Getenv("AUTH0_CALLBACK_URL"),
 		Scopes:       []string{"openid", "profile", "user_metadata"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  serverURL + "/authorize",
-			TokenURL: serverURL + "/oauth/token",
+			AuthURL:  "https://" + domain + "/authorize",
+			TokenURL: "https://" + domain + "/oauth/token",
 		},
 	}
 
@@ -50,7 +49,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	client := conf.Client(oauth2.NoContext, token)
-	resp, err := client.Get(serverURL + "/userinfo")
+	resp, err := client.Get("https://" + domain + "/userinfo")
 	if err != nil {
 		log.Printf("err = %+v\n", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

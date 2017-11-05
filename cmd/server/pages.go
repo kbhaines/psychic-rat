@@ -39,21 +39,6 @@ var (
 	logDbgf        = log.New(os.Stderr, "DBG:", 0).Printf
 )
 
-func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
-	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl", "navi.html.tmpl"))
-	tpt.Execute(writer, variables)
-}
-
-func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := methodSelector{
-		"GET": func(writer http.ResponseWriter, request *http.Request) {
-			vars := (&pageVariables{}).withSessionVars(request)
-			renderPage(writer, "home.html.tmpl", vars)
-		},
-	}
-	execHandlerForMethod(selector, writer, request)
-}
-
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 	s := sess.NewSessionStore(r, nil)
 	user, err := s.Get()
@@ -72,6 +57,21 @@ func (pv *pageVariables) withAuth0Vars() *pageVariables {
 	pv.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
 	pv.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
 	return pv
+}
+
+func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
+	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl", "navi.html.tmpl"))
+	tpt.Execute(writer, variables)
+}
+
+func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
+	selector := methodSelector{
+		"GET": func(writer http.ResponseWriter, request *http.Request) {
+			vars := (&pageVariables{}).withSessionVars(request)
+			renderPage(writer, "home.html.tmpl", vars)
+		},
+	}
+	execHandlerForMethod(selector, writer, request)
 }
 
 func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, request *http.Request) {
