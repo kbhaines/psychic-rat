@@ -28,16 +28,16 @@ type pledgeApiRepoImpl struct {
 	repos Repos
 }
 
-func (p *pledgeApiRepoImpl) NewPledge(itemId mdl.Id, userId mdl.Id) (newId mdl.Id, err error) {
+func (p *pledgeApiRepoImpl) NewPledge(itemId mdl.ID, userId mdl.ID) (newId mdl.ID, err error) {
 	_, err = p.repos.Item.GetById(itemId)
 	if err != nil {
 		return newId, fmt.Errorf("error retrieving item %v: %v", itemId, err)
 	}
 	_, err = p.repos.User.GetById(userId)
-	if userId != mdl.Id(0) && err != nil {
+	if userId != mdl.ID(0) && err != nil {
 		return newId, fmt.Errorf("error retrieving user %v: %v", userId, err)
 	}
-	newPledge := mdl.PledgeRecord{Id: mdl.Id(uuid.NewV4().String()), UserId: userId, ItemId: itemId, Timestamp: time.Now()}
+	newPledge := mdl.Pledge{Id: mdl.ID(uuid.NewV4().String()), UserID: userId, ItemID: itemId, Timestamp: time.Now()}
 	p.repos.Pledge.Create(newPledge)
 	return newPledge.Id, nil
 }
@@ -58,26 +58,26 @@ type restPledgeApiImpl struct {
 }
 
 type pledgeResponse struct {
-	Id mdl.Id `json:"id"`
+	Id mdl.ID `json:"id"`
 }
 
-func NewPledgeRequest(itemId mdl.Id) types.PledgeRequest {
+func NewPledgeRequest(itemId mdl.ID) types.PledgeRequest {
 	return types.PledgeRequest{itemId}
 }
 
-func (a *restPledgeApiImpl) NewPledge(itemId mdl.Id, userId mdl.Id) (mdl.Id, error) {
+func (a *restPledgeApiImpl) NewPledge(itemId mdl.ID, userId mdl.ID) (mdl.ID, error) {
 	jsonString := rest.ToJsonString(NewPledgeRequest(itemId))
 	body := strings.NewReader(jsonString)
 	resp, err := http.Post(a.url+rest.PledgeApi, "application/json", body)
 	if resp.StatusCode != http.StatusOK {
-		return mdl.Id(0), fmt.Errorf("request returned: %d", resp.StatusCode)
+		return mdl.ID(0), fmt.Errorf("request returned: %d", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	bytes, _ := ioutil.ReadAll(resp.Body)
 	r := pledgeResponse{}
 	err = json.Unmarshal(bytes, &r)
 	if err != nil {
-		return mdl.Id(0), fmt.Errorf("unable to decode response: %v", err)
+		return mdl.ID(0), fmt.Errorf("unable to decode response: %v", err)
 	}
 	return r.Id, nil
 }

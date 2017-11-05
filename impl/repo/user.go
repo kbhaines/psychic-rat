@@ -7,13 +7,13 @@ import (
 )
 
 // declare that we implement Repo interface
-var userRepo = &userRepoMap{make(map[mdl.Id]mdl.UserRecord)}
+var userRepo = &userRepoMap{make(map[mdl.ID]mdl.User)}
 
 type userRepoMap struct {
-	records map[mdl.Id]mdl.UserRecord
+	records map[mdl.ID]mdl.User
 }
 
-func (repo *userRepoMap) Create(i mdl.UserRecord) error {
+func (repo *userRepoMap) Create(i mdl.User) error {
 	if _, found := repo.records[i.Id]; found {
 		return fmt.Errorf("user id %v already exists", i.Id)
 	}
@@ -21,7 +21,7 @@ func (repo *userRepoMap) Create(i mdl.UserRecord) error {
 	return nil
 }
 
-func (repo *userRepoMap) GetById(id mdl.Id) (*mdl.UserRecord, error) {
+func (repo *userRepoMap) GetById(id mdl.ID) (*mdl.User, error) {
 	item, found := repo.records[id]
 	if !found {
 		return nil, errors.New("not found")
@@ -29,8 +29,8 @@ func (repo *userRepoMap) GetById(id mdl.Id) (*mdl.UserRecord, error) {
 	return &item, nil
 }
 
-func (repo *userRepoMap) List() []mdl.Id {
-	ids := make([]mdl.Id, len(repo.records))
+func (repo *userRepoMap) List() []mdl.ID {
+	ids := make([]mdl.ID, len(repo.records))
 	i := 0
 	for id := range repo.records {
 		ids[i] = id

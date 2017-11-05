@@ -42,7 +42,7 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 		errorResponse(writer, fmt.Errorf("no company specified"))
 		return
 	}
-	json, err := json.Marshal(getItemsForCompany(mdl.Id(companyId)))
+	json, err := json.Marshal(getItemsForCompany(mdl.ID(companyId)))
 	if err != nil {
 		logInternalError(writer, err)
 		return
@@ -50,7 +50,7 @@ func ItemHandler(writer http.ResponseWriter, request *http.Request) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-func getItemsForCompany(companyId mdl.Id) types.ItemReport {
+func getItemsForCompany(companyId mdl.ID) types.ItemReport {
 	items, err := apis.Item.ListItems()
 	if err != nil {
 		panic(fmt.Sprintf("unable to get items: %v", err))
@@ -98,7 +98,7 @@ func handlePost(writer http.ResponseWriter, request *http.Request) {
 	writeUserPledges(writer, userId)
 }
 
-func writeUserPledges(writer http.ResponseWriter, userId mdl.Id) {
+func writeUserPledges(writer http.ResponseWriter, userId mdl.ID) {
 	userPledges := getUserPledges(userId)
 	log.Printf("pledges: %v", userPledges.Pledges)
 	json, err := json.Marshal(userPledges)
@@ -109,14 +109,14 @@ func writeUserPledges(writer http.ResponseWriter, userId mdl.Id) {
 	fmt.Fprintf(writer, "%s", json)
 }
 
-func getUserPledges(id mdl.Id) types.PledgeListing {
-	ps := make([]mdl.PledgeRecord, 0)
+func getUserPledges(id mdl.ID) types.PledgeListing {
+	ps := make([]mdl.Pledge, 0)
 	sort.Sort(mdl.ByTimeStamp(ps))
 	ps2 := make([]types.PledgeElement, len(ps))
 	for _, p := range ps {
 		var err error
 		if err != nil {
-			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemId, p.Id))
+			panic(fmt.Sprintf("data inconsistency error %v. item %v for pledge %v does not exist", err, p.ItemID, p.Id))
 		}
 		//ps2[i] = types.PledgeElement{p.Id(), types.ItemElement{item.Id(), item.Make(), item.Model()}, p.TimeStamp()}
 	}
@@ -159,6 +159,6 @@ func logInternalError(writer http.ResponseWriter, err error) {
 	fmt.Fprintf(writer, "internal error; contact developer: %v", err)
 }
 
-func getCurrentUserId() mdl.Id {
-	return mdl.Id(0)
+func getCurrentUserId() mdl.ID {
+	return mdl.ID(0)
 }

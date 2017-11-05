@@ -29,18 +29,18 @@ func (i *itemRepoApi) ListItems() (types.ItemReport, error) {
 	coRepo := i.repos.Company
 	results := make([]types.ItemElement, len(items))
 	for i, item := range items {
-		company, _ := coRepo.GetById(item.CompanyId)
+		company, _ := coRepo.GetById(item.CompanyID)
 		results[i] = types.ItemElement{item.Id, item.Make, item.Model, company.Name}
 	}
 	return types.ItemReport{results}, nil
 }
 
-func (i *itemRepoApi) GetById(id mdl.Id) (types.ItemElement, error) {
+func (i *itemRepoApi) GetById(id mdl.ID) (types.ItemElement, error) {
 	item, err := i.repos.Item.GetById(id)
 	if err != nil {
 		return types.ItemElement{}, err
 	}
-	co, err := i.repos.Company.GetById(item.CompanyId)
+	co, err := i.repos.Company.GetById(item.CompanyID)
 	if err != nil {
 		return types.ItemElement{}, err
 	}
@@ -99,7 +99,7 @@ func (ia *itemRestApi) ListItems() (types.ItemReport, error) {
 	return ItemsFromJson(bytes)
 }
 
-func (a *itemRestApi) GetById(id mdl.Id) (types.ItemElement, error) {
+func (a *itemRestApi) GetById(id mdl.ID) (types.ItemElement, error) {
 	panic("Not implemented")
 }
 

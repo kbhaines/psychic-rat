@@ -13,10 +13,10 @@ import (
 
 var mockItemReport = types.ItemReport{
 	Items: []types.ItemElement{
-		types.ItemElement{Id: mdl.Id("123"), Make: "phone", Model: "x124", Company: "bigco1"},
-		types.ItemElement{Id: mdl.Id("124"), Make: "phone", Model: "x125", Company: "bigco2"},
-		types.ItemElement{Id: mdl.Id("125"), Make: "phone", Model: "x126", Company: "bigco2"},
-		types.ItemElement{Id: mdl.Id("126"), Make: "phone", Model: "x127", Company: "bigco3"},
+		types.ItemElement{Id: mdl.ID("123"), Make: "phone", Model: "x124", Company: "bigco1"},
+		types.ItemElement{Id: mdl.ID("124"), Make: "phone", Model: "x125", Company: "bigco2"},
+		types.ItemElement{Id: mdl.ID("125"), Make: "phone", Model: "x126", Company: "bigco2"},
+		types.ItemElement{Id: mdl.ID("126"), Make: "phone", Model: "x127", Company: "bigco3"},
 	},
 }
 
@@ -26,7 +26,7 @@ func (m *mockItemApi) ListItems() (types.ItemReport, error) {
 	return mockItemReport, nil
 }
 
-func (m *mockItemApi) GetById(id mdl.Id) (types.ItemElement, error) {
+func (m *mockItemApi) GetById(id mdl.ID) (types.ItemElement, error) {
 	panic("not implemented")
 }
 

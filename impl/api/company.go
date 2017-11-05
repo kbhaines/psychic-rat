@@ -33,7 +33,7 @@ func (c *companyApiRepoImpl) GetCompanies() (types.CompanyListing, error) {
 	return results, nil
 }
 
-func (c *companyApiRepoImpl) GetById(id mdl.Id) (types.CompanyElement, error) {
+func (c *companyApiRepoImpl) GetById(id mdl.ID) (types.CompanyElement, error) {
 	co, err := c.repos.Company.GetById(id)
 	if err != nil {
 		return types.CompanyElement{}, err
@@ -73,7 +73,7 @@ func companiesFromJson(bytes []byte) (types.CompanyListing, error) {
 	return companies, nil
 }
 
-func (r *restfulCompanyApi) GetById(id mdl.Id) (types.CompanyElement, error) {
+func (r *restfulCompanyApi) GetById(id mdl.ID) (types.CompanyElement, error) {
 	resp, err := http.Get(r.url + rest.CompanyApi + fmt.Sprintf("?company=%v", id))
 	if err != nil {
 		return types.CompanyElement{}, fmt.Errorf("could not retrieve company %v : %v", id, err)

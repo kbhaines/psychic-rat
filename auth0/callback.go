@@ -14,8 +14,8 @@ import (
 )
 
 type UserAPI interface {
-	GetById(mdl.Id) (*mdl.UserRecord, error)
-	Create(mdl.UserRecord) error
+	GetById(mdl.ID) (*mdl.User, error)
+	Create(mdl.User) error
 }
 
 var (
@@ -78,10 +78,10 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	//session.Values["profile"] = profile
 	//session.Values["userId"] = userId
 
-	userId := mdl.Id(profile["sub"].(string))
+	userId := mdl.ID(profile["sub"].(string))
 	userRecord, error := userAPI.GetById(userId)
 	if error != nil {
-		userRecord = &mdl.UserRecord{
+		userRecord = &mdl.User{
 			Id:        userId,
 			Fullname:  profile["name"].(string),
 			FirstName: profile["given_name"].(string),

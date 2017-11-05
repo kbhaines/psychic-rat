@@ -10,7 +10,7 @@ type CompanyListing struct {
 }
 
 type CompanyElement struct {
-	Id   mdl.Id `json:"id"`
+	Id   mdl.ID `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -19,7 +19,7 @@ type ItemReport struct {
 }
 
 type ItemElement struct {
-	Id      mdl.Id `json:"id"`
+	Id      mdl.ID `json:"id"`
 	Make    string `json:"make"`
 	Model   string `json:"model"`
 	Company string `json:"company"`
@@ -30,11 +30,11 @@ type PledgeListing struct {
 }
 
 type PledgeElement struct {
-	PledgeId  mdl.Id      `json:"id"`
+	PledgeId  mdl.ID      `json:"id"`
 	Item      ItemElement `json:"item"`
 	Timestamp time.Time   `json:"timestamp"`
 }
 
 type PledgeRequest struct {
-	ItemId mdl.Id `json:"itemId"`
+	ItemId mdl.ID `json:"itemId"`
 }

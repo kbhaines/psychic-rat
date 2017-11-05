@@ -7,13 +7,13 @@ import (
 )
 
 // declare that we implement pledgeMapRepo interface
-var pledgeRepo = &pledgeRepoMap{make(map[mdl.Id]mdl.PledgeRecord)}
+var pledgeRepo = &pledgeRepoMap{make(map[mdl.ID]mdl.Pledge)}
 
 type pledgeRepoMap struct {
-	records map[mdl.Id]mdl.PledgeRecord
+	records map[mdl.ID]mdl.Pledge
 }
 
-func (repo *pledgeRepoMap) Create(i mdl.PledgeRecord) error {
+func (repo *pledgeRepoMap) Create(i mdl.Pledge) error {
 	if _, found := repo.records[i.Id]; found {
 		return fmt.Errorf("pledge with id %v exists", i.Id)
 	}
@@ -21,7 +21,7 @@ func (repo *pledgeRepoMap) Create(i mdl.PledgeRecord) error {
 	return nil
 }
 
-func (repo *pledgeRepoMap) GetById(id mdl.Id) (*mdl.PledgeRecord, error) {
+func (repo *pledgeRepoMap) GetById(id mdl.ID) (*mdl.Pledge, error) {
 	item, found := repo.records[id]
 	if !found {
 		return nil, errors.New("not found")
@@ -29,17 +29,17 @@ func (repo *pledgeRepoMap) GetById(id mdl.Id) (*mdl.PledgeRecord, error) {
 	return &item, nil
 }
 
-func (repo *pledgeRepoMap) GetByUser(id mdl.Id) []mdl.Id {
-	results := make([]mdl.Id, 16)
+func (repo *pledgeRepoMap) GetByUser(id mdl.ID) []mdl.ID {
+	results := make([]mdl.ID, 16)
 	for _, p := range repo.records {
-		if id == p.UserId {
+		if id == p.UserID {
 			results = append(results, p.Id)
 		}
 	}
 	return results
 }
 
-func (repo *pledgeRepoMap) List() (pledges []mdl.PledgeRecord) {
+func (repo *pledgeRepoMap) List() (pledges []mdl.Pledge) {
 	for _, p := range repo.records {
 		pledges = append(pledges, p)
 	}

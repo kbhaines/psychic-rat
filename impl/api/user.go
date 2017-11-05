@@ -14,7 +14,7 @@ type userApiRepoImpl struct {
 	repos Repos
 }
 
-func (u *userApiRepoImpl) GetById(userId mdl.Id) (*mdl.UserRecord, error) {
+func (u *userApiRepoImpl) GetById(userId mdl.ID) (*mdl.User, error) {
 	user, err := u.repos.User.GetById(userId)
 	if err != nil {
 		return nil, err
@@ -22,7 +22,7 @@ func (u *userApiRepoImpl) GetById(userId mdl.Id) (*mdl.UserRecord, error) {
 	return user, nil
 }
 
-func (u *userApiRepoImpl) Create(user mdl.UserRecord) error {
+func (u *userApiRepoImpl) Create(user mdl.User) error {
 	if _, err := u.GetById(user.Id); err == nil {
 		log.Printf("user %v already exists", user)
 		return fmt.Errorf("user %s already exists", user.Id)

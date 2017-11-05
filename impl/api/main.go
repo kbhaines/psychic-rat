@@ -3,29 +3,29 @@ package api
 import "psychic-rat/mdl"
 
 type Companies interface {
-	Create(company mdl.CompanyRecord) error
-	GetCompanies() []mdl.CompanyRecord
-	GetById(mdl.Id) (*mdl.CompanyRecord, error)
+	Create(company mdl.Company) error
+	GetCompanies() []mdl.Company
+	GetById(mdl.ID) (*mdl.Company, error)
 }
 
 type Items interface {
-	Create(item mdl.ItemRecord) error
-	GetById(id mdl.Id) (*mdl.ItemRecord, error)
-	GetAllByCompany(companyId mdl.Id) []mdl.ItemRecord
-	Update(id mdl.Id, item mdl.ItemRecord)
-	List() []mdl.ItemRecord
+	Create(item mdl.Item) error
+	GetById(id mdl.ID) (*mdl.Item, error)
+	GetAllByCompany(companyId mdl.ID) []mdl.Item
+	Update(id mdl.ID, item mdl.Item)
+	List() []mdl.Item
 }
 
 type Pledges interface {
-	Create(pledge mdl.PledgeRecord) error
-	GetById(id mdl.Id) (*mdl.PledgeRecord, error)
-	GetByUser(id mdl.Id) []mdl.Id
-	List() []mdl.PledgeRecord
+	Create(pledge mdl.Pledge) error
+	GetById(id mdl.ID) (*mdl.Pledge, error)
+	GetByUser(id mdl.ID) []mdl.ID
+	List() []mdl.Pledge
 }
 
 type Users interface {
-	GetById(id mdl.Id) (*mdl.UserRecord, error)
-	Create(user mdl.UserRecord) error
+	GetById(id mdl.ID) (*mdl.User, error)
+	Create(user mdl.User) error
 }
 
 type Repos struct {

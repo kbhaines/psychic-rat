@@ -29,23 +29,23 @@ type (
 
 	CompanyApi interface {
 		GetCompanies() (types.CompanyListing, error)
-		GetById(mdl.Id) (types.CompanyElement, error)
+		GetById(mdl.ID) (types.CompanyElement, error)
 	}
 
 	ItemApi interface {
 		//AddItem(make string, model string, company company.Id) error
 		ListItems() (types.ItemReport, error)
-		GetById(id mdl.Id) (types.ItemElement, error)
+		GetById(id mdl.ID) (types.ItemElement, error)
 	}
 
 	PledgeApi interface {
-		NewPledge(itemId mdl.Id, userId mdl.Id) (mdl.Id, error)
+		NewPledge(itemId mdl.ID, userId mdl.ID) (mdl.ID, error)
 		//ListPledges() PledgeListing
 	}
 
 	UserApi interface {
-		GetById(userId mdl.Id) (*mdl.UserRecord, error)
-		Create(mdl.UserRecord) error
+		GetById(userId mdl.ID) (*mdl.User, error)
+		Create(mdl.User) error
 	}
 )
 

@@ -11,8 +11,8 @@ import (
 )
 
 func init() {
-	gob.Register(mdl.Id(0))
-	gob.Register(mdl.UserRecord{})
+	gob.Register(mdl.ID(0))
+	gob.Register(mdl.User{})
 }
 
 func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
@@ -27,7 +27,7 @@ type (
 	}
 )
 
-func (s *SessionStore) Get() (*mdl.UserRecord, error) {
+func (s *SessionStore) Get() (*mdl.User, error) {
 	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve from store: %v", err)
@@ -36,7 +36,7 @@ func (s *SessionStore) Get() (*mdl.UserRecord, error) {
 	if !found {
 		return nil, nil
 	}
-	userRecord, ok := userFromSession.(mdl.UserRecord)
+	userRecord, ok := userFromSession.(mdl.User)
 	if !ok {
 		return nil, fmt.Errorf("conversion error: %v", err)
 	}
@@ -44,7 +44,7 @@ func (s *SessionStore) Get() (*mdl.UserRecord, error) {
 	return &userRecord, nil
 }
 
-func (s *SessionStore) Save(user mdl.UserRecord) error {
+func (s *SessionStore) Save(user mdl.User) error {
 	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
 		return fmt.Errorf("cannot retrieve from store: %v", err)

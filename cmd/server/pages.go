@@ -23,7 +23,7 @@ type (
 	pageVariables struct {
 		Auth0
 		Items []types.ItemElement
-		User  mdl.UserRecord
+		User  mdl.User
 	}
 
 	renderFunc     func(writer http.ResponseWriter, templateName string, vars *pageVariables)
@@ -122,7 +122,7 @@ func authUser(request *http.Request, session *sess.SessionStore) error {
 		return fmt.Errorf("userId not specified")
 	}
 
-	user, err := apis.User.GetById(mdl.Id(userId))
+	user, err := apis.User.GetById(mdl.ID(userId))
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
@@ -187,7 +187,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	logDbgf("request = %+v\n", request)
 	logDbgf("request.Form= %+v\n", request.Form)
 
-	itemId := mdl.Id(request.FormValue("item"))
+	itemId := mdl.ID(request.FormValue("item"))
 	if itemId == "" {
 		http.Error(writer, "", http.StatusBadRequest)
 		return

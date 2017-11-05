@@ -4,47 +4,40 @@ import (
 	"time"
 )
 
-type Id string
+type ID string
 
-type CompanyRecord struct {
-	Id   Id
+type Company struct {
+	Id   ID
 	Name string
 }
 
-func NewCompany(id Id, name string) CompanyRecord {
-	return CompanyRecord{Id: id, Name: name}
-}
-
-type ItemRecord struct {
-	Id        Id
+type Item struct {
+	Id        ID
 	Make      string
 	Model     string
-	CompanyId Id
+	CompanyID ID
 }
 
-func NewItem(id, make, model string, companyId Id) ItemRecord {
-	return ItemRecord{Id: Id(id), Make: make, Model: model, CompanyId: companyId}
+type ItemUser struct {
+	ItemID ID
+	UserID ID
 }
 
-type PledgeRecord struct {
-	Id        Id
-	UserId    Id
-	ItemId    Id
+type Pledge struct {
+	Id        ID
+	UserID    ID
+	ItemID    ID
 	Timestamp time.Time
 }
 
-func NewPledge(id Id, userId Id, itemId Id, timestamp time.Time) PledgeRecord {
-	return PledgeRecord{Id: id, UserId: userId, ItemId: itemId, Timestamp: timestamp}
-}
-
-type ByTimeStamp []PledgeRecord
+type ByTimeStamp []Pledge
 
 func (b ByTimeStamp) Len() int           { return len(b) }
 func (b ByTimeStamp) Less(i, j int) bool { return b[i].Timestamp.Before(b[j].Timestamp) }
 func (b ByTimeStamp) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 
-type UserRecord struct {
-	Id        Id
+type User struct {
+	Id        ID
 	Country   string
 	FirstName string
 	Email     string
