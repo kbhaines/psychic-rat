@@ -84,10 +84,11 @@ func execHandlerForMethod(selector methodSelector, writer http.ResponseWriter, r
 }
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := methodSelector{
-		"GET": signInAuth0,
+	method := signInSimple
+	if flags.enableAuth0 {
+		method = signInAuth0
 	}
-	execHandlerForMethod(selector, writer, request)
+	execHandlerForMethod(methodSelector{"GET": method}, writer, request)
 }
 
 func signInSimple(writer http.ResponseWriter, request *http.Request) {
@@ -131,7 +132,7 @@ func authUser(request *http.Request, session *sess.SessionStore) error {
 func signInAuth0(writer http.ResponseWriter, request *http.Request) {
 	vars := (&pageVariables{}).withAuth0Vars()
 	log.Printf("vars = %+v\n", vars)
-	renderPage(writer, "signin.html.tmpl", vars)
+	renderPage(writer, "signin-auth0.html.tmpl", vars)
 }
 
 func userLoginRequired(h handlerFunc) handlerFunc {

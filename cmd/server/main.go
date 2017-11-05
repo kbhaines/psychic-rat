@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -84,6 +85,14 @@ func handler() http.Handler {
 	return hmux
 }
 
+var flags struct {
+	enableAuth0, sqldb bool
+}
+
 func main() {
+	flag.BoolVar(&flags.enableAuth0, "auth0", false, "enable auth0 function")
+	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
+	flag.Parse()
+
 	http.ListenAndServe("localhost:8080", context.ClearHandler(handler()))
 }

@@ -1,51 +1,9 @@
 {{ template "header.html.tmpl" . }}
 
-{{ if .Auth0Domain }}
-<script src="https://cdn.auth0.com/js/auth0/8.10.1/auth0.min.js"></script>
-
-<script>
-$(document).ready(function() {
-  var webAuth = new auth0.WebAuth({
-      domain: '{{ .Auth0Domain }}',
-      clientID: '{{ .Auth0ClientId }}',
-      redirectUri: '{{ .Auth0CallbackURL }}',
-      audience: 'https://{{ .Auth0Domain }}/userinfo',
-      responseType: 'code',
-      scope: 'openid profile'
-  });
-
-  $('.btn-login').click(function(e) {
-    e.preventDefault();
-    webAuth.authorize();
-  });
-
-});
-
-
-function  authClick() {
-var webAuth = new auth0.WebAuth({
-    domain: '{{ .Auth0Domain }}',
-    clientID: '{{ .Auth0ClientId }}',
-    redirectUri: '{{ .Auth0CallbackURL }}',
-    audience: 'https://{{ .Auth0Domain }}/userinfo',
-    responseType: 'code',
-    scope: 'openid profile'
-  });
-    webAuth.authorize();
-}
-</script>
-{{ end }}
-
 {{ if eq .User.Id "" }}
 <h1>Sign in</h1>
-
-{{ if .Auth0Domain }}
-    <button onclick="authClick()" class=".btn-login">Login</button>
-{{ end }}
-
 {{ else }}
     <h1> Already signed in as {{ .User.Fullname }} </h1>
 {{ end }}
-
 
 {{ template "footer.html.tmpl" . }}
