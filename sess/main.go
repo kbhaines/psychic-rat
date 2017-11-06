@@ -28,7 +28,7 @@ type (
 )
 
 func (s *SessionStore) Get() (*mdl.User, error) {
-	session, err := s.store.Get(s.r, "auth-session")
+	session, err := s.store.Get(s.r, "auth-session1")
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve from store: %v", err)
 	}
@@ -45,7 +45,7 @@ func (s *SessionStore) Get() (*mdl.User, error) {
 }
 
 func (s *SessionStore) Save(user mdl.User) error {
-	session, err := s.store.Get(s.r, "auth-session")
+	session, err := s.store.Get(s.r, "auth-session1")
 	if err != nil {
 		return fmt.Errorf("cannot retrieve from store: %v", err)
 	}

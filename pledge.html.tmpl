@@ -1,6 +1,5 @@
 {{ template "header.html.tmpl" . }}
 <h1>Pledge</h1>
-<p> Hello {{ .User.Fullname }}</p>
 
 <h2>Select the item you're going to boycott</h2>
 
@@ -15,14 +14,4 @@
 <input type="submit" value="Submit">
 
 </form>
-
-
-<h2>Options</h2>
-
-<ul>
-<li> <a href="/signin">Sign In</a></li>
-<li> <a href="/logout">Log out</a></li>
-<li> <a href="/pledge">Pledge Support</a></li>
-</ul>
-
 {{ template "footer.html.tmpl" . }}

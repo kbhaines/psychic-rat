@@ -193,7 +193,8 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	if _, err := apis.Item.GetById(itemId); err != nil {
+	item, err := apis.Item.GetById(itemId)
+	if err != nil {
 		log.Printf("error looking up item %v : %v", itemId, err)
 		http.Error(writer, "", http.StatusBadRequest)
 		return
@@ -211,13 +212,12 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	log.Printf("pledge %v created", plId)
-	vars := struct {
-		Username string
-		PledgeId string
-	}{string(userId), string(plId)}
-	_ = vars
-	//renderPage(writer, "thanks.html.tmpl", vars)
-	return
+
+	vars := &pageVariables{
+		User:  *user,
+		Items: []types.ItemElement{item},
+	}
+	renderPage(writer, "pledge-post.html.tmpl", vars)
 }
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {

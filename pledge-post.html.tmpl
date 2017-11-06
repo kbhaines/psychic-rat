@@ -1,0 +1,7 @@
+{{ template "header.html.tmpl" . }}
+<h1>Pledge submitted</h1>
+
+{{ $item := index .Items 0 }}
+<p>Thank you for supporting this cause with your boycott of {{ printf "%s %s by %s" $item.Make $item.Model $item.Company }} </p>
+
+{{ template "footer.html.tmpl" . }}

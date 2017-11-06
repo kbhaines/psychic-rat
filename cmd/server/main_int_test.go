@@ -10,6 +10,8 @@ import (
 	"testing"
 )
 
+// Todo : move mock data into tests
+
 var testUrl = "http://localhost:8080"
 
 func TestHomePage(t *testing.T) {
@@ -75,23 +77,36 @@ func TestPledgeWithLogin(t *testing.T) {
 	client := http.Client{Jar: cookie}
 	resp, err := client.Get(testUrl + "/pledge")
 	testPageStatus(resp, err, http.StatusOK, t)
+
+	strBody := readResponseBody(resp, t)
+	expected := []string{
+		"Kevin",
+		"<select ",
+		"<input type=\"submit\"",
+	}
+	testStrings(strBody, expected, t)
+}
+
+func readResponseBody(resp *http.Response, t *testing.T) string {
+	t.Helper()
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		t.Fatal(err)
 	}
-	strBody := string(body)
-	if !strings.Contains(strBody, "Kevin") {
-		t.Error("body does not contain greeting for user")
+	return string(body)
+}
+
+func testStrings(body string, expectedStrings []string, t *testing.T) {
+	t.Helper()
+	for _, s := range expectedStrings {
+		if !strings.Contains(body, s) {
+			t.Errorf("body did not contain '%s'", s)
+		}
 	}
-	if !strings.Contains(strBody, "<select ") {
-		t.Error("body does not contain <select ")
+	if t.Failed() {
+		t.Errorf("body was %s", body)
 	}
-	if !strings.Contains(strBody, "<input type=\"submit\"") {
-		t.Error("body does not contain <input> for submit button")
-	}
-	// Todo : move mock data
-	// Todo: move to using handler-based testing
 }
 
 func TestHappyPathPledge(t *testing.T) {
@@ -99,7 +114,14 @@ func TestHappyPathPledge(t *testing.T) {
 	defer server.Close()
 	cookie := loginUser("testuser1", t)
 	client := http.Client{Jar: cookie}
-	data := url.Values{"item": {"2"}}
+	data := url.Values{"item": {"1"}}
 	resp, err := client.PostForm(testUrl+"/pledge", data)
 	testPageStatus(resp, err, http.StatusOK, t)
+
+	expected := []string{
+		"boycott of phone abc by bigco1",
+		"Signed in as Kevin",
+	}
+	body := readResponseBody(resp, t)
+	testStrings(body, expected, t)
 }
