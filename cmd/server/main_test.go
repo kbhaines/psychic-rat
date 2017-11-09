@@ -34,6 +34,14 @@ func (m *mockItemApi) AddItem(item mdl.NewItem) error {
 	panic("not implemented")
 }
 
+func (m *mockItemApi) ApproveItem(id mdl.ID) error {
+	return nil
+}
+
+func (m *mockItemApi) ListNewItems() ([]mdl.NewItem, error) {
+	return nil, nil
+}
+
 func mockSession(request *http.Request) bool {
 	return true
 }
