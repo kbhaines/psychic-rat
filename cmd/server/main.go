@@ -33,9 +33,11 @@ type (
 	}
 
 	ItemApi interface {
-		//AddItem(make string, model string, company company.Id) error
 		ListItems() (types.ItemReport, error)
 		GetById(id mdl.ID) (types.ItemElement, error)
+		AddItem(item mdl.NewItem) error
+		ListNewItems() ([]mdl.NewItem, error)
+		ApproveItem(id mdl.ID) error
 	}
 
 	PledgeApi interface {

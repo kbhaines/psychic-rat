@@ -30,6 +30,10 @@ func (m *mockItemApi) GetById(id mdl.ID) (types.ItemElement, error) {
 	panic("not implemented")
 }
 
+func (m *mockItemApi) AddItem(item mdl.NewItem) error {
+	panic("not implemented")
+}
+
 func mockSession(request *http.Request) bool {
 	return true
 }

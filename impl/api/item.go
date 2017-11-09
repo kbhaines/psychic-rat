@@ -47,6 +47,21 @@ func (i *itemRepoApi) GetById(id mdl.ID) (types.ItemElement, error) {
 	return types.ItemElement{item.Id, item.Make, item.Model, co.Name}, err
 }
 
+var newItems = make([]mdl.NewItem, 0)
+
+func (i *itemRepoApi) AddItem(item mdl.NewItem) error {
+	newItems = append(newItems, item)
+	return nil
+}
+
+func (i *itemRepoApi) ApproveItem(id mdl.ID) error {
+	return nil
+}
+
+func (i *itemRepoApi) ListNewItems() ([]mdl.NewItem, error) {
+	return nil, nil
+}
+
 //func checkDuplicate(item mdl.Record) error {
 //	itemsToCheck := itemRepo.GetAllByCompany(mdl.Company())
 //	for _, i := range itemsToCheck {
