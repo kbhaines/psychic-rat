@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"io/ioutil"
@@ -22,7 +22,7 @@ func TestHomePage(t *testing.T) {
 }
 
 func newServer() *httptest.Server {
-	server := httptest.NewServer(handler())
+	server := httptest.NewServer(Handler())
 	testUrl = server.URL
 	return server
 }

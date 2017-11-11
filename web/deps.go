@@ -1,4 +1,4 @@
-package main
+package web
 
 import (
 	"psychic-rat/auth0"

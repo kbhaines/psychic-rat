@@ -1,6 +1,4 @@
-// +build !integration
-
-package main
+package web
 
 import (
 	"net/http"

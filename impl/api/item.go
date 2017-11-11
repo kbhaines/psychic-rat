@@ -47,6 +47,9 @@ func (i *itemRepoApi) GetById(id mdl.ID) (types.ItemElement, error) {
 	return types.ItemElement{item.Id, item.Make, item.Model, co.Name}, err
 }
 
+// TODO: considering getting rid of repo interfaces/implementations and just
+// working directly from API
+
 var newItems = make([]mdl.NewItem, 0)
 
 func (i *itemRepoApi) AddItem(item mdl.NewItem) error {
