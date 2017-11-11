@@ -10,24 +10,24 @@ import (
 )
 
 type (
-	UriHandler struct {
+	URIHandler struct {
 		URI     string
 		Handler http.HandlerFunc
 	}
 
 	API struct {
-		Company CompanyApi
-		Item    ItemApi
-		Pledge  PledgeApi
-		User    UserApi
+		Company CompanyAPI
+		Item    ItemAPI
+		Pledge  PledgeAPI
+		User    UserAPI
 	}
 
-	CompanyApi interface {
+	CompanyAPI interface {
 		GetCompanies() (types.CompanyListing, error)
 		GetById(mdl.ID) (types.CompanyElement, error)
 	}
 
-	ItemApi interface {
+	ItemAPI interface {
 		ListItems() (types.ItemReport, error)
 		GetById(id mdl.ID) (types.ItemElement, error)
 		AddItem(item mdl.NewItem) error
@@ -35,19 +35,19 @@ type (
 		ApproveItem(id mdl.ID) error
 	}
 
-	PledgeApi interface {
+	PledgeAPI interface {
 		NewPledge(itemId mdl.ID, userId mdl.ID) (mdl.ID, error)
 		//ListPledges() PledgeListing
 	}
 
-	UserApi interface {
+	UserAPI interface {
 		GetById(userId mdl.ID) (*mdl.User, error)
 		Create(mdl.User) error
 	}
 )
 
 var (
-	uriHandlers = []UriHandler{
+	uriHandlers = []URIHandler{
 		{rest.HomePage, HomePageHandler},
 		{rest.SignInPage, SignInPageHandler},
 		{rest.PledgePage, PledgePageHandler},
