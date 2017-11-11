@@ -1,13 +1,11 @@
 package web
 
 import (
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/auth0"
 	"psychic-rat/mdl"
+	"psychic-rat/sqldb"
 	"psychic-rat/types"
 )
 
@@ -58,6 +56,7 @@ var (
 	}
 
 	apis API
+	db   sqldb.DB
 
 	flags struct {
 		enableAuth0, sqldb bool
@@ -70,16 +69,4 @@ func Handler() http.Handler {
 		hmux.HandleFunc(h.URI, h.Handler)
 	}
 	return hmux
-}
-
-func ToJson(writer io.Writer, v interface{}) {
-	fmt.Fprintf(writer, "%s", ToJsonString(v))
-}
-
-func ToJsonString(v interface{}) string {
-	js, err := json.Marshal(v)
-	if err != nil {
-		panic(fmt.Sprintf("unable to convert %T (%v)to json", v, v))
-	}
-	return string(js)
 }

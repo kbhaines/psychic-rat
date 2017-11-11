@@ -4,6 +4,7 @@ import (
 	"psychic-rat/auth0"
 	"psychic-rat/impl/api"
 	"psychic-rat/impl/repo"
+	"psychic-rat/sqldb"
 )
 
 func init() {
@@ -20,4 +21,11 @@ func init() {
 		User:    api.NewUserApi(repos),
 	}
 	auth0.Init(apis.User)
+
+	var err error
+	db, err = sqldb.NewDB("pr.dat")
+	if err != nil {
+		panic("unable to init db: " + err.Error())
+	}
+
 }
