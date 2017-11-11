@@ -6,19 +6,19 @@ import (
 )
 
 type CompanyListing struct {
-	Companies []CompanyElement `json:"companies"`
+	Companies []Company `json:"companies"`
 }
 
-type CompanyElement struct {
+type Company struct {
 	Id   mdl.ID `json:"id"`
 	Name string `json:"name"`
 }
 
 type ItemReport struct {
-	Items []ItemElement `json:"items"`
+	Items []Item `json:"items"`
 }
 
-type ItemElement struct {
+type Item struct {
 	Id      mdl.ID `json:"id"`
 	Make    string `json:"make"`
 	Model   string `json:"model"`
@@ -26,13 +26,13 @@ type ItemElement struct {
 }
 
 type PledgeListing struct {
-	Pledges []PledgeElement `json:"pledges"`
+	Pledges []Pledge `json:"pledges"`
 }
 
-type PledgeElement struct {
-	PledgeId  mdl.ID      `json:"id"`
-	Item      ItemElement `json:"item"`
-	Timestamp time.Time   `json:"timestamp"`
+type Pledge struct {
+	PledgeId  mdl.ID    `json:"id"`
+	Item      Item      `json:"item"`
+	Timestamp time.Time `json:"timestamp"`
 }
 
 type PledgeRequest struct {

@@ -22,7 +22,7 @@ type (
 
 	pageVariables struct {
 		Auth0
-		Items []types.ItemElement
+		Items []types.Item
 		User  mdl.User
 	}
 
@@ -215,7 +215,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 
 	vars := &pageVariables{
 		User:  *user,
-		Items: []types.ItemElement{item},
+		Items: []types.Item{item},
 	}
 	renderPage(writer, "pledge-post.html.tmpl", vars)
 }

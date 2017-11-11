@@ -24,12 +24,12 @@ type (
 
 	CompanyAPI interface {
 		GetCompanies() (types.CompanyListing, error)
-		GetById(mdl.ID) (types.CompanyElement, error)
+		GetById(mdl.ID) (types.Company, error)
 	}
 
 	ItemAPI interface {
 		ListItems() (types.ItemReport, error)
-		GetById(id mdl.ID) (types.ItemElement, error)
+		GetById(id mdl.ID) (types.Item, error)
 		AddItem(item mdl.NewItem) error
 		ListNewItems() ([]mdl.NewItem, error)
 		ApproveItem(id mdl.ID) error
@@ -56,7 +56,7 @@ var (
 	}
 
 	apis API
-	db   sqldb.DB
+	db   *sqldb.DB
 
 	flags struct {
 		enableAuth0, sqldb bool

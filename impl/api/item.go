@@ -27,24 +27,24 @@ type itemRepoApi struct {
 func (i *itemRepoApi) ListItems() (types.ItemReport, error) {
 	items := i.repos.Item.List()
 	coRepo := i.repos.Company
-	results := make([]types.ItemElement, len(items))
+	results := make([]types.Item, len(items))
 	for i, item := range items {
 		company, _ := coRepo.GetById(item.CompanyID)
-		results[i] = types.ItemElement{item.Id, item.Make, item.Model, company.Name}
+		results[i] = types.Item{item.Id, item.Make, item.Model, company.Name}
 	}
 	return types.ItemReport{results}, nil
 }
 
-func (i *itemRepoApi) GetById(id mdl.ID) (types.ItemElement, error) {
+func (i *itemRepoApi) GetById(id mdl.ID) (types.Item, error) {
 	item, err := i.repos.Item.GetById(id)
 	if err != nil {
-		return types.ItemElement{}, err
+		return types.Item{}, err
 	}
 	co, err := i.repos.Company.GetById(item.CompanyID)
 	if err != nil {
-		return types.ItemElement{}, err
+		return types.Item{}, err
 	}
-	return types.ItemElement{item.Id, item.Make, item.Model, co.Name}, err
+	return types.Item{item.Id, item.Make, item.Model, co.Name}, err
 }
 
 // TODO: considering getting rid of repo interfaces/implementations and just
@@ -117,7 +117,7 @@ func (ia *itemRestApi) ListItems() (types.ItemReport, error) {
 	return ItemsFromJson(bytes)
 }
 
-func (a *itemRestApi) GetById(id mdl.ID) (types.ItemElement, error) {
+func (a *itemRestApi) GetById(id mdl.ID) (types.Item, error) {
 	panic("Not implemented")
 }
 

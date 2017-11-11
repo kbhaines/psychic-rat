@@ -43,8 +43,8 @@ func (d *DB) NewCompany(c mdl.Company) error {
 }
 
 func (d *DB) GetCompanies() (types.CompanyListing, error) {
-	rows, err := d.Query("select id, name from companies")
 	result := types.CompanyListing{}
+	rows, err := d.Query("select id, name from companies")
 	if err != nil {
 		return result, err
 	}
@@ -55,11 +55,11 @@ func (d *DB) GetCompanies() (types.CompanyListing, error) {
 		if err != nil {
 			return result, err
 		}
-		result.Companies = append(result.Companies, types.CompanyElement{Id: mdl.ID(strconv.Itoa(id)), Name: name})
+		result.Companies = append(result.Companies, types.Company{Id: mdl.ID(strconv.Itoa(id)), Name: name})
 	}
 	return result, nil
 }
 
-func (d *DB) GetById(mdl.ID) (types.CompanyElement, error) {
+func (d *DB) GetById(mdl.ID) (types.Company, error) {
 	panic("not implemented")
 }
