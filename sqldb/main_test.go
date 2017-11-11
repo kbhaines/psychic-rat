@@ -1,7 +1,7 @@
 package sqldb
 
 import (
-	"psychic-rat/mdl"
+	"os"
 	"psychic-rat/types"
 	"testing"
 )
@@ -14,6 +14,7 @@ var (
 
 func TestCreateDB(t *testing.T) {
 	db := initDB(t)
+	defer os.Remove("test.db")
 	cs, err := db.GetCompanies()
 	if err != nil {
 		t.Fatal(err)
@@ -30,13 +31,13 @@ func TestCreateDB(t *testing.T) {
 
 func initDB(t *testing.T) *DB {
 	t.Helper()
-	db, err := NewDB("test.db")
+	db, err := NewDB("test1.db")
 	if err != nil {
 		t.Fatalf("could not init DB: %v", err)
 	}
 
 	for _, c := range testCos {
-		err = db.NewCompany(mdl.Company{Name: c})
+		err = db.NewCompany(types.Company{Name: c})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -46,6 +47,7 @@ func initDB(t *testing.T) *DB {
 
 func TestGetCompanyById(t *testing.T) {
 	db := initDB(t)
+	defer os.Remove("test.db")
 	id := 1
 	c, err := db.GetCompany(id)
 	if err != nil {
@@ -61,6 +63,7 @@ func TestGetCompanyById(t *testing.T) {
 
 func TestListItems(t *testing.T) {
 	db := initDB(t)
+	defer os.Remove("test.db")
 	items, err := db.ListItems()
 	if err != nil {
 		t.Fatal(err)

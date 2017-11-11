@@ -18,20 +18,6 @@ type Item struct {
 	CompanyID ID
 }
 
-// NewItem is a record of a (user) request to add a new item to the database of
-// Items. 'Company' will be used if also adding in a new company to the
-// database. IsPledge is true if the user also pledged the item
-type NewItem struct {
-	Id        ID
-	UserID    ID
-	IsPledge  bool
-	Make      string
-	Model     string
-	Company   string
-	CompanyID ID
-	Timestamp time.Time
-}
-
 type Pledge struct {
 	Id        ID
 	UserID    ID

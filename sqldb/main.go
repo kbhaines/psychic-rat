@@ -3,7 +3,6 @@ package sqldb
 import (
 	"database/sql"
 	"os"
-	"psychic-rat/mdl"
 	"psychic-rat/types"
 	"strconv"
 
@@ -20,7 +19,10 @@ func NewDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	createSchema(db)
+	err = createSchema(db)
+	if err != nil {
+		return nil, err
+	}
 	return &DB{db}, nil
 }
 
@@ -29,12 +31,22 @@ func createSchema(db *sql.DB) error {
 	create table companies (id integer primary key, name string);
 	create table items (id integer primary key,
 	  make string, model string, companyId integer);
+	
+	create table newItems(id integer primary key, 
+	  userId integer,
+	  isPledge boolean,
+	  make string, 
+	  model string, 
+	  company string,
+	  companyId integer,
+	  timestamp date
+	  );
 	`
 	_, err := db.Exec(stmt)
 	return err
 }
 
-func (d *DB) NewCompany(c mdl.Company) error {
+func (d *DB) NewCompany(c types.Company) error {
 	stmt, err := d.Prepare("insert into companies(name) values(?)")
 	if err != nil {
 		return err
@@ -92,11 +104,20 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 	panic("not implemented")
 }
 
-func (d *DB) AddItem(item mdl.NewItem) error {
-	panic("not implemented")
+func (d *DB) AddNewItem(i types.NewItem) error {
+	s, err := d.Prepare("insert into newItems(userId, isPledge, make, model, company, companyId) values (?,?,?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	defer s.Close()
+	_, err = s.Exec(i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (d *DB) ListNewItems() ([]mdl.NewItem, error) {
+func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	panic("not implemented")
 }
 
