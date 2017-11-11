@@ -27,6 +27,8 @@ func NewDB(name string) (*DB, error) {
 func createSchema(db *sql.DB) error {
 	stmt := `
 	create table companies (id integer primary key, name string);
+	create table items (id integer primary key,
+	  make string, model string, companyId integer);
 	`
 	_, err := db.Exec(stmt)
 	return err
@@ -49,17 +51,55 @@ func (d *DB) GetCompanies() (types.CompanyListing, error) {
 		return result, err
 	}
 	for rows.Next() {
-		var id int
-		var name string
-		err = rows.Scan(&id, &name)
+		var co types.Company
+		err = rows.Scan(&co.Id, &co.Name)
 		if err != nil {
 			return result, err
 		}
-		result.Companies = append(result.Companies, types.Company{Id: mdl.ID(strconv.Itoa(id)), Name: name})
+		result.Companies = append(result.Companies, co)
 	}
 	return result, nil
 }
 
-func (d *DB) GetById(mdl.ID) (types.Company, error) {
+func (d *DB) GetCompany(id int) (types.Company, error) {
+	result := types.Company{}
+	err := d.QueryRow("select id, name from companies where id = "+strconv.Itoa(id)).Scan(&result.Id, &result.Name)
+	if err != nil {
+		return result, err
+	}
+	return result, nil
+}
+
+func (d *DB) ListItems() (types.ItemReport, error) {
+	ir := types.ItemReport{}
+	rows, err := d.Query("select id, make, model, companyId from items")
+	if err != nil {
+		return ir, err
+	}
+	for rows.Next() {
+		item := types.Item{}
+		var coid int
+		err = rows.Scan(&item.Id, &item.Make, &item.Model, &coid)
+		if err != nil {
+			return ir, err
+		}
+		ir.Items = append(ir.Items, item)
+	}
+	return ir, nil
+}
+
+func (d *DB) GetItem(id int) (types.Item, error) {
+	panic("not implemented")
+}
+
+func (d *DB) AddItem(item mdl.NewItem) error {
+	panic("not implemented")
+}
+
+func (d *DB) ListNewItems() ([]mdl.NewItem, error) {
+	panic("not implemented")
+}
+
+func (d *DB) ApproveItem(id int) error {
 	panic("not implemented")
 }

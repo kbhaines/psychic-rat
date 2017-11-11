@@ -24,7 +24,7 @@ func (m *mockItemApi) ListItems() (types.ItemReport, error) {
 	return mockItemReport, nil
 }
 
-func (m *mockItemApi) GetById(id mdl.ID) (types.Item, error) {
+func (m *mockItemApi) GetItem(id mdl.ID) (types.Item, error) {
 	panic("not implemented")
 }
 

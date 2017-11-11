@@ -24,24 +24,24 @@ type (
 
 	CompanyAPI interface {
 		GetCompanies() (types.CompanyListing, error)
-		GetById(mdl.ID) (types.Company, error)
+		GetCompany(int) (types.Company, error)
 	}
 
 	ItemAPI interface {
 		ListItems() (types.ItemReport, error)
-		GetById(id mdl.ID) (types.Item, error)
+		GetItem(id int) (types.Item, error)
 		AddItem(item mdl.NewItem) error
 		ListNewItems() ([]mdl.NewItem, error)
-		ApproveItem(id mdl.ID) error
+		ApproveItem(id int) error
 	}
 
 	PledgeAPI interface {
-		NewPledge(itemId mdl.ID, userId mdl.ID) (mdl.ID, error)
+		NewPledge(itemId int, userId int) (int, error)
 		//ListPledges() PledgeListing
 	}
 
 	UserAPI interface {
-		GetById(userId mdl.ID) (*mdl.User, error)
+		GetUser(userId int) (*mdl.User, error)
 		Create(mdl.User) error
 	}
 )

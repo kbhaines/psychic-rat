@@ -122,7 +122,7 @@ func authUser(request *http.Request, session *sess.SessionStore) error {
 		return fmt.Errorf("userId not specified")
 	}
 
-	user, err := apis.User.GetById(mdl.ID(userId))
+	user, err := apis.User.GetUser(mdl.ID(userId))
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
@@ -193,7 +193,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	item, err := apis.Item.GetById(itemId)
+	item, err := apis.Item.GetItem(itemId)
 	if err != nil {
 		log.Printf("error looking up item %v : %v", itemId, err)
 		http.Error(writer, "", http.StatusBadRequest)

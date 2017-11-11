@@ -1,7 +1,6 @@
 package types
 
 import (
-	"psychic-rat/mdl"
 	"time"
 )
 
@@ -10,7 +9,7 @@ type CompanyListing struct {
 }
 
 type Company struct {
-	Id   mdl.ID `json:"id"`
+	Id   int    `json:"id"`
 	Name string `json:"name"`
 }
 
@@ -19,7 +18,7 @@ type ItemReport struct {
 }
 
 type Item struct {
-	Id      mdl.ID `json:"id"`
+	Id      int    `json:"id"`
 	Make    string `json:"make"`
 	Model   string `json:"model"`
 	Company string `json:"company"`
@@ -30,11 +29,11 @@ type PledgeListing struct {
 }
 
 type Pledge struct {
-	PledgeId  mdl.ID    `json:"id"`
+	PledgeId  int       `json:"id"`
 	Item      Item      `json:"item"`
 	Timestamp time.Time `json:"timestamp"`
 }
 
 type PledgeRequest struct {
-	ItemId mdl.ID `json:"itemId"`
+	ItemId int `json:"itemId"`
 }
