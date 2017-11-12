@@ -30,6 +30,7 @@ func NewDB(name string) (*DB, error) {
 func createSchema(db *sql.DB) error {
 	stmt := `
 	create table companies (id integer primary key, name string);
+
 	create table items (id integer primary key,
 	  make string, model string, companyId integer);
 	

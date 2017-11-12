@@ -33,18 +33,18 @@ type (
 	}
 
 	NewItemAPI interface {
-		AddNewItem(item mdl.NewItem) error
-		ListNewItems() ([]mdl.NewItem, error)
+		AddNewItem(types.NewItem) error
+		ListNewItems() ([]types.NewItem, error)
 		ApproveItem(id int) error
 	}
 
 	PledgeAPI interface {
-		NewPledge(itemId int, userId int) (int, error)
+		NewPledge(itemId int, userId string) (int, error)
 		//ListPledges() PledgeListing
 	}
 
 	UserAPI interface {
-		GetUser(userId int) (*mdl.User, error)
+		GetUser(userId string) (*mdl.User, error)
 		Create(mdl.User) error
 	}
 )

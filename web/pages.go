@@ -9,6 +9,7 @@ import (
 	"psychic-rat/mdl"
 	"psychic-rat/sess"
 	"psychic-rat/types"
+	"strconv"
 
 	"github.com/gorilla/sessions"
 )
@@ -122,7 +123,7 @@ func authUser(request *http.Request, session *sess.SessionStore) error {
 		return fmt.Errorf("userId not specified")
 	}
 
-	user, err := apis.User.GetUser(mdl.ID(userId))
+	user, err := apis.User.GetUser(userId)
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
@@ -187,11 +188,12 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	logDbgf("request = %+v\n", request)
 	logDbgf("request.Form= %+v\n", request.Form)
 
-	itemId := mdl.ID(request.FormValue("item"))
-	if itemId == "" {
+	itemId64, err := strconv.ParseInt(request.FormValue("item"), 10, 32)
+	if err != nil {
 		http.Error(writer, "", http.StatusBadRequest)
 		return
 	}
+	itemId := int(itemId64)
 
 	item, err := apis.Item.GetItem(itemId)
 	if err != nil {

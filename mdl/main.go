@@ -32,7 +32,7 @@ func (b ByTimeStamp) Less(i, j int) bool { return b[i].Timestamp.Before(b[j].Tim
 func (b ByTimeStamp) Swap(i, j int)      { b[i], b[j] = b[j], b[i] }
 
 type User struct {
-	Id        ID
+	Id        string
 	Country   string
 	FirstName string
 	Email     string
