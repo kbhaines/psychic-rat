@@ -5,6 +5,7 @@ import (
 	"os"
 	"psychic-rat/types"
 	"strconv"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -39,7 +40,7 @@ func createSchema(db *sql.DB) error {
 	  model string, 
 	  company string,
 	  companyId integer,
-	  timestamp date
+	  timestamp integer
 	  );
 	`
 	_, err := db.Exec(stmt)
@@ -104,21 +105,46 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 	panic("not implemented")
 }
 
-func (d *DB) AddNewItem(i types.NewItem) error {
-	s, err := d.Prepare("insert into newItems(userId, isPledge, make, model, company, companyId) values (?,?,?,?,?,?)")
+func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
+	s, err := d.Prepare("insert into newItems(userId, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer s.Close()
-	_, err = s.Exec(i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID)
+	timestamp := time.Now().Truncate(time.Second)
+	r, err := s.Exec(i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	lastId, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	new := i
+	new.Timestamp = timestamp
+	new.Id = int(lastId)
+	return &new, nil
 }
 
+// TODO: make it compile/check on save
+// TODO: highlight errors in gutter
 func (d *DB) ListNewItems() ([]types.NewItem, error) {
-	panic("not implemented")
+	result := []types.NewItem{}
+	rows, err := d.Query("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		var n types.NewItem
+		var timestamp int64
+		err = rows.Scan(&n.Id, &n.UserID, &n.IsPledge, &n.Make, &n.Model, &n.Company, &n.CompanyID, &timestamp)
+		if err != nil {
+			return result, err
+		}
+		n.Timestamp = time.Unix(timestamp, 0)
+		result = append(result, n)
+	}
+	return result, nil
 }
 
 func (d *DB) ApproveItem(id int) error {
