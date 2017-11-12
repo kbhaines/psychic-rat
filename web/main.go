@@ -30,6 +30,9 @@ type (
 	ItemAPI interface {
 		ListItems() (types.ItemReport, error)
 		GetItem(id int) (types.Item, error)
+	}
+
+	NewItemAPI interface {
 		AddNewItem(item mdl.NewItem) error
 		ListNewItems() ([]mdl.NewItem, error)
 		ApproveItem(id int) error
