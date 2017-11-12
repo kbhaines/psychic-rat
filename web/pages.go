@@ -128,7 +128,6 @@ func authUser(request *http.Request, session *sess.SessionStore) error {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
 	return session.Save(*user)
-
 }
 
 func signInAuth0(writer http.ResponseWriter, request *http.Request) {

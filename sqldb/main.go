@@ -3,6 +3,7 @@ package sqldb
 import (
 	"database/sql"
 	"os"
+	"psychic-rat/mdl"
 	"psychic-rat/types"
 	"strconv"
 	"time"
@@ -46,9 +47,9 @@ func createSchema(db *sql.DB) error {
 	  timestamp integer);
 
 	create table users (id string primary key,
-	  fullname string,
-	  country string,
+	  fullName string,
 	  firstName string,
+	  country string,
 	  email string);
 	`
 	_, err := db.Exec(stmt)
@@ -173,5 +174,27 @@ func (d *DB) ListNewItems() ([]types.NewItem, error) {
 }
 
 func (d *DB) ApproveItem(id int) error {
+	panic("not implemented")
+}
+
+func (d *DB) GetUser(userId string) (*mdl.User, error) {
+	result := mdl.User{}
+	err := d.QueryRow("select id, fullname, firstName, country, email from users where id= \""+userId+"\"").Scan(&result.Id, &result.Fullname, &result.FirstName, &result.Country, &result.Email)
+	if err != nil {
+		return &result, err
+	}
+	return &result, nil
+}
+
+func (d *DB) CreateUser(u mdl.User) error {
+	stmt, err := d.Prepare("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)")
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
+	return nil
+}
+
+func (d *DB) NewPledge(itemId int, userId string) (int, error) {
 	panic("not implemented")
 }

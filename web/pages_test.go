@@ -8,18 +8,24 @@ import (
 	"testing"
 )
 
-var mockItemReport = types.ItemReport{
-	Items: []types.Item{
-		types.Item{Id: 123, Make: "phone", Model: "x124", Company: "bigco1"},
-		types.Item{Id: 124, Make: "phone", Model: "x125", Company: "bigco2"},
-		types.Item{Id: 125, Make: "phone", Model: "x126", Company: "bigco2"},
-		types.Item{Id: 126, Make: "phone", Model: "x127", Company: "bigco3"},
-	},
-}
+var (
+	mockCompanies = []types.Company{
+		types.Company{Name: "bigco1"},
+		types.Company{Name: "bigco2"},
+		types.Company{Name: "bigco3"},
+	}
+
+	mockItemReport = []types.Item{
+		types.Item{Id: 123, Make: "phone", Model: "x124", Company: mockCompanies[0]},
+		types.Item{Id: 124, Make: "phone", Model: "x125", Company: mockCompanies[1]},
+		types.Item{Id: 125, Make: "phone", Model: "x126", Company: mockCompanies[1]},
+		types.Item{Id: 126, Make: "phone", Model: "x127", Company: mockCompanies[2]},
+	}
+)
 
 type mockItemApi struct{}
 
-func (m *mockItemApi) ListItems() (types.ItemReport, error) {
+func (m *mockItemApi) ListItems() ([]types.Item, error) {
 	return mockItemReport, nil
 }
 
@@ -33,7 +39,7 @@ func mockSession(request *http.Request) bool {
 
 func TestPledgeListItems(t *testing.T) {
 	apis = API{Item: &mockItemApi{}}
-	expectedVars := pageVariables{Items: mockItemReport.Items}
+	expectedVars := pageVariables{Items: mockItemReport}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	isUserLoggedIn = mockSession
 	req := &http.Request{Method: "GET"}

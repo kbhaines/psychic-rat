@@ -6,6 +6,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"psychic-rat/mdl"
 	"strings"
 	"testing"
 )
@@ -14,6 +15,28 @@ import (
 
 var testUrl = "http://localhost:8080"
 
+var testUsers = []mdl.User{
+	mdl.User{Id: "test1", Fullname: "user1 full", FirstName: "user1", Email: "user1@user.com"},
+	mdl.User{Id: "test2", Fullname: "user2 full", FirstName: "user2", Email: "user2@user.com"},
+	mdl.User{Id: "test3", Fullname: "user3 full", FirstName: "user3", Email: "user3@user.com"},
+	mdl.User{Id: "test4", Fullname: "user4 full", FirstName: "user4", Email: "user4@user.com"},
+	mdl.User{Id: "test5", Fullname: "user5 full", FirstName: "user5", Email: "user5@user.com"},
+	mdl.User{Id: "test6", Fullname: "user6 full", FirstName: "user6", Email: "user6@user.com"},
+	mdl.User{Id: "test7", Fullname: "user7 full", FirstName: "user7", Email: "user7@user.com"},
+	mdl.User{Id: "test8", Fullname: "user8 full", FirstName: "user8", Email: "user8@user.com"},
+	mdl.User{Id: "test9", Fullname: "user9 full", FirstName: "user9", Email: "user9@user.com"},
+	mdl.User{Id: "test10", Fullname: "user10 full", FirstName: "user10", Email: "user10@user.com"},
+}
+
+func initUsers(t *testing.T) {
+	t.Helper()
+	for _, u := range testUsers {
+		err := apis.User.CreateUser(u)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
 func TestHomePage(t *testing.T) {
 	server := newServer()
 	defer server.Close()
@@ -54,7 +77,8 @@ func TestThankYouWithoutLogin(t *testing.T) {
 func TestSignin(t *testing.T) {
 	server := newServer()
 	defer server.Close()
-	loginUser("testuser1", t)
+	initUsers(t)
+	loginUser("test1", t)
 }
 
 func loginUser(user string, t *testing.T) http.CookieJar {
@@ -72,15 +96,16 @@ func loginUser(user string, t *testing.T) http.CookieJar {
 func TestPledgeWithLogin(t *testing.T) {
 	server := newServer()
 	defer server.Close()
+	initUsers(t)
 
-	cookie := loginUser("testuser1", t)
+	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	resp, err := client.Get(testUrl + "/pledge")
 	testPageStatus(resp, err, http.StatusOK, t)
 
 	strBody := readResponseBody(resp, t)
 	expected := []string{
-		"Kevin",
+		"user1 full",
 		"<select ",
 		"<input type=\"submit\"",
 	}
@@ -112,7 +137,7 @@ func testStrings(body string, expectedStrings []string, t *testing.T) {
 func TestHappyPathPledge(t *testing.T) {
 	server := newServer()
 	defer server.Close()
-	cookie := loginUser("testuser1", t)
+	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	data := url.Values{"item": {"1"}}
 	resp, err := client.PostForm(testUrl+"/pledge", data)

@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"os"
+	"psychic-rat/mdl"
 	"psychic-rat/types"
 	"reflect"
 	"testing"
@@ -140,4 +141,43 @@ func initNewItems(db *DB, t *testing.T) []types.NewItem {
 		res = append(res, *n)
 	}
 	return res
+}
+
+func TestNewUser(t *testing.T) {
+	db := initDB(t)
+	defer os.Remove("test.db")
+	initUsers(db, t)
+
+	for _, u := range testUsers {
+		user, err := db.GetUser(u.Id)
+		if err != nil {
+			t.Fatal("error from db.GetUser:" + err.Error())
+		}
+		if reflect.DeepEqual(u, user) {
+			t.Fatalf("expected %v got %v", u, user)
+		}
+	}
+}
+
+var testUsers = []mdl.User{
+	mdl.User{Id: "test1", FirstName: "user1", Email: "user1@user.com"},
+	mdl.User{Id: "test2", FirstName: "user2", Email: "user2@user.com"},
+	mdl.User{Id: "test3", FirstName: "user3", Email: "user3@user.com"},
+	mdl.User{Id: "test4", FirstName: "user4", Email: "user4@user.com"},
+	mdl.User{Id: "test5", FirstName: "user5", Email: "user5@user.com"},
+	mdl.User{Id: "test6", FirstName: "user6", Email: "user6@user.com"},
+	mdl.User{Id: "test7", FirstName: "user7", Email: "user7@user.com"},
+	mdl.User{Id: "test8", FirstName: "user8", Email: "user8@user.com"},
+	mdl.User{Id: "test9", FirstName: "user9", Email: "user9@user.com"},
+	mdl.User{Id: "test10", FirstName: "user10", Email: "user10@user.com"},
+}
+
+func initUsers(db *DB, t *testing.T) {
+	t.Helper()
+	for _, u := range testUsers {
+		err := db.CreateUser(u)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }

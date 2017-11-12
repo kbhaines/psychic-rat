@@ -6,13 +6,17 @@ import (
 )
 
 func init() {
-	apis = API{}
-	auth0.Init(apis.User)
-
 	var err error
 	db, err = sqldb.NewDB("pr.dat")
 	if err != nil {
 		panic("unable to init db: " + err.Error())
 	}
 
+	apis = API{
+		Company: db,
+		Item:    db,
+		Pledge:  db,
+		User:    db,
+	}
+	auth0.Init(apis.User)
 }

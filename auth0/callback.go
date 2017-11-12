@@ -15,7 +15,7 @@ import (
 
 type UserAPI interface {
 	GetUser(id string) (*mdl.User, error)
-	Create(mdl.User) error
+	CreateUser(mdl.User) error
 }
 
 var (
@@ -87,7 +87,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 			FirstName: profile["given_name"].(string),
 			Country:   profile["locale"].(string),
 		}
-		err := userAPI.Create(*userRecord)
+		err := userAPI.CreateUser(*userRecord)
 		if err != nil {
 			log.Fatal("unable to create a user %v :%v", userRecord, err)
 			return

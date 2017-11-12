@@ -45,7 +45,7 @@ type (
 
 	UserAPI interface {
 		GetUser(userId string) (*mdl.User, error)
-		Create(mdl.User) error
+		CreateUser(mdl.User) error
 	}
 )
 
