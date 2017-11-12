@@ -32,7 +32,9 @@ func createSchema(db *sql.DB) error {
 	create table companies (id integer primary key, name string);
 
 	create table items (id integer primary key,
-	  make string, model string, companyId integer);
+	  make string, 
+	  model string, 
+	  companyId integer);
 	
 	create table newItems(id integer primary key, 
 	  userId integer,
@@ -41,8 +43,13 @@ func createSchema(db *sql.DB) error {
 	  model string, 
 	  company string,
 	  companyId integer,
-	  timestamp integer
-	  );
+	  timestamp integer);
+
+	create table users (id string primary key,
+	  fullname string,
+	  country string,
+	  firstName string,
+	  email string);
 	`
 	_, err := db.Exec(stmt)
 	return err
@@ -58,8 +65,8 @@ func (d *DB) NewCompany(c types.Company) error {
 	return err
 }
 
-func (d *DB) GetCompanies() (types.CompanyListing, error) {
-	result := types.CompanyListing{}
+func (d *DB) GetCompanies() ([]types.Company, error) {
+	result := []types.Company{}
 	rows, err := d.Query("select id, name from companies")
 	if err != nil {
 		return result, err
@@ -70,7 +77,7 @@ func (d *DB) GetCompanies() (types.CompanyListing, error) {
 		if err != nil {
 			return result, err
 		}
-		result.Companies = append(result.Companies, co)
+		result = append(result, co)
 	}
 	return result, nil
 }
@@ -84,8 +91,8 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 	return result, nil
 }
 
-func (d *DB) ListItems() (types.ItemReport, error) {
-	ir := types.ItemReport{}
+func (d *DB) ListItems() ([]types.Item, error) {
+	ir := []types.Item{}
 	rows, err := d.Query("select id, make, model, companyId from items")
 	if err != nil {
 		return ir, err
@@ -97,13 +104,32 @@ func (d *DB) ListItems() (types.ItemReport, error) {
 		if err != nil {
 			return ir, err
 		}
-		ir.Items = append(ir.Items, item)
+		ir = append(ir, item)
 	}
 	return ir, nil
 }
 
 func (d *DB) GetItem(id int) (types.Item, error) {
 	panic("not implemented")
+}
+
+func (d *DB) AddItem(i types.Item) (*types.Item, error) {
+	s, err := d.Prepare("insert into items(make, model, companyId) values (?,?,?)")
+	if err != nil {
+		return nil, err
+	}
+	defer s.Close()
+	r, err := s.Exec(i.Make, i.Model, i.Company.Id)
+	if err != nil {
+		return nil, err
+	}
+	lastId, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	new := i
+	new.Id = int(lastId)
+	return &new, nil
 }
 
 func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
@@ -127,8 +153,6 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	return &new, nil
 }
 
-// TODO: make it compile/check on save
-// TODO: highlight errors in gutter
 func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	result := []types.NewItem{}
 	rows, err := d.Query("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems")

@@ -10,7 +10,17 @@ import (
 var (
 	testCos = []string{"testco1", "testco2", "testco3"}
 
-	testItems = []types.Item{}
+	companies = []types.Company{
+		types.Company{0, "testco1"},
+		types.Company{1, "testco2"},
+	}
+
+	testItems = []types.Item{
+		types.Item{Id: 0, Make: "phone", Model: "xyz", Company: companies[0]},
+		types.Item{Id: 0, Make: "phone", Model: "133", Company: companies[0]},
+		types.Item{Id: 0, Make: "tablet", Model: "ab1", Company: companies[1]},
+		types.Item{Id: 0, Make: "tablet", Model: "xy1", Company: companies[1]},
+	}
 
 	newItems = []types.NewItem{
 		types.NewItem{Id: 1, UserID: 1, IsPledge: true, Make: "newPhone", Model: "newMod",
@@ -27,11 +37,11 @@ func TestCreateDB(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(testCos) != len(cs.Companies) {
-		t.Fatalf("expected %v records but got %v\nRecords:", len(testCos), len(cs.Companies), cs.Companies)
+	if len(testCos) != len(cs) {
+		t.Fatalf("expected %v records but got %v\nRecords:", len(testCos), len(cs), cs)
 	}
 	for i, c := range testCos {
-		if cs.Companies[i].Name != c {
+		if cs[i].Name != c {
 			t.Fatal("did not get record back")
 		}
 	}
@@ -39,7 +49,7 @@ func TestCreateDB(t *testing.T) {
 
 func initDB(t *testing.T) *DB {
 	t.Helper()
-	db, err := NewDB("test1.db")
+	db, err := NewDB("test.db")
 	if err != nil {
 		t.Fatalf("could not init DB: %v", err)
 	}
@@ -75,13 +85,29 @@ func TestGetCompanyById(t *testing.T) {
 
 func TestListItems(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
+	//defer os.Remove("test.db")
+	initItems(db, t)
 	items, err := db.ListItems()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(testItems) != len(items.Items) {
-		t.Fatalf("expected %v items, got %v items [%v]", len(testItems), len(items.Items), items.Items)
+	if len(testItems) != len(items) {
+		t.Fatalf("expected %v items, got %v items [%v]", len(testItems), len(items), items)
+	}
+	for i := range items {
+		if reflect.DeepEqual(testItems[i], items[i]) {
+			t.Fatalf("expected %v, got %v", testItems[i], items[i])
+		}
+	}
+}
+
+func initItems(db *DB, t *testing.T) {
+	t.Helper()
+	for _, item := range testItems {
+		_, err := db.AddItem(item)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 }
 

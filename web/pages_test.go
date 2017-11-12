@@ -3,7 +3,6 @@ package web
 import (
 	"net/http"
 	"net/http/httptest"
-	"psychic-rat/mdl"
 	"psychic-rat/types"
 	"reflect"
 	"testing"
@@ -11,10 +10,10 @@ import (
 
 var mockItemReport = types.ItemReport{
 	Items: []types.Item{
-		types.Item{Id: mdl.ID("123"), Make: "phone", Model: "x124", Company: "bigco1"},
-		types.Item{Id: mdl.ID("124"), Make: "phone", Model: "x125", Company: "bigco2"},
-		types.Item{Id: mdl.ID("125"), Make: "phone", Model: "x126", Company: "bigco2"},
-		types.Item{Id: mdl.ID("126"), Make: "phone", Model: "x127", Company: "bigco3"},
+		types.Item{Id: 123, Make: "phone", Model: "x124", Company: "bigco1"},
+		types.Item{Id: 124, Make: "phone", Model: "x125", Company: "bigco2"},
+		types.Item{Id: 125, Make: "phone", Model: "x126", Company: "bigco2"},
+		types.Item{Id: 126, Make: "phone", Model: "x127", Company: "bigco3"},
 	},
 }
 
@@ -24,20 +23,8 @@ func (m *mockItemApi) ListItems() (types.ItemReport, error) {
 	return mockItemReport, nil
 }
 
-func (m *mockItemApi) GetItem(id mdl.ID) (types.Item, error) {
+func (m *mockItemApi) GetItem(id int) (types.Item, error) {
 	panic("not implemented")
-}
-
-func (m *mockItemApi) AddItem(item mdl.NewItem) error {
-	panic("not implemented")
-}
-
-func (m *mockItemApi) ApproveItem(id mdl.ID) error {
-	return nil
-}
-
-func (m *mockItemApi) ListNewItems() ([]mdl.NewItem, error) {
-	return nil, nil
 }
 
 func mockSession(request *http.Request) bool {

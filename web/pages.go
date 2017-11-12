@@ -174,7 +174,7 @@ func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
-	vars := &pageVariables{Items: report.Items}
+	vars := &pageVariables{Items: report}
 	vars = vars.withSessionVars(request)
 	renderPage(writer, "pledge.html.tmpl", vars)
 }
