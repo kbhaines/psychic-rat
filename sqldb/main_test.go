@@ -86,7 +86,7 @@ func TestGetCompanyById(t *testing.T) {
 
 func TestListItems(t *testing.T) {
 	db := initDB(t)
-	//defer os.Remove("test.db")
+	defer os.Remove("test.db")
 	initItems(db, t)
 	items, err := db.ListItems()
 	if err != nil {
@@ -102,14 +102,17 @@ func TestListItems(t *testing.T) {
 	}
 }
 
-func initItems(db *DB, t *testing.T) {
+func initItems(db *DB, t *testing.T) []int {
 	t.Helper()
+	ids := []int{}
 	for _, item := range testItems {
-		_, err := db.AddItem(item)
+		i, err := db.AddItem(item)
 		if err != nil {
 			t.Fatal(err)
 		}
+		ids = append(ids, i.Id)
 	}
+	return ids
 }
 
 func TestNewItems(t *testing.T) {
@@ -178,6 +181,22 @@ func initUsers(db *DB, t *testing.T) {
 		err := db.CreateUser(u)
 		if err != nil {
 			t.Fatal(err)
+		}
+	}
+}
+
+func TestGetItem(t *testing.T) {
+	db := initDB(t)
+	defer os.Remove("test.db")
+	ids := initItems(db, t)
+
+	for i := range testItems {
+		item, err := db.GetItem(ids[i])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if reflect.DeepEqual(testItems[i], item) {
+			t.Fatalf("expected %v, got %v", testItems[i], item)
 		}
 	}
 }

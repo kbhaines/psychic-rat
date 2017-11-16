@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"database/sql"
+	"fmt"
 	"os"
 	"psychic-rat/mdl"
 	"psychic-rat/types"
@@ -51,6 +52,11 @@ func createSchema(db *sql.DB) error {
 	  firstName string,
 	  country string,
 	  email string);
+
+	create table pledges (id integer primary key,
+	  userId integer,
+	  itemId integer,
+	  timestamp integer);
 	`
 	_, err := db.Exec(stmt)
 	return err
@@ -111,7 +117,13 @@ func (d *DB) ListItems() ([]types.Item, error) {
 }
 
 func (d *DB) GetItem(id int) (types.Item, error) {
-	panic("not implemented")
+	i := types.Item{}
+	var companyID int
+	err := d.QueryRow("select id, make, model, companyId from items where id = ?", id).Scan(&i.Id, &i.Make, &i.Model, &companyID)
+	if err != nil {
+		return i, fmt.Errorf("could not get item %d: %v ", id, err)
+	}
+	return i, nil
 }
 
 func (d *DB) AddItem(i types.Item) (*types.Item, error) {
@@ -196,5 +208,18 @@ func (d *DB) CreateUser(u mdl.User) error {
 }
 
 func (d *DB) NewPledge(itemId int, userId string) (int, error) {
-	panic("not implemented")
+	timestamp := time.Now().Truncate(time.Second)
+	stmt, err := d.Prepare("insert into pledges(itemId, userId, timestamp) values (?,?,?)")
+	if err != nil {
+		return 0, err
+	}
+	r, err := stmt.Exec(itemId, userId, timestamp)
+	if err != nil {
+		return 0, fmt.Errorf("could not insert pledge for item %d for user %d: %v", itemId, userId, err)
+	}
+	lastId, err := r.LastInsertId()
+	if err != nil {
+		return 0, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemId, userId, err)
+	}
+	return int(lastId), nil
 }
