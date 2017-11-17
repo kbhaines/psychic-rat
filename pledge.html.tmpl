@@ -4,14 +4,23 @@
 <h2>Select the item you're going to boycott</h2>
 
 <form action="/pledge" method="post">
-
 <select name="item" required>
     {{ range .Items }}
     <option value="{{.Id}}"> {{ .Company }} {{ .Make }} {{ .Model }} </option>
     {{ end }}
 </select>
-
 <input type="submit" value="Submit">
-
 </form>
+
+<h2>Don't see the item you're looking for? Add it!</h2>
+
+<form action="/newitem" method="post">
+    <p>Manufacturer/Company    <input name="company"></p>
+    <p>Make    <input name="make"></p>
+    <p>Model    <input name="model"></p>
+    <p>Approximate Value (USD)    <input name="value"></p>
+    <input type="submit" value="Submit">
+</form>
+
+
 {{ template "footer.html.tmpl" . }}

@@ -230,3 +230,39 @@ func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	execHandlerForMethod(selector, writer, request)
 }
+
+func NewItemHandler(w http.ResponseWriter, r *http.Request) {
+	selector := methodSelector{
+		"POST": userLoginRequired(newItemPostHandler),
+	}
+	execHandlerForMethod(selector, w, r)
+}
+
+func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		log.Print(err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+	company := r.FormValue("company")
+	make := r.FormValue("make")
+	model := r.FormValue("model")
+	if company == "" || model == "" || make == "" {
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+	//value, err := strconv.ParseFloat(r.FormValue("value"), 10)
+	//if err != nil {
+	//	log.Print(err)
+	//	http.Error(w, "", http.StatusBadRequest)
+	//	return
+	//}
+
+	newItem := types.NewItem{UserID: "", IsPledge: true, Make: make, Model: model, Company: company}
+	_, err := apis.NewItem.AddNewItem(newItem)
+	if err != nil {
+		log.Printf("unable to add new item %v:", newItem, err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+}

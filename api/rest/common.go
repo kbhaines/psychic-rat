@@ -16,6 +16,7 @@ const (
 	SignInPage = "/signin"
 	PledgePage = "/pledge"
 	ThanksPage = "/thanks"
+	NewItem    = "/newitem"
 )
 
 func ToJson(writer io.Writer, v interface{}) {

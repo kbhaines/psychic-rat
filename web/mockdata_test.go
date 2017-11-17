@@ -38,7 +38,7 @@ var (
 	}
 
 	newItems = []types.NewItem{
-		types.NewItem{Id: 1, UserID: 1, IsPledge: true, Make: "newPhone", Model: "newMod",
+		types.NewItem{Id: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod",
 			Company: "co1", CompanyID: 1},
 	}
 )

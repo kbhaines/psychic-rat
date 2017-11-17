@@ -18,6 +18,7 @@ type (
 	API struct {
 		Company CompanyAPI
 		Item    ItemAPI
+		NewItem NewItemAPI
 		Pledge  PledgeAPI
 		User    UserAPI
 	}
@@ -33,7 +34,7 @@ type (
 	}
 
 	NewItemAPI interface {
-		AddNewItem(types.NewItem) error
+		AddNewItem(types.NewItem) (*types.NewItem, error)
 		ListNewItems() ([]types.NewItem, error)
 		ApproveItem(id int) error
 	}
@@ -54,6 +55,7 @@ var (
 		{rest.HomePage, HomePageHandler},
 		{rest.SignInPage, SignInPageHandler},
 		{rest.PledgePage, PledgePageHandler},
+		{rest.NewItem, NewItemHandler},
 		{rest.ThanksPage, ThanksPageHandler},
 		{"/callback", auth0.CallbackHandler},
 	}

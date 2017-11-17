@@ -124,3 +124,56 @@ func TestHappyPathPledge(t *testing.T) {
 	body := readResponseBody(resp, t)
 	testStrings(body, expected, t)
 }
+
+func TestBadNewItems(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+
+	values := []url.Values{
+		url.Values{"company": {""}, "make": {"newmake"}, "model": {"newmodel"}},
+		url.Values{"company": {"newco"}, "make": {""}, "model": {"newmodel"}},
+		url.Values{"company": {""}, "make": {"newmake"}, "model": {""}},
+		url.Values{"make": {"newmake"}, "model": {"bla"}},
+	}
+
+	for _, d := range values {
+		resp, err := client.PostForm(testUrl+"/newitem", d)
+		testPageStatus(resp, err, http.StatusBadRequest, t)
+	}
+	items, err := apis.NewItem.ListNewItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if 0 != len(items) {
+		t.Fatalf("expected 0 new items, got %d", len(items))
+	}
+}
+
+func TestNewItems(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+
+	values := []url.Values{
+		url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
+		url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
+		url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
+		url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
+	}
+
+	for _, d := range values {
+		resp, err := client.PostForm(testUrl+"/newitem", d)
+		testPageStatus(resp, err, http.StatusOK, t)
+	}
+
+	items, err := apis.NewItem.ListNewItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(values) != len(items) {
+		t.Fatalf("expected %d new items, got %d", len(values), len(items))
+	}
+}

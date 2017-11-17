@@ -6,6 +6,8 @@ import (
 )
 
 func init() {
+	// TODO: smells a bit, as it gets used in tests by default
+
 	var err error
 	db, err = sqldb.NewDB("pr.dat")
 	if err != nil {
@@ -15,6 +17,7 @@ func init() {
 	apis = API{
 		Company: db,
 		Item:    db,
+		NewItem: db,
 		Pledge:  db,
 		User:    db,
 	}
