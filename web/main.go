@@ -5,7 +5,6 @@ import (
 	"psychic-rat/api/rest"
 	"psychic-rat/auth0"
 	"psychic-rat/mdl"
-	"psychic-rat/sqldb"
 	"psychic-rat/types"
 )
 
@@ -61,7 +60,6 @@ var (
 	}
 
 	apis API
-	db   *sqldb.DB
 
 	flags struct {
 		enableAuth0, sqldb bool

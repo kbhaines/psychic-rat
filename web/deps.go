@@ -8,8 +8,7 @@ import (
 func init() {
 	// TODO: smells a bit, as it gets used in tests by default
 
-	var err error
-	db, err = sqldb.NewDB("pr.dat")
+	db, err := sqldb.NewDB("pr.dat")
 	if err != nil {
 		panic("unable to init db: " + err.Error())
 	}

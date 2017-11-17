@@ -45,9 +45,20 @@ var (
 
 func initDB(t *testing.T) {
 	t.Helper()
+	db,err := sqldb.NewDB("test.dat")
+	if err != nil {
+		t.Fatal(err)
+	}
+	apis = API{
+		Company: db,
+		Item:    db,
+		NewItem: db,
+		Pledge:  db,
+		User:    db,
+	}
 	initCompanies(db,t)
 	initUsers(db,t)
-	initNewItems(db,t)
+	//initNewItems(db,t)
 	initItems(db,t)
 }
 
