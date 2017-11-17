@@ -123,6 +123,11 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 	if err != nil {
 		return i, fmt.Errorf("could not get item %d: %v ", id, err)
 	}
+	co, err := d.GetCompany(companyID)
+	if err != nil {
+		return i, fmt.Errorf("internal error, no company (%d) for item %d: %v", companyID, id, err)
+	}
+	i.Company = co
 	return i, nil
 }
 
@@ -191,7 +196,7 @@ func (d *DB) ApproveItem(id int) error {
 
 func (d *DB) GetUser(userId string) (*mdl.User, error) {
 	result := mdl.User{}
-	err := d.QueryRow("select id, fullname, firstName, country, email from users where id= \""+userId+"\"").Scan(&result.Id, &result.Fullname, &result.FirstName, &result.Country, &result.Email)
+	err := d.QueryRow("select id, fullname, firstName, country, email from users where id=?", userId).Scan(&result.Id, &result.Fullname, &result.FirstName, &result.Country, &result.Email)
 	if err != nil {
 		return &result, err
 	}

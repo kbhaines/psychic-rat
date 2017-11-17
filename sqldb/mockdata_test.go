@@ -23,8 +23,8 @@ var (
 	testCos = []string{"testco1", "testco2", "testco3"}
 
 	companies = []types.Company{
-		types.Company{0, "testco1"},
-		types.Company{1, "testco2"},
+		types.Company{1, "testco1"},
+		types.Company{2, "testco2"},
 	}
 
 	testItems = []types.Item{

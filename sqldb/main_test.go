@@ -87,6 +87,7 @@ func TestGetItem(t *testing.T) {
 	db := initDB(t)
 	defer os.Remove("test.db")
 	ids := initItems(db, t)
+	initCompanies(db, t)
 
 	for i := range testItems {
 		item, err := db.GetItem(ids[i])
