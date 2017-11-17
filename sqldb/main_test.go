@@ -2,8 +2,10 @@ package sqldb
 
 import (
 	"os"
+	"psychic-rat/types"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestCreateDB(t *testing.T) {
@@ -97,5 +99,30 @@ func TestGetItem(t *testing.T) {
 		if reflect.DeepEqual(testItems[i], item) {
 			t.Fatalf("expected %v, got %v", testItems[i], item)
 		}
+	}
+}
+
+func TestAddNewItem(t *testing.T) {
+	db := initDB(t)
+	defer os.Remove("test.db")
+
+	newItem := &types.NewItem{Make: "newthing", Model: "newmodel", Company: "newco", UserID: "test1"}
+	newItem, err := db.AddNewItem(*newItem)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var n types.NewItem
+	var timestamp int64
+	err = db.QueryRow("select id, make, model, company, userID, timestamp from newItems where id=?", newItem.Id).Scan(&n.Id, &n.Make, &n.Model, &n.Company, &n.UserID, &timestamp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n.Timestamp = time.Unix(timestamp, 0)
+	if time.Since(n.Timestamp) > time.Second {
+		t.Fatalf("timestamp problem, new is %v: ", n.Timestamp)
+	}
+	if !reflect.DeepEqual(*newItem, n) {
+		t.Fatalf("expected %v, got back %v", newItem, n)
 	}
 }

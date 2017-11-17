@@ -32,7 +32,7 @@ type PledgeRequest struct {
 // database. IsPledge is true if the user also pledged the item
 type NewItem struct {
 	Id        int
-	UserID    int
+	UserID    string
 	IsPledge  bool
 	Make      string
 	Model     string
