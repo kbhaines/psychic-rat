@@ -202,4 +202,9 @@ func TestListNewItems(t *testing.T) {
 	loadNewItems(client, t)
 	resp, err := client.Get(testUrl + "/newitem")
 	testPageStatus(resp, err, http.StatusOK, t)
+	expected := []string{}
+	for i, pd := range newItemPostData {
+		expected = append(expected, fmt.Sprintf("%d,%s,%s,%s,%s", i+1, pd["company"][0], pd["make"][0], pd["model"][0], "test1"))
+	}
+	testStrings(readResponseBody(resp, t), expected, t)
 }

@@ -184,8 +184,6 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
-	logDbgf("request = %+v\n", request)
-	logDbgf("request.Form= %+v\n", request.Form)
 
 	itemId64, err := strconv.ParseInt(request.FormValue("item"), 10, 32)
 	if err != nil {
@@ -272,7 +270,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	item := types.Item{Make: newItem.Make, Model: newItem.Model}
+	item := types.Item{Make: newItem.Make, Model: newItem.Model, Company: types.Company{Name: company}}
 	vars := &pageVariables{
 		User:  *user,
 		Items: []types.Item{item},
@@ -281,5 +279,13 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func newItemListHandler(w http.ResponseWriter, r *http.Request) {
-	panic("")
+	newItems, err := apis.NewItem.ListNewItems()
+	if err != nil {
+		log.Printf("unable to retrieve new items: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+	for _, item := range newItems {
+		row := []byte(fmt.Sprintf("%d,%s,%s,%s,%s,%d\n", item.Id, item.Company, item.Make, item.Model, item.UserID, item.Timestamp))
+		w.Write(row)
+	}
 }

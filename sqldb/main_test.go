@@ -35,6 +35,7 @@ func TestGetCompanyById(t *testing.T) {
 func TestListItems(t *testing.T) {
 	db := initDB(t)
 	defer os.Remove("test.db")
+	initCompanies(db, t)
 	initItems(db, t)
 	items, err := db.ListItems()
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 	"os"
 	"psychic-rat/mdl"
 	"psychic-rat/types"
-	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -38,6 +37,8 @@ func createSchema(db *sql.DB) error {
 	  model string, 
 	  companyId integer);
 	
+	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyId = c.id;
+
 	create table newItems(id integer primary key, 
 	  userId integer,
 	  isPledge boolean,
@@ -91,7 +92,7 @@ func (d *DB) GetCompanies() ([]types.Company, error) {
 
 func (d *DB) GetCompany(id int) (types.Company, error) {
 	result := types.Company{}
-	err := d.QueryRow("select id, name from companies where id = "+strconv.Itoa(id)).Scan(&result.Id, &result.Name)
+	err := d.QueryRow("select id, name from companies where id = ?", id).Scan(&result.Id, &result.Name)
 	if err != nil {
 		return result, err
 	}
@@ -100,14 +101,13 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 
 func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
-	rows, err := d.Query("select id, make, model, companyId from items")
+	rows, err := d.Query("select id, make, model, companyId, companyName from itemsCompany")
 	if err != nil {
 		return ir, err
 	}
 	for rows.Next() {
 		item := types.Item{}
-		var coid int
-		err = rows.Scan(&item.Id, &item.Make, &item.Model, &coid)
+		err = rows.Scan(&item.Id, &item.Make, &item.Model, &item.Company.Id, &item.Company.Name)
 		if err != nil {
 			return ir, err
 		}
@@ -118,16 +118,10 @@ func (d *DB) ListItems() ([]types.Item, error) {
 
 func (d *DB) GetItem(id int) (types.Item, error) {
 	i := types.Item{}
-	var companyID int
-	err := d.QueryRow("select id, make, model, companyId from items where id = ?", id).Scan(&i.Id, &i.Make, &i.Model, &companyID)
+	err := d.QueryRow("select id, make, model, companyId, companyName from itemsCompany where id = ?", id).Scan(&i.Id, &i.Make, &i.Model, &i.Company.Id, &i.Company.Name)
 	if err != nil {
 		return i, fmt.Errorf("could not get item %d: %v ", id, err)
 	}
-	co, err := d.GetCompany(companyID)
-	if err != nil {
-		return i, fmt.Errorf("internal error, no company (%d) for item %d: %v", companyID, id, err)
-	}
-	i.Company = co
 	return i, nil
 }
 
