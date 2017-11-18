@@ -244,6 +244,11 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+	// TODO ignoring a couple of errors
+	s := sess.NewSessionStore(r, w)
+	user, _ := s.Get()
+	userId := user.Id
+
 	company := r.FormValue("company")
 	make := r.FormValue("make")
 	model := r.FormValue("model")
@@ -258,11 +263,18 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	newItem := types.NewItem{UserID: "", IsPledge: true, Make: make, Model: model, Company: company}
+	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company}
 	_, err := apis.NewItem.AddNewItem(newItem)
 	if err != nil {
 		log.Printf("unable to add new item %v:", newItem, err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+
+	item := types.Item{Make: newItem.Make, Model: newItem.Model}
+	vars := &pageVariables{
+		User:  *user,
+		Items: []types.Item{item},
+	}
+	renderPage(w, "pledge-post-new-item.html.tmpl", vars)
 }

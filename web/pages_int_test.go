@@ -167,6 +167,13 @@ func TestNewItems(t *testing.T) {
 	for _, d := range values {
 		resp, err := client.PostForm(testUrl+"/newitem", d)
 		testPageStatus(resp, err, http.StatusOK, t)
+		expected := []string{
+			"boycott of ",
+			"Signed in as user1 full",
+			"new item is under review",
+		}
+		body := readResponseBody(resp, t)
+		testStrings(body, expected, t)
 	}
 
 	items, err := apis.NewItem.ListNewItems()
@@ -176,4 +183,7 @@ func TestNewItems(t *testing.T) {
 	if len(values) != len(items) {
 		t.Fatalf("expected %d new items, got %d", len(values), len(items))
 	}
+
+	// Round-tripping of database items is tested in sqldb package, no need
+	// to replicate the work here
 }
