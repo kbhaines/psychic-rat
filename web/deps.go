@@ -2,6 +2,7 @@ package web
 
 import (
 	"psychic-rat/auth0"
+	"psychic-rat/datagen"
 	"psychic-rat/sqldb"
 )
 
@@ -21,4 +22,5 @@ func init() {
 		User:    db,
 	}
 	auth0.Init(apis.User)
+	go datagen.Generate(db, 10000)
 }
