@@ -174,6 +174,9 @@ func TestNewItems(t *testing.T) {
 		}
 		body := readResponseBody(resp, t)
 		testStrings(body, expected, t)
+
+		// Round-tripping of database items is tested in sqldb package, no need
+		// to replicate the work here
 	}
 
 	items, err := apis.NewItem.ListNewItems()
@@ -183,7 +186,4 @@ func TestNewItems(t *testing.T) {
 	if len(values) != len(items) {
 		t.Fatalf("expected %d new items, got %d", len(values), len(items))
 	}
-
-	// Round-tripping of database items is tested in sqldb package, no need
-	// to replicate the work here
 }
