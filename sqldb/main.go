@@ -64,13 +64,11 @@ func createSchema(db *sql.DB) error {
 }
 
 func (d *DB) NewCompany(c types.Company) error {
-	stmt, err := d.Prepare("insert into companies(name) values(?)")
+	_, err := d.Exec("insert into companies(name) values(?)", c.Name)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-	_, err = stmt.Exec(c.Name)
-	return err
+	return nil
 }
 
 func (d *DB) GetCompanies() ([]types.Company, error) {
@@ -126,12 +124,7 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 }
 
 func (d *DB) AddItem(i types.Item) (*types.Item, error) {
-	s, err := d.Prepare("insert into items(make, model, companyId) values (?,?,?)")
-	if err != nil {
-		return nil, err
-	}
-	defer s.Close()
-	r, err := s.Exec(i.Make, i.Model, i.Company.Id)
+	r, err := d.Exec("insert into items(make, model, companyId) values (?,?,?)", i.Make, i.Model, i.Company.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -145,13 +138,8 @@ func (d *DB) AddItem(i types.Item) (*types.Item, error) {
 }
 
 func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
-	s, err := d.Prepare("insert into newItems(userId, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)")
-	if err != nil {
-		return nil, err
-	}
-	defer s.Close()
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := s.Exec(i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
+	r, err := d.Exec("insert into newItems(userId, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -198,23 +186,18 @@ func (d *DB) GetUser(userId string) (*mdl.User, error) {
 }
 
 func (d *DB) CreateUser(u mdl.User) error {
-	stmt, err := d.Prepare("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)")
+	_, err := d.Exec("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)", u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
 	return nil
 }
 
 func (d *DB) NewPledge(itemId int, userId string) (int, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	stmt, err := d.Prepare("insert into pledges(itemId, userId, timestamp) values (?,?,?)")
+	r, err := d.Exec("insert into pledges(itemId, userId, timestamp) values (?,?,?)", itemId, userId, timestamp)
 	if err != nil {
 		return 0, err
-	}
-	r, err := stmt.Exec(itemId, userId, timestamp)
-	if err != nil {
-		return 0, fmt.Errorf("could not insert pledge for item %d for user %d: %v", itemId, userId, err)
 	}
 	lastId, err := r.LastInsertId()
 	if err != nil {

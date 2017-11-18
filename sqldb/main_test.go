@@ -16,7 +16,7 @@ func TestCreateDB(t *testing.T) {
 
 func TestGetCompanyById(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
+	//defer os.Remove("test.db")
 	initCompanies(db, t)
 
 	id := 1
