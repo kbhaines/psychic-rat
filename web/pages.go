@@ -233,6 +233,7 @@ func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 
 func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 	selector := methodSelector{
+		"GET":  userLoginRequired(newItemListHandler),
 		"POST": userLoginRequired(newItemPostHandler),
 	}
 	execHandlerForMethod(selector, w, r)
@@ -277,4 +278,8 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		Items: []types.Item{item},
 	}
 	renderPage(w, "pledge-post-new-item.html.tmpl", vars)
+}
+
+func newItemListHandler(w http.ResponseWriter, r *http.Request) {
+	panic("")
 }

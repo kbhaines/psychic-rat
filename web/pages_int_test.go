@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
@@ -157,33 +158,48 @@ func TestNewItems(t *testing.T) {
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 
-	values := []url.Values{
-		url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
-		url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
-		url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
-		url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
-	}
-
-	for _, d := range values {
-		resp, err := client.PostForm(testUrl+"/newitem", d)
-		testPageStatus(resp, err, http.StatusOK, t)
-		expected := []string{
-			"boycott of ",
-			"Signed in as user1 full",
-			"new item is under review",
-		}
-		body := readResponseBody(resp, t)
-		testStrings(body, expected, t)
-
-		// Round-tripping of database items is tested in sqldb package, no need
-		// to replicate the work here
-	}
+	loadNewItems(client, t)
 
 	items, err := apis.NewItem.ListNewItems()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(values) != len(items) {
-		t.Fatalf("expected %d new items, got %d", len(values), len(items))
+	if len(newItemPostData) != len(items) {
+		t.Fatalf("expected %d new items, got %d", len(newItemPostData), len(items))
 	}
+}
+
+var newItemPostData = []url.Values{
+	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
+	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
+	url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
+	url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
+}
+
+func loadNewItems(client http.Client, t *testing.T) {
+	t.Helper()
+	for i, d := range newItemPostData {
+		resp, err := client.PostForm(testUrl+"/newitem", d)
+		testPageStatus(resp, err, http.StatusOK, t)
+		expected := []string{
+			fmt.Sprintf("boycott of %s %s by %s", newItemPostData[i]["make"][0], newItemPostData[i]["model"][0], newItemPostData[i]["company"][0]),
+			"Signed in as user1 full",
+			"new item is under review",
+		}
+		body := readResponseBody(resp, t)
+		testStrings(body, expected, t)
+		// Round-tripping of database items is tested in sqldb package, no need
+		// to replicate the work here
+	}
+}
+
+func TestListNewItems(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+
+	loadNewItems(client, t)
+	resp, err := client.Get(testUrl + "/newitem")
+	testPageStatus(resp, err, http.StatusOK, t)
 }
