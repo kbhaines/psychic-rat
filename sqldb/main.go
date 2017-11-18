@@ -17,11 +17,20 @@ type DB struct {
 
 func NewDB(name string) (*DB, error) {
 	os.Remove(name)
-	db, err := sql.Open("sqlite3", name)
+	db, err := OpenDB(name)
 	if err != nil {
 		return nil, err
 	}
-	err = createSchema(db)
+
+	err = createSchema(db.DB)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
+func OpenDB(name string) (*DB, error) {
+	db, err := sql.Open("sqlite3", name)
 	if err != nil {
 		return nil, err
 	}
