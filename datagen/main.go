@@ -6,7 +6,6 @@ import (
 	"psychic-rat/mdl"
 	"psychic-rat/sqldb"
 	"psychic-rat/types"
-	"sync"
 	"time"
 )
 
@@ -17,8 +16,6 @@ func Generate(db *sqldb.DB, totalSize int) error {
 	numUsers := totalSize / 10
 	numItem := totalSize / 100
 
-	var wg sync.WaitGroup
-	wg.Add(3)
 	genCos := func() {
 		defer timeTrack(time.Now(), "Gen cos")
 		defer wg.Done()

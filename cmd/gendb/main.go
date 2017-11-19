@@ -21,5 +21,7 @@ func main() {
 	}
 
 	datagen.Generate(db, *size)
+	db.Close()
+
 	pprof.StopCPUProfile()
 }
