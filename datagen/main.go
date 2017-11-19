@@ -16,38 +16,45 @@ func Generate(db *sqldb.DB, totalSize int) error {
 	numUsers := totalSize / 10
 	numItem := totalSize / 100
 
-	genCos := func() {
+	genCos := func() error {
 		defer timeTrack(time.Now(), "Gen cos")
 		for c := 0; c < numCompanies; c++ {
-			err := db.NewCompany(generateCompany(c))
-			if err != nil {
-				return
+			if err := db.NewCompany(generateCompany(c)); err != nil {
+				return err
 			}
 		}
-	}
-	genUsers := func() {
-		defer timeTrack(time.Now(), "Gen users")
-		for u := 0; u < numUsers; u++ {
-			err := db.CreateUser(generateUser(u))
-			if err != nil {
-				return
-			}
-		}
-	}
-	genItems := func() {
-		defer timeTrack(time.Now(), "Gen items")
-		for i := 0; i < numItem; i++ {
-			_, err := db.AddItem(generateItem(i, numCompanies))
-			if err != nil {
-				return
-			}
-		}
+		return nil
 	}
 
-	genCos()
-	genUsers()
-	genItems()
+	genUsers := func() error {
+		defer timeTrack(time.Now(), "Gen users")
+		for u := 0; u < numUsers; u++ {
+			if err := db.CreateUser(generateUser(u)); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+	genItems := func() error {
+		defer timeTrack(time.Now(), "Gen items")
+		for i := 0; i < numItem; i++ {
+			if _, err := db.AddItem(generateItem(i, numCompanies)); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	runOrPanic(genCos)
+	runOrPanic(genUsers)
+	runOrPanic(genItems)
 	return nil
+}
+
+func runOrPanic(f func() error) {
+	if err := f(); err != nil {
+		panic(fmt.Sprintf("failed %v: %v", f, err))
+	}
 }
 
 var spf = fmt.Sprintf
