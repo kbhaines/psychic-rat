@@ -18,7 +18,6 @@ func Generate(db *sqldb.DB, totalSize int) error {
 
 	genCos := func() {
 		defer timeTrack(time.Now(), "Gen cos")
-		defer wg.Done()
 		for c := 0; c < numCompanies; c++ {
 			err := db.NewCompany(generateCompany(c))
 			if err != nil {
@@ -28,7 +27,6 @@ func Generate(db *sqldb.DB, totalSize int) error {
 	}
 	genUsers := func() {
 		defer timeTrack(time.Now(), "Gen users")
-		defer wg.Done()
 		for u := 0; u < numUsers; u++ {
 			err := db.CreateUser(generateUser(u))
 			if err != nil {
@@ -38,7 +36,6 @@ func Generate(db *sqldb.DB, totalSize int) error {
 	}
 	genItems := func() {
 		defer timeTrack(time.Now(), "Gen items")
-		defer wg.Done()
 		for i := 0; i < numItem; i++ {
 			_, err := db.AddItem(generateItem(i, numCompanies))
 			if err != nil {
@@ -50,7 +47,6 @@ func Generate(db *sqldb.DB, totalSize int) error {
 	genCos()
 	genUsers()
 	genItems()
-	wg.Wait()
 	return nil
 }
 

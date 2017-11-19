@@ -13,7 +13,8 @@ import (
 
 type DB struct {
 	*sql.DB
-	createUser *sql.Stmt
+	insertUser   *sql.Stmt
+	insertPledge *sql.Stmt
 }
 
 func NewDB(name string) (*DB, error) {
@@ -45,12 +46,13 @@ func OpenDB(name string) (*DB, error) {
 		return nil, err
 	}
 
-	createUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)")
+	insertUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)")
+	insertPledge, err := db.Prepare("insert into pledges(itemId, userId, timestamp) values (?,?,?)")
 	if err != nil {
 		panic("prep failed" + err.Error())
 	}
 
-	return &DB{db, createUser}, nil
+	return &DB{db, insertUser, insertPledge}, nil
 }
 
 func createSchema(db *sql.DB) error {
@@ -211,7 +213,7 @@ func (d *DB) GetUser(userId string) (*mdl.User, error) {
 }
 
 func (d *DB) CreateUser(u mdl.User) error {
-	_, err := d.createUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
+	_, err := d.insertUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
 	if err != nil {
 		return err
 	}
@@ -220,7 +222,7 @@ func (d *DB) CreateUser(u mdl.User) error {
 
 func (d *DB) NewPledge(itemId int, userId string) (int, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.Exec("insert into pledges(itemId, userId, timestamp) values (?,?,?)", itemId, userId, timestamp)
+	r, err := d.insertPledge.Exec(itemId, userId, timestamp)
 	if err != nil {
 		return 0, err
 	}
