@@ -13,20 +13,21 @@ import (
 
 type DB struct {
 	*sql.DB
+	createUser *sql.Stmt
 }
 
 func NewDB(name string) (*DB, error) {
 	os.Remove(name)
-	db, err := OpenDB(name)
+	db, err := sql.Open("sqlite3", name)
 	if err != nil {
 		return nil, err
 	}
-
-	err = createSchema(db.DB)
+	err = createSchema(db)
 	if err != nil {
 		return nil, err
 	}
-	return db, nil
+	db.Close()
+	return OpenDB(name)
 }
 
 func OpenDB(name string) (*DB, error) {
@@ -34,7 +35,22 @@ func OpenDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{db}, nil
+
+	_, err = db.Exec("PRAGMA synchronous = OFF")
+	if err != nil {
+		return nil, err
+	}
+	_, err = db.Exec("PRAGMA journal_mode = OFF")
+	if err != nil {
+		return nil, err
+	}
+
+	createUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)")
+	if err != nil {
+		panic("prep failed" + err.Error())
+	}
+
+	return &DB{db, createUser}, nil
 }
 
 func createSchema(db *sql.DB) error {
@@ -195,7 +211,7 @@ func (d *DB) GetUser(userId string) (*mdl.User, error) {
 }
 
 func (d *DB) CreateUser(u mdl.User) error {
-	_, err := d.Exec("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)", u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
+	_, err := d.createUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
 	if err != nil {
 		return err
 	}

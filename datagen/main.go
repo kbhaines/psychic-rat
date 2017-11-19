@@ -19,7 +19,7 @@ func Generate(db *sqldb.DB, totalSize int) error {
 
 	var wg sync.WaitGroup
 	wg.Add(3)
-	go func() {
+	genCos := func() {
 		defer timeTrack(time.Now(), "Gen cos")
 		defer wg.Done()
 		for c := 0; c < numCompanies; c++ {
@@ -28,8 +28,8 @@ func Generate(db *sqldb.DB, totalSize int) error {
 				return
 			}
 		}
-	}()
-	go func() {
+	}
+	genUsers := func() {
 		defer timeTrack(time.Now(), "Gen users")
 		defer wg.Done()
 		for u := 0; u < numUsers; u++ {
@@ -38,8 +38,8 @@ func Generate(db *sqldb.DB, totalSize int) error {
 				return
 			}
 		}
-	}()
-	go func() {
+	}
+	genItems := func() {
 		defer timeTrack(time.Now(), "Gen items")
 		defer wg.Done()
 		for i := 0; i < numItem; i++ {
@@ -48,7 +48,11 @@ func Generate(db *sqldb.DB, totalSize int) error {
 				return
 			}
 		}
-	}()
+	}
+
+	genCos()
+	genUsers()
+	genItems()
 	wg.Wait()
 	return nil
 }
