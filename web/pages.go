@@ -184,8 +184,6 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		http.Error(writer, "", http.StatusInternalServerError)
 		return
 	}
-	logDbgf("request = %+v\n", request)
-	logDbgf("request.Form= %+v\n", request.Form)
 
 	itemId64, err := strconv.ParseInt(request.FormValue("item"), 10, 32)
 	if err != nil {
@@ -233,6 +231,7 @@ func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 
 func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 	selector := methodSelector{
+		"GET":  userLoginRequired(newItemListHandler),
 		"POST": userLoginRequired(newItemPostHandler),
 	}
 	execHandlerForMethod(selector, w, r)
@@ -244,6 +243,11 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+	// TODO ignoring a couple of errors
+	s := sess.NewSessionStore(r, w)
+	user, _ := s.Get()
+	userId := user.Id
+
 	company := r.FormValue("company")
 	make := r.FormValue("make")
 	model := r.FormValue("model")
@@ -258,11 +262,30 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	//	return
 	//}
 
-	newItem := types.NewItem{UserID: "", IsPledge: true, Make: make, Model: model, Company: company}
+	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company}
 	_, err := apis.NewItem.AddNewItem(newItem)
 	if err != nil {
 		log.Printf("unable to add new item %v:", newItem, err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
+	}
+
+	item := types.Item{Make: newItem.Make, Model: newItem.Model, Company: types.Company{Name: company}}
+	vars := &pageVariables{
+		User:  *user,
+		Items: []types.Item{item},
+	}
+	renderPage(w, "pledge-post-new-item.html.tmpl", vars)
+}
+
+func newItemListHandler(w http.ResponseWriter, r *http.Request) {
+	newItems, err := apis.NewItem.ListNewItems()
+	if err != nil {
+		log.Printf("unable to retrieve new items: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+	for _, item := range newItems {
+		row := []byte(fmt.Sprintf("%d,%s,%s,%s,%s,%d\n", item.Id, item.Company, item.Make, item.Model, item.UserID, item.Timestamp))
+		w.Write(row)
 	}
 }

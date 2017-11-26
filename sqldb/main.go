@@ -6,7 +6,6 @@ import (
 	"os"
 	"psychic-rat/mdl"
 	"psychic-rat/types"
-	"strconv"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -14,6 +13,8 @@ import (
 
 type DB struct {
 	*sql.DB
+	insertUser   *sql.Stmt
+	insertPledge *sql.Stmt
 }
 
 func NewDB(name string) (*DB, error) {
@@ -26,7 +27,32 @@ func NewDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &DB{db}, nil
+	db.Close()
+	return OpenDB(name)
+}
+
+func OpenDB(name string) (*DB, error) {
+	db, err := sql.Open("sqlite3", name)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Exec("PRAGMA synchronous = OFF")
+	if err != nil {
+		return nil, err
+	}
+	_, err = db.Exec("PRAGMA journal_mode = OFF")
+	if err != nil {
+		return nil, err
+	}
+
+	insertUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
+	insertPledge, err := db.Prepare("insert into pledges(itemId, userId, timestamp) values (?,?,?)")
+	if err != nil {
+		panic("prep failed" + err.Error())
+	}
+
+	return &DB{db, insertUser, insertPledge}, nil
 }
 
 func createSchema(db *sql.DB) error {
@@ -38,6 +64,8 @@ func createSchema(db *sql.DB) error {
 	  model string, 
 	  companyId integer);
 	
+	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyId = c.id;
+
 	create table newItems(id integer primary key, 
 	  userId integer,
 	  isPledge boolean,
@@ -64,13 +92,11 @@ func createSchema(db *sql.DB) error {
 }
 
 func (d *DB) NewCompany(c types.Company) error {
-	stmt, err := d.Prepare("insert into companies(name) values(?)")
+	_, err := d.Exec("insert into companies(name) values(?)", c.Name)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-	_, err = stmt.Exec(c.Name)
-	return err
+	return nil
 }
 
 func (d *DB) GetCompanies() ([]types.Company, error) {
@@ -92,7 +118,7 @@ func (d *DB) GetCompanies() ([]types.Company, error) {
 
 func (d *DB) GetCompany(id int) (types.Company, error) {
 	result := types.Company{}
-	err := d.QueryRow("select id, name from companies where id = "+strconv.Itoa(id)).Scan(&result.Id, &result.Name)
+	err := d.QueryRow("select id, name from companies where id = ?", id).Scan(&result.Id, &result.Name)
 	if err != nil {
 		return result, err
 	}
@@ -101,14 +127,13 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 
 func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
-	rows, err := d.Query("select id, make, model, companyId from items")
+	rows, err := d.Query("select id, make, model, companyId, companyName from itemsCompany")
 	if err != nil {
 		return ir, err
 	}
 	for rows.Next() {
 		item := types.Item{}
-		var coid int
-		err = rows.Scan(&item.Id, &item.Make, &item.Model, &coid)
+		err = rows.Scan(&item.Id, &item.Make, &item.Model, &item.Company.Id, &item.Company.Name)
 		if err != nil {
 			return ir, err
 		}
@@ -119,26 +144,15 @@ func (d *DB) ListItems() ([]types.Item, error) {
 
 func (d *DB) GetItem(id int) (types.Item, error) {
 	i := types.Item{}
-	var companyID int
-	err := d.QueryRow("select id, make, model, companyId from items where id = ?", id).Scan(&i.Id, &i.Make, &i.Model, &companyID)
+	err := d.QueryRow("select id, make, model, companyId, companyName from itemsCompany where id = ?", id).Scan(&i.Id, &i.Make, &i.Model, &i.Company.Id, &i.Company.Name)
 	if err != nil {
 		return i, fmt.Errorf("could not get item %d: %v ", id, err)
 	}
-	co, err := d.GetCompany(companyID)
-	if err != nil {
-		return i, fmt.Errorf("internal error, no company (%d) for item %d: %v", companyID, id, err)
-	}
-	i.Company = co
 	return i, nil
 }
 
 func (d *DB) AddItem(i types.Item) (*types.Item, error) {
-	s, err := d.Prepare("insert into items(make, model, companyId) values (?,?,?)")
-	if err != nil {
-		return nil, err
-	}
-	defer s.Close()
-	r, err := s.Exec(i.Make, i.Model, i.Company.Id)
+	r, err := d.Exec("insert into items(make, model, companyId) values (?,?,?)", i.Make, i.Model, i.Company.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -152,13 +166,8 @@ func (d *DB) AddItem(i types.Item) (*types.Item, error) {
 }
 
 func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
-	s, err := d.Prepare("insert into newItems(userId, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)")
-	if err != nil {
-		return nil, err
-	}
-	defer s.Close()
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := s.Exec(i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
+	r, err := d.Exec("insert into newItems(userId, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -205,23 +214,18 @@ func (d *DB) GetUser(userId string) (*mdl.User, error) {
 }
 
 func (d *DB) CreateUser(u mdl.User) error {
-	stmt, err := d.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
+	_, err := d.insertUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	return nil
 }
 
 func (d *DB) NewPledge(itemId int, userId string) (int, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	stmt, err := d.Prepare("insert into pledges(itemId, userId, timestamp) values (?,?,?)")
+	r, err := d.insertPledge.Exec(itemId, userId, timestamp)
 	if err != nil {
 		return 0, err
-	}
-	r, err := stmt.Exec(itemId, userId, timestamp)
-	if err != nil {
-		return 0, fmt.Errorf("could not insert pledge for item %d for user %d: %v", itemId, userId, err)
 	}
 	lastId, err := r.LastInsertId()
 	if err != nil {
