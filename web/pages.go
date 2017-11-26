@@ -147,6 +147,17 @@ func userLoginRequired(h handlerFunc) handlerFunc {
 	}
 }
 
+func adminLoginRequired(h handlerFunc) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isUserAdmin(r) {
+			log.Print("user not admin")
+			http.Error(w, "", http.StatusForbidden)
+			return
+		}
+		h(w, r)
+	}
+}
+
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
 		"GET":  userLoginRequired(pledgeGetHandler),
@@ -164,6 +175,16 @@ func isUserLoggedInSession(request *http.Request) bool {
 		return false
 	}
 	return user != nil
+}
+
+func isUserAdmin(request *http.Request) bool {
+	s := sess.NewSessionStore(request, nil)
+	user, err := s.Get()
+	if err != nil {
+		log.Print(err)
+		return false
+	}
+	return user != nil && user.IsAdmin
 }
 
 func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
@@ -288,4 +309,20 @@ func newItemListHandler(w http.ResponseWriter, r *http.Request) {
 		row := []byte(fmt.Sprintf("%d,%s,%s,%s,%s,%d\n", item.Id, item.Company, item.Make, item.Model, item.UserID, item.Timestamp))
 		w.Write(row)
 	}
+}
+
+func ApproveItemHandler(w http.ResponseWriter, r *http.Request) {
+	selector := methodSelector{
+		"GET":  adminLoginRequired(listNewItems),
+		"POST": adminLoginRequired(approveNewItems),
+	}
+	execHandlerForMethod(selector, w, r)
+}
+
+func approveNewItems(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func listNewItems(w http.ResponseWriter, r *http.Request) {
+
 }

@@ -35,6 +35,9 @@ type (
 	NewItemAPI interface {
 		AddNewItem(types.NewItem) (*types.NewItem, error)
 		ListNewItems() ([]types.NewItem, error)
+	}
+
+	AdminApi interface {
 		ApproveItem(id int) error
 	}
 
@@ -57,6 +60,8 @@ var (
 		{rest.NewItem, NewItemHandler},
 		{rest.ThanksPage, ThanksPageHandler},
 		{"/callback", auth0.CallbackHandler},
+
+		{"/admin/approveItem", ApproveItemHandler},
 	}
 
 	apis API

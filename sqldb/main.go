@@ -201,7 +201,38 @@ func (d *DB) ListNewItems() ([]types.NewItem, error) {
 }
 
 func (d *DB) ApproveItem(id int) error {
-	panic("not implemented")
+	ni, err := d.getNewItem(id)
+	if err != nil {
+		return fmt.Errorf("could not retrieve new item %d: %v", id, err)
+	}
+
+	if ni.Company != "" {
+		return fmt.Errorf("new item in wrong state, still has company name defined: %v", ni)
+	}
+
+	item := &types.Item{Make: ni.Make, Model: ni.Model, Company: types.Company{Id: ni.CompanyID}}
+	item, err = d.AddItem(*item)
+	if err != nil {
+		return fmt.Errorf("could not add new item [%v]: %v", ni, err)
+	}
+
+	_, err = d.NewPledge(item.Id, ni.UserID)
+	if err != nil {
+		return fmt.Errorf("could not pledge from new item [%v]: %v", ni, err)
+	}
+	return nil
+}
+
+func (d *DB) getNewItem(id int) (*types.NewItem, error) {
+	i := types.NewItem{}
+	var timestamp int64
+	err := d.QueryRow("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems where id = ?", id).Scan(&i.Id,
+		&i.UserID, &i.IsPledge, &i.Make, &i.Model, &i.Company, &i.CompanyID, &timestamp)
+	if err != nil {
+		return nil, err
+	}
+	i.Timestamp = time.Unix(timestamp, 0)
+	return &i, nil
 }
 
 func (d *DB) GetUser(userId string) (*mdl.User, error) {
