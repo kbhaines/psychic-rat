@@ -38,4 +38,5 @@ type User struct {
 	Email     string
 	AuthToken string
 	Fullname  string
+	IsAdmin   bool
 }

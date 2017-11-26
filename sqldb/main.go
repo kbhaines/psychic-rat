@@ -51,7 +51,8 @@ func createSchema(db *sql.DB) error {
 	  fullName string,
 	  firstName string,
 	  country string,
-	  email string);
+	  email string,
+  	  isAdmin bool);
 
 	create table pledges (id integer primary key,
 	  userId integer,
@@ -195,20 +196,20 @@ func (d *DB) ApproveItem(id int) error {
 }
 
 func (d *DB) GetUser(userId string) (*mdl.User, error) {
-	result := mdl.User{}
-	err := d.QueryRow("select id, fullname, firstName, country, email from users where id=?", userId).Scan(&result.Id, &result.Fullname, &result.FirstName, &result.Country, &result.Email)
+	u := mdl.User{}
+	err := d.QueryRow("select id, fullname, firstName, country, email from users where id=?", userId).Scan(&u.Id, &u.Fullname, &u.FirstName, &u.Country, &u.Email)
 	if err != nil {
-		return &result, err
+		return &u, err
 	}
-	return &result, nil
+	return &u, nil
 }
 
 func (d *DB) CreateUser(u mdl.User) error {
-	stmt, err := d.Prepare("insert into users(id, fullName, firstName, country, email) values (?,?,?,?,?)")
+	stmt, err := d.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
 	if err != nil {
 		return err
 	}
-	_, err = stmt.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email)
+	_, err = stmt.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	return nil
 }
 
