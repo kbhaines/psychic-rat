@@ -23,8 +23,10 @@ type (
 
 	pageVariables struct {
 		Auth0
-		Items []types.Item
-		User  mdl.User
+		Items     []types.Item
+		User      mdl.User
+		NewItems  []types.NewItem
+		Companies []types.Company
 	}
 
 	renderFunc     func(writer http.ResponseWriter, templateName string, vars *pageVariables)
@@ -258,6 +260,10 @@ func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 	execHandlerForMethod(selector, w, r)
 }
 
+func newItemListHandler(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Print(err)
@@ -299,18 +305,6 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "pledge-post-new-item.html.tmpl", vars)
 }
 
-func newItemListHandler(w http.ResponseWriter, r *http.Request) {
-	newItems, err := apis.NewItem.ListNewItems()
-	if err != nil {
-		log.Printf("unable to retrieve new items: %v", err)
-		http.Error(w, "", http.StatusInternalServerError)
-	}
-	for _, item := range newItems {
-		row := []byte(fmt.Sprintf("%d,%s,%s,%s,%s,%d\n", item.Id, item.Company, item.Make, item.Model, item.UserID, item.Timestamp))
-		w.Write(row)
-	}
-}
-
 func ApproveItemHandler(w http.ResponseWriter, r *http.Request) {
 	selector := methodSelector{
 		"GET":  adminLoginRequired(listNewItems),
@@ -319,10 +313,30 @@ func ApproveItemHandler(w http.ResponseWriter, r *http.Request) {
 	execHandlerForMethod(selector, w, r)
 }
 
-func approveNewItems(w http.ResponseWriter, r *http.Request) {
+func listNewItems(w http.ResponseWriter, r *http.Request) {
+	newItems, err := apis.NewItem.ListNewItems()
+	if err != nil {
+		log.Printf("unable to retrieve new items: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+	items, err := apis.Item.ListItems()
+	if err != nil {
+		log.Printf("unable to retrieve items: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+	companies, err := apis.Company.GetCompanies()
+	if err != nil {
+		log.Printf("unable to retrieve companies: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
 
+	vars := &pageVariables{Items: items, NewItems: newItems, Companies: companies}
+	renderPage(w, "admin-new-items.html.tmpl", vars)
 }
 
-func listNewItems(w http.ResponseWriter, r *http.Request) {
+func approveNewItems(w http.ResponseWriter, r *http.Request) {
 
 }

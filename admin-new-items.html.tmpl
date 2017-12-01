@@ -1,0 +1,52 @@
+{{ template "header.html.tmpl" . }}
+<h1>Admin New Items</h1>
+
+{{ define "items" -}}
+<select name="item[]">
+    {{ range .Items }}
+    <option value="{{.Id}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
+    {{ end }}
+</select>
+{{ end -}}
+
+{{ define "companies" -}}
+<select name="company[]">
+    {{ range .Companies }}
+    <option value="{{.Id}}"> {{ .Name }}</option>
+    {{ end }}
+</select>
+{{ end -}}
+
+<form action="/admin/newitems" method="post">
+
+<table>
+    <tr>
+        <td>Add</td>
+        <td>User Id</td>
+        <td>User Company</td>
+        <td>Company</td>
+        <td>User Make</td>
+        <td>User Model</td>
+        <td>User Value</td>
+        <td>Item</td>
+    </tr>
+    {{ range .NewItems }}
+    <tr>
+        <input type="hidden" name="id[]" value="{{.Id}}">
+        <td><input type="checkbox" name="add[]"></td>
+        <td>{{ .UserID }}</td>
+        <td><input type="input" name="usercompany[]" value="{{ .Company }}"></td>
+        <td>{{ template "companies" $ }}</td>
+        <td><input type="input" name="usermake[]" value="{{ .Make }}"></td>
+        <td><input type="input" name="usermodel[]" value="{{ .Model }}"></td>
+        <td><input type="input" name="uservalue[]" value="{{ .Value }}"></td>
+        <td>{{ template "items" $ }}</td>
+    </tr>
+    {{ end }}
+</table>
+
+<input type="submit" value="Submit">
+</form>
+
+{{ template "footer.html.tmpl" . }}
+

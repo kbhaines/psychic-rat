@@ -237,7 +237,7 @@ func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 
 func (d *DB) GetUser(userId string) (*mdl.User, error) {
 	u := mdl.User{}
-	err := d.QueryRow("select id, fullname, firstName, country, email from users where id=?", userId).Scan(&u.Id, &u.Fullname, &u.FirstName, &u.Country, &u.Email)
+	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userId).Scan(&u.Id, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
 	if err != nil {
 		return &u, err
 	}

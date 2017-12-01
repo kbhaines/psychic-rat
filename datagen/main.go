@@ -44,10 +44,20 @@ func Generate(db *sqldb.DB, totalSize int) error {
 		}
 		return nil
 	}
+	genNewItems := func() error {
+		defer timeTrack(time.Now(), "Gen new items")
+		for i := 0; i < numItem; i++ {
+			if _, err := db.AddNewItem(generateNewItem(i, numItem)); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 
 	runOrPanic(genCos)
 	runOrPanic(genUsers)
 	runOrPanic(genItems)
+	runOrPanic(genNewItems)
 	return nil
 }
 
@@ -68,8 +78,12 @@ func generateItem(i, maxCompanyId int) types.Item {
 	return types.Item{Make: spf("make%03d", i), Model: spf("model%03d", i), Company: company}
 }
 
+func generateNewItem(i, maxCompanyId int) types.NewItem {
+	return types.NewItem{UserID: spf("user%03d", i), Make: spf("newmake%03d", i), Model: spf("newmodel%03d", i), Company: spf("newco%03d", i)}
+}
+
 func generateUser(u int) mdl.User {
-	return mdl.User{Id: spf("user%03d", u), FirstName: spf("User%03d", u), Fullname: spf("User%03d Fullname", u), Email: spf("user%03d@domain.com", u)}
+	return mdl.User{Id: spf("user%03d", u), FirstName: spf("User%03d", u), Fullname: spf("User%03d Fullname", u), Email: spf("user%03d@domain.com", u), IsAdmin: u == 42}
 }
 
 func timeTrack(start time.Time, name string) {

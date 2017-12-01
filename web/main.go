@@ -61,7 +61,7 @@ var (
 		{rest.ThanksPage, ThanksPageHandler},
 		{"/callback", auth0.CallbackHandler},
 
-		{"/admin/approveItem", ApproveItemHandler},
+		{"/admin/newitems", ApproveItemHandler},
 	}
 
 	apis API

@@ -36,6 +36,7 @@ type NewItem struct {
 	IsPledge  bool
 	Make      string
 	Model     string
+	Value     int
 	Company   string
 	CompanyID int
 	Timestamp time.Time
