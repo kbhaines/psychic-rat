@@ -36,8 +36,9 @@
     {{ range $index, $element := .NewItems }}
     <tr>
         <input type="hidden" name="id[]" value="{{ .Id }}">
+        <input type="hidden" name="isPledge[]" value="{{ .IsPledge }}">
         <td><input type="checkbox" name="add[]" value="{{ $index }}"></td>
-        <td>{{ .UserID }}</td>
+        <td><input type="input" name="userID" value="{{ .UserID }}"></td>
         <td><input type="input" name="usercompany[]" value="{{ .Company }}"></td>
         <td>{{ template "companies" $ }}</td>
         <td><input type="input" name="usermake[]" value="{{ .Make }}"></td>

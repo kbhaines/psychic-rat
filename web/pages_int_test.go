@@ -193,18 +193,40 @@ func loadNewItems(client http.Client, t *testing.T) {
 	}
 }
 
-func TestListNewItems(t *testing.T) {
+func TestBlockAccessToItemListing(t *testing.T) {
 	server := newServer(t)
 	defer server.Close()
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 
+	resp, err := client.Get(testUrl + "/admin/newitems")
+	testPageStatus(resp, err, http.StatusForbidden, t)
+}
+
+func TestListNewItems(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
-	resp, err := client.Get(testUrl + "/newitem")
+
+	cookie = loginUser("admin", t)
+	client = http.Client{Jar: cookie}
+	resp, err := client.Get(testUrl + "/admin/newitems")
 	testPageStatus(resp, err, http.StatusOK, t)
 	expected := []string{}
-	for i, pd := range newItemPostData {
-		expected = append(expected, fmt.Sprintf("%d,%s,%s,%s,%s", i+1, pd["company"][0], pd["make"][0], pd["model"][0], "test1"))
+	for _, pd := range newItemPostData {
+		expected = append(expected, pd["make"][0])
+		expected = append(expected, pd["model"][0])
+		expected = append(expected, pd["company"][0])
 	}
 	testStrings(readResponseBody(resp, t), expected, t)
+}
+
+func TestItemAdminSubmission(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+	client = client
 }

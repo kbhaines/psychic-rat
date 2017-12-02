@@ -359,6 +359,19 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Printf("add row = %+v\n", row)
+		itemId, err := strconv.ParseInt(r.Form["item[]"][row], 10, 32)
+		// TODO: handle all errs
+		if itemId == 0 {
+			// Adding a new item, figure out the company
+			companyId, _ := strconv.ParseInt(r.Form["company[]"][row], 10, 32)
+			if companyId == 0 {
+				// Add new company
 
+			}
+		}
+
+		if r.Form["isPledge[]"][row] == "1" {
+			apis.Pledge.NewPledge(int(itemId), r.Form["userID"][row])
+		}
 	}
 }

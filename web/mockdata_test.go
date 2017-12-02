@@ -21,6 +21,7 @@ var (
 		mdl.User{Id: "test8", Fullname: "user8 full", Email: "user8@user.com"},
 		mdl.User{Id: "test9", Fullname: "user9 full", Email: "user9@user.com"},
 		mdl.User{Id: "test10", Fullname: "user10 full", Email: "user10@user.com"},
+		mdl.User{Id: "admin", Fullname: "Admin", Email: "admin@admin.com", IsAdmin: true},
 	}
 
 	testCos = []string{"testco1", "testco2", "testco3"}
@@ -38,8 +39,12 @@ var (
 	}
 
 	newItems = []types.NewItem{
-		types.NewItem{Id: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod",
-			Company: "co1", CompanyID: 1},
+		types.NewItem{Id: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
+		types.NewItem{Id: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co2", CompanyID: 1},
+		types.NewItem{Id: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co3", CompanyID: 1},
+		types.NewItem{Id: 4, UserID: "test4", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co4", CompanyID: 1},
+		types.NewItem{Id: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1},
+		types.NewItem{Id: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1},
 	}
 )
 
