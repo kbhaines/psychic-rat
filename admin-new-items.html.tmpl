@@ -3,6 +3,7 @@
 
 {{ define "items" -}}
 <select name="item[]">
+    <option value="0"> --- </option>
     {{ range .Items }}
     <option value="{{.Id}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
     {{ end }}
@@ -11,6 +12,7 @@
 
 {{ define "companies" -}}
 <select name="company[]">
+    <option value="0"> --- </option>
     {{ range .Companies }}
     <option value="{{.Id}}"> {{ .Name }}</option>
     {{ end }}
@@ -21,7 +23,7 @@
 
 <table>
     <tr>
-        <td>Add</td>
+        <td>Add?</td>
         <td>User Id</td>
         <td>User Company</td>
         <td>Company</td>
@@ -29,11 +31,12 @@
         <td>User Model</td>
         <td>User Value</td>
         <td>Item</td>
+        <td>Delete?</td>
     </tr>
-    {{ range .NewItems }}
+    {{ range $index, $element := .NewItems }}
     <tr>
-        <input type="hidden" name="id[]" value="{{.Id}}">
-        <td><input type="checkbox" name="add[]"></td>
+        <input type="hidden" name="id[]" value="{{ .Id }}">
+        <td><input type="checkbox" name="add[]" value="{{ $index }}"></td>
         <td>{{ .UserID }}</td>
         <td><input type="input" name="usercompany[]" value="{{ .Company }}"></td>
         <td>{{ template "companies" $ }}</td>
@@ -41,6 +44,7 @@
         <td><input type="input" name="usermodel[]" value="{{ .Model }}"></td>
         <td><input type="input" name="uservalue[]" value="{{ .Value }}"></td>
         <td>{{ template "items" $ }}</td>
+        <td><input type="checkbox" name="delete[]" value="{{ $index }}"></td>
     </tr>
     {{ end }}
 </table>

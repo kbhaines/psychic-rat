@@ -305,7 +305,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "pledge-post-new-item.html.tmpl", vars)
 }
 
-func ApproveItemHandler(w http.ResponseWriter, r *http.Request) {
+func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
 	selector := methodSelector{
 		"GET":  adminLoginRequired(listNewItems),
 		"POST": adminLoginRequired(approveNewItems),
@@ -338,5 +338,27 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 }
 
 func approveNewItems(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Printf("unable to parse form: %v", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+	addItems, ok := r.Form["add[]"]
+	if !ok {
+		log.Printf("no add items\n")
+		log.Printf("r.Form = %+v\n", r.Form)
+		return
+	}
+	for _, rowString := range addItems {
+		row, err := strconv.ParseInt(rowString, 10, 32)
+		if err != nil {
+			log.Printf("unable to parse row Id: %v", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
 
+		log.Printf("add row = %+v\n", row)
+
+	}
 }
