@@ -7,8 +7,12 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 var testUrl string
@@ -214,13 +218,65 @@ func TestListNewItems(t *testing.T) {
 	client = http.Client{Jar: cookie}
 	resp, err := client.Get(testUrl + "/admin/newitems")
 	testPageStatus(resp, err, http.StatusOK, t)
-	expected := []string{}
-	for _, pd := range newItemPostData {
-		expected = append(expected, pd["make"][0])
-		expected = append(expected, pd["model"][0])
-		expected = append(expected, pd["company"][0])
+
+	doc, err := goquery.NewDocumentFromResponse(resp)
+	if err != nil {
+		t.Fatal(err)
 	}
-	testStrings(readResponseBody(resp, t), expected, t)
+
+	doc.Find(".items-table .item-entry").Each(func(i int, s *goquery.Selection) {
+		h := newItemHtml{}
+		s.Find("input").Each(func(_ int, s *goquery.Selection) {
+			n := s.AttrOr("name", "")
+			v := s.AttrOr("value", "")
+			switch n {
+			case "id[]":
+				h.Id = v
+			case "isPledge[]":
+				h.IsPledge = v
+			case "userID[]":
+				h.UserID = v
+			case "usercompany[]":
+				h.UserCompany = v
+			case "usermake[]":
+				h.UserMake = v
+			case "usermodel[]":
+				h.UserModel = v
+			case "uservalue[]":
+				h.UserValue = v
+			case "add[]":
+			case "delete[]":
+				break
+			default:
+				t.Fatalf("unknown input: %s", n)
+			}
+		})
+
+		v := newItemPostData[i]
+		expectedNewItem := newItemHtml{
+			Id:          strconv.Itoa(i + 1),
+			IsPledge:    "true",
+			UserID:      "test1",
+			UserCompany: v["company"][0],
+			UserMake:    v["make"][0],
+			UserModel:   v["model"][0],
+			UserValue:   "0",
+		}
+		if !reflect.DeepEqual(expectedNewItem, h) {
+			t.Errorf("expected html form to have %v, got %v", expectedNewItem, h)
+		}
+	})
+
+}
+
+type newItemHtml struct {
+	Id          string
+	IsPledge    string
+	UserID      string
+	UserCompany string
+	UserMake    string
+	UserModel   string
+	UserValue   string
 }
 
 func TestItemAdminSubmission(t *testing.T) {

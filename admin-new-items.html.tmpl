@@ -20,8 +20,7 @@
 {{ end -}}
 
 <form action="/admin/newitems" method="post">
-
-<table>
+<table class="items-table">
     <tr>
         <td>Add?</td>
         <td>User Id</td>
@@ -34,7 +33,7 @@
         <td>Delete?</td>
     </tr>
     {{ range $index, $element := .NewItems }}
-    <tr>
+    <tr class="item-entry">
         <input type="hidden" name="id[]" value="{{ .Id }}">
         <input type="hidden" name="isPledge[]" value="{{ .IsPledge }}">
         <td><input type="checkbox" name="add[]" value="{{ $index }}"></td>
@@ -49,6 +48,7 @@
     </tr>
     {{ end }}
 </table>
+</div>
 
 <input type="submit" value="Submit">
 </form>
