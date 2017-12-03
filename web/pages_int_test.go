@@ -224,7 +224,11 @@ func TestListNewItems(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	doc.Find(".items-table .item-entry").Each(func(i int, s *goquery.Selection) {
+	rows := doc.Find(".items-table .item-entry")
+	if rows.Size() != len(newItemPostData) {
+		t.Errorf("expected %d rows in results, got %d", len(newItemPostData), rows.Size())
+	}
+	rows.Each(func(i int, s *goquery.Selection) {
 		h := newItemHtml{}
 		s.Find("input").Each(func(_ int, s *goquery.Selection) {
 			n := s.AttrOr("name", "")
