@@ -230,30 +230,27 @@ func TestListNewItems(t *testing.T) {
 	}
 	rows.Each(func(i int, s *goquery.Selection) {
 		h := newItemHtml{}
+
+		fmap := map[string]func(string){
+			"id[]":          func(w string) { h.Id = w },
+			"isPledge[]":    func(w string) { h.IsPledge = w },
+			"userID[]":      func(w string) { h.UserID = w },
+			"usercompany[]": func(w string) { h.UserCompany = w },
+			"usermake[]":    func(w string) { h.UserMake = w },
+			"usermodel[]":   func(w string) { h.UserModel = w },
+			"uservalue[]":   func(w string) { h.UserValue = w },
+			"add[]":         func(string) {},
+			"delete[]":      func(string) {},
+		}
+
 		s.Find("input").Each(func(_ int, s *goquery.Selection) {
 			n := s.AttrOr("name", "")
 			v := s.AttrOr("value", "")
-			switch n {
-			case "id[]":
-				h.Id = v
-			case "isPledge[]":
-				h.IsPledge = v
-			case "userID[]":
-				h.UserID = v
-			case "usercompany[]":
-				h.UserCompany = v
-			case "usermake[]":
-				h.UserMake = v
-			case "usermodel[]":
-				h.UserModel = v
-			case "uservalue[]":
-				h.UserValue = v
-			case "add[]":
-			case "delete[]":
-				break
-			default:
+			f, ok := fmap[n]
+			if !ok {
 				t.Fatalf("unknown input: %s", n)
 			}
+			f(v)
 		})
 
 		v := newItemPostData[i]
