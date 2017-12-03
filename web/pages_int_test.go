@@ -169,13 +169,6 @@ func TestNewItems(t *testing.T) {
 	}
 }
 
-var newItemPostData = []url.Values{
-	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
-	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
-	url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
-	url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
-}
-
 func loadNewItems(client http.Client, t *testing.T) {
 	t.Helper()
 	for i, d := range newItemPostData {
@@ -191,6 +184,13 @@ func loadNewItems(client http.Client, t *testing.T) {
 		// Round-tripping of database items is tested in sqldb package, no need
 		// to replicate the work here
 	}
+}
+
+var newItemPostData = []url.Values{
+	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
+	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
+	url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
+	url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
 }
 
 func TestBlockAccessToItemListing(t *testing.T) {
@@ -228,5 +228,25 @@ func TestItemAdminSubmission(t *testing.T) {
 	defer server.Close()
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
-	client = client
+	loadNewItems(client, t)
+
+	cookie = loginUser("admin", t)
+	client = http.Client{Jar: cookie}
+
+	post := url.Values{
+		"add[]":         []string{"0"},
+		"id[]":          []string{"1"},
+		"isPledge[]":    []string{"0"},
+		"userID[]":      []string{"test1"},
+		"item[]":        []string{"0"},
+		"company[]":     []string{"0"},
+		"usercompany[]": newItemPostData[0]["company"],
+		"usermake[]":    newItemPostData[0]["make"],
+		"usermodel[]":   newItemPostData[0]["model"],
+	}
+	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
+	testPageStatus(resp, err, http.StatusOK, t)
+}
+
+func TestLimitUserNewItems(t *testing.T) {
 }
