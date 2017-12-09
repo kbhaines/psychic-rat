@@ -19,7 +19,7 @@ func Generate(db *sqldb.DB, totalSize int) error {
 	genCos := func() error {
 		defer timeTrack(time.Now(), "Gen cos")
 		for c := 0; c < numCompanies; c++ {
-			if err := db.NewCompany(generateCompany(c)); err != nil {
+			if _, err := db.NewCompany(generateCompany(c)); err != nil {
 				return err
 			}
 		}

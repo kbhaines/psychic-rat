@@ -156,47 +156,6 @@ func TestBadNewItems(t *testing.T) {
 	}
 }
 
-func TestNewItems(t *testing.T) {
-	server := newServer(t)
-	defer server.Close()
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	loadNewItems(client, t)
-
-	items, err := apis.NewItem.ListNewItems()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(newItemPostData) != len(items) {
-		t.Fatalf("expected %d new items, got %d", len(newItemPostData), len(items))
-	}
-}
-
-func loadNewItems(client http.Client, t *testing.T) {
-	t.Helper()
-	for i, d := range newItemPostData {
-		resp, err := client.PostForm(testUrl+"/newitem", d)
-		testPageStatus(resp, err, http.StatusOK, t)
-		expected := []string{
-			fmt.Sprintf("boycott of %s %s by %s", newItemPostData[i]["make"][0], newItemPostData[i]["model"][0], newItemPostData[i]["company"][0]),
-			"Signed in as user1 full",
-			"new item is under review",
-		}
-		body := readResponseBody(resp, t)
-		testStrings(body, expected, t)
-		// Round-tripping of database items is tested in sqldb package, no need
-		// to replicate the work here
-	}
-}
-
-var newItemPostData = []url.Values{
-	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
-	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
-	url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
-	url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
-}
-
 func TestBlockAccessToItemListing(t *testing.T) {
 	server := newServer(t)
 	defer server.Close()
@@ -214,8 +173,31 @@ func TestListNewItems(t *testing.T) {
 	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
 
-	cookie = loginUser("admin", t)
-	client = http.Client{Jar: cookie}
+	testNewItemsPage(newItemPostData, t)
+}
+
+var newItemPostData = []url.Values{
+	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
+	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
+	url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
+	url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
+}
+
+func testNewItemsPage(newItems []url.Values, t *testing.T) {
+
+	type newItemHtml struct {
+		Id          string
+		IsPledge    string
+		UserID      string
+		UserCompany string
+		UserMake    string
+		UserModel   string
+		UserValue   string
+	}
+
+	t.Helper()
+	cookie := loginUser("admin", t)
+	client := http.Client{Jar: cookie}
 	resp, err := client.Get(testUrl + "/admin/newitems")
 	testPageStatus(resp, err, http.StatusOK, t)
 
@@ -225,8 +207,8 @@ func TestListNewItems(t *testing.T) {
 	}
 
 	rows := doc.Find(".items-table .item-entry")
-	if rows.Size() != len(newItemPostData) {
-		t.Errorf("expected %d rows in results, got %d", len(newItemPostData), rows.Size())
+	if rows.Size() != len(newItems) {
+		t.Fatalf("expected %d rows in item listing, got %d", len(newItems), rows.Size())
 	}
 	rows.Each(func(i int, s *goquery.Selection) {
 		h := newItemHtml{}
@@ -253,7 +235,7 @@ func TestListNewItems(t *testing.T) {
 			f(v)
 		})
 
-		v := newItemPostData[i]
+		v := newItems[i]
 		expectedNewItem := newItemHtml{
 			Id:          strconv.Itoa(i + 1),
 			IsPledge:    "true",
@@ -270,17 +252,24 @@ func TestListNewItems(t *testing.T) {
 
 }
 
-type newItemHtml struct {
-	Id          string
-	IsPledge    string
-	UserID      string
-	UserCompany string
-	UserMake    string
-	UserModel   string
-	UserValue   string
+func loadNewItems(client http.Client, t *testing.T) {
+	t.Helper()
+	for i, d := range newItemPostData {
+		resp, err := client.PostForm(testUrl+"/newitem", d)
+		testPageStatus(resp, err, http.StatusOK, t)
+		expected := []string{
+			fmt.Sprintf("boycott of %s %s by %s", newItemPostData[i]["make"][0], newItemPostData[i]["model"][0], newItemPostData[i]["company"][0]),
+			"Signed in as user1 full",
+			"new item is under review",
+		}
+		body := readResponseBody(resp, t)
+		testStrings(body, expected, t)
+		// Round-tripping of database items is tested in sqldb package, no need
+		// to replicate the work here
+	}
 }
 
-func TestItemAdminSubmission(t *testing.T) {
+func TestNewItemAdminSubmission(t *testing.T) {
 	server := newServer(t)
 	defer server.Close()
 	cookie := loginUser("test1", t)
@@ -290,19 +279,38 @@ func TestItemAdminSubmission(t *testing.T) {
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
 
+	// POST to add Item from row 0
 	post := url.Values{
-		"add[]":         []string{"0"},
+		"add[]":         []string{"0"}, // row selected
 		"id[]":          []string{"1"},
 		"isPledge[]":    []string{"0"},
-		"userID[]":      []string{"test1"},
-		"item[]":        []string{"0"},
-		"company[]":     []string{"0"},
+		"userID[]":      []string{"test1"}, // user test1
+		"item[]":        []string{"0"},     // add new item
+		"company[]":     []string{"0"},     //add new company
 		"usercompany[]": newItemPostData[0]["company"],
 		"usermake[]":    newItemPostData[0]["make"],
 		"usermodel[]":   newItemPostData[0]["model"],
 	}
 	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
 	testPageStatus(resp, err, http.StatusOK, t)
+
+	testNewItemAdded(newItemPostData[0], t)
+	testNewItemsPage(newItemPostData[1:], t)
+}
+
+func testNewItemAdded(item url.Values, t *testing.T) {
+	t.Helper()
+	items, err := apis.Item.ListItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	make, model, company := item["make"][0], item["model"][0], item["company"][0]
+	for _, i := range items {
+		if i.Make == make && i.Model == model && i.Company.Name == company {
+			return
+		}
+	}
+	t.Fatalf("did not find expected item %s,%s,%s in items db", make, model, company)
 }
 
 func TestLimitUserNewItems(t *testing.T) {

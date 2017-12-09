@@ -91,12 +91,17 @@ func createSchema(db *sql.DB) error {
 	return err
 }
 
-func (d *DB) NewCompany(c types.Company) error {
-	_, err := d.Exec("insert into companies(name) values(?)", c.Name)
+func (d *DB) NewCompany(c types.Company) (*types.Company, error) {
+	r, err := d.Exec("insert into companies(name) values(?)", c.Name)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	lastId, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	c.Id = int(lastId)
+	return &c, nil
 }
 
 func (d *DB) GetCompanies() ([]types.Company, error) {

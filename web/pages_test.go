@@ -25,6 +25,10 @@ var (
 
 type mockItemApi struct{}
 
+func (m *mockItemApi) AddItem(types.Item) (*types.Item, error) {
+	panic("not implemented")
+}
+
 func (m *mockItemApi) ListItems() ([]types.Item, error) {
 	return mockItemReport, nil
 }

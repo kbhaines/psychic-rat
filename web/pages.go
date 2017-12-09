@@ -346,32 +346,35 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 	addItems, ok := r.Form["add[]"]
 	if !ok {
-		log.Printf("no add items\n")
+		log.Printf("no items to add\n")
 		log.Printf("r.Form = %+v\n", r.Form)
 		return
 	}
 	for _, rowString := range addItems {
-		row, err := strconv.ParseInt(rowString, 10, 32)
+		rowID, err := strconv.ParseInt(rowString, 10, 32)
 		if err != nil {
 			log.Printf("unable to parse row Id: %v", err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
 
-		log.Printf("add row = %+v\n", row)
-		itemId, err := strconv.ParseInt(r.Form["item[]"][row], 10, 32)
+		log.Printf("add row = %+v\n", rowID)
+		itemId, err := strconv.ParseInt(r.Form["item[]"][rowID], 10, 32)
 		// TODO: handle all errs
+		var newItem *types.Item
 		if itemId == 0 {
 			// Adding a new item, figure out the company
-			companyId, _ := strconv.ParseInt(r.Form["company[]"][row], 10, 32)
+			companyId, _ := strconv.ParseInt(r.Form["company[]"][rowID], 10, 32)
+			var company *types.Company
 			if companyId == 0 {
-				// Add new company
-
+				company, _ = apis.Company.NewCompany(types.Company{Name: r.Form["usercompany[]"][rowID]})
 			}
+			ni := types.Item{Company: *company, Make: r.Form["usermake[]"][0], Model: r.Form["usermodel[]"][0]}
+			newItem, _ = apis.Item.AddItem(ni)
 		}
 
-		if r.Form["isPledge[]"][row] == "1" {
-			apis.Pledge.NewPledge(int(itemId), r.Form["userID"][row])
+		if r.Form["isPledge[]"][rowID] == "1" {
+			apis.Pledge.NewPledge(newItem.Id, r.Form["userID"][rowID])
 		}
 	}
 }

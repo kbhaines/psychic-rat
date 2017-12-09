@@ -69,7 +69,7 @@ func initDB(t *testing.T) {
 
 func initCompanies(db *DB, t *testing.T) {
 	for _, c := range testCos {
-		err := db.NewCompany(types.Company{Name: c})
+		_, err := db.NewCompany(types.Company{Name: c})
 		if err != nil {
 			t.Fatal(err)
 		}

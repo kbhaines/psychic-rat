@@ -25,10 +25,12 @@ type (
 	CompanyAPI interface {
 		GetCompanies() ([]types.Company, error)
 		GetCompany(int) (types.Company, error)
+		NewCompany(co types.Company) (*types.Company, error)
 	}
 
 	ItemAPI interface {
 		ListItems() ([]types.Item, error)
+		AddItem(types.Item) (*types.Item, error)
 		GetItem(id int) (types.Item, error)
 	}
 
