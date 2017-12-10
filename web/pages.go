@@ -358,8 +358,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		log.Printf("add row = %+v\n", rowID)
-		itemId, err := strconv.ParseInt(r.Form["item[]"][rowID], 10, 32)
+		itemID, err := strconv.ParseInt(r.Form["item[]"][rowID], 10, 32)
 		if err != nil {
 			log.Printf("unable to parse item[]: %v", err)
 			http.Error(w, "", http.StatusBadRequest)
@@ -368,16 +367,16 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: handle all errs
 		var newItem *types.Item
-		if itemId == 0 {
+		if itemID == 0 {
 			// Adding a new item, figure out the company
-			companyId, err := strconv.ParseInt(r.Form["company[]"][rowID], 10, 32)
+			companyID, err := strconv.ParseInt(r.Form["company[]"][rowID], 10, 32)
 			if err != nil {
 				log.Printf("unable to parse company[]: %v", err)
 				http.Error(w, "", http.StatusBadRequest)
 				return
 			}
 			var company *types.Company
-			if companyId == 0 {
+			if companyID == 0 {
 				company, _ = apis.Company.NewCompany(types.Company{Name: r.Form["usercompany[]"][rowID]})
 			}
 			ni := types.Item{Company: *company, Make: r.Form["usermake[]"][rowID], Model: r.Form["usermodel[]"][rowID]}
@@ -397,7 +396,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 
 		err = apis.NewItem.DeleteNewItem(int(newItemID))
 		if err != nil {
-			log.Printf("unable to delete new item %d:  %v", itemId, err)
+			log.Printf("unable to delete new item %d:  %v", itemID, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
