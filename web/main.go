@@ -37,6 +37,7 @@ type (
 	NewItemAPI interface {
 		AddNewItem(types.NewItem) (*types.NewItem, error)
 		ListNewItems() ([]types.NewItem, error)
+		DeleteNewItem(int) error
 	}
 
 	AdminApi interface {

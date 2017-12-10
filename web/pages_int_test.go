@@ -279,23 +279,24 @@ func TestNewItemAdminSubmission(t *testing.T) {
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
 
-	// POST to add Item from row 0
-	post := url.Values{
-		"add[]":         []string{"0"}, // row selected
-		"id[]":          []string{"1"},
-		"isPledge[]":    []string{"0"},
-		"userID[]":      []string{"test1"}, // user test1
-		"item[]":        []string{"0"},     // add new item
-		"company[]":     []string{"0"},     //add new company
-		"usercompany[]": newItemPostData[0]["company"],
-		"usermake[]":    newItemPostData[0]["make"],
-		"usermodel[]":   newItemPostData[0]["model"],
-	}
-	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
-	testPageStatus(resp, err, http.StatusOK, t)
+	for itemToUse := 3; itemToUse > 0; itemToUse-- {
+		post := url.Values{
+			"add[]":         []string{"0"}, // row selected
+			"id[]":          []string{fmt.Sprintf("%d", itemToUse+1)},
+			"isPledge[]":    []string{"0"},
+			"userID[]":      []string{"test1"}, // user test1
+			"item[]":        []string{"0"},     // add new item
+			"company[]":     []string{"0"},     //add new company
+			"usercompany[]": newItemPostData[itemToUse]["company"],
+			"usermake[]":    newItemPostData[itemToUse]["make"],
+			"usermodel[]":   newItemPostData[itemToUse]["model"],
+		}
+		resp, err := client.PostForm(testUrl+"/admin/newitems", post)
+		testPageStatus(resp, err, http.StatusOK, t)
 
-	testNewItemAdded(newItemPostData[0], t)
-	testNewItemsPage(newItemPostData[1:], t)
+		testNewItemAdded(newItemPostData[itemToUse], t)
+		testNewItemsPage(newItemPostData[:itemToUse], t)
+	}
 }
 
 func testNewItemAdded(item url.Values, t *testing.T) {

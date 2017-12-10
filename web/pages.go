@@ -360,21 +360,47 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 
 		log.Printf("add row = %+v\n", rowID)
 		itemId, err := strconv.ParseInt(r.Form["item[]"][rowID], 10, 32)
+		if err != nil {
+			log.Printf("unable to parse item[]: %v", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
 		// TODO: handle all errs
 		var newItem *types.Item
 		if itemId == 0 {
 			// Adding a new item, figure out the company
-			companyId, _ := strconv.ParseInt(r.Form["company[]"][rowID], 10, 32)
+			companyId, err := strconv.ParseInt(r.Form["company[]"][rowID], 10, 32)
+			if err != nil {
+				log.Printf("unable to parse company[]: %v", err)
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
 			var company *types.Company
 			if companyId == 0 {
 				company, _ = apis.Company.NewCompany(types.Company{Name: r.Form["usercompany[]"][rowID]})
 			}
-			ni := types.Item{Company: *company, Make: r.Form["usermake[]"][0], Model: r.Form["usermodel[]"][0]}
+			ni := types.Item{Company: *company, Make: r.Form["usermake[]"][rowID], Model: r.Form["usermodel[]"][rowID]}
 			newItem, _ = apis.Item.AddItem(ni)
 		}
 
 		if r.Form["isPledge[]"][rowID] == "1" {
 			apis.Pledge.NewPledge(newItem.Id, r.Form["userID"][rowID])
 		}
+
+		newItemID, err := strconv.ParseInt(r.Form["id[]"][rowID], 10, 32)
+		if err != nil {
+			log.Printf("unable to parse id[]: %v", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
+		err = apis.NewItem.DeleteNewItem(int(newItemID))
+		if err != nil {
+			log.Printf("unable to delete new item %d:  %v", itemId, err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+
 	}
 }
