@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"psychic-rat/mdl"
 	"psychic-rat/sess"
@@ -337,6 +338,31 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "admin-new-items.html.tmpl", vars)
 }
 
+type formReader struct {
+	form url.Values
+	row  int
+	err  []error
+}
+
+func (f *formReader) getString(field string) string {
+	v, ok := f.form[field]
+	if !ok || !(f.row < len(v)) {
+		f.err = append(f.err, fmt.Errorf("%s not found in form (looking up row %d in %d items)", field, f.row, len(v)))
+		return ""
+	}
+	return v[f.row]
+}
+
+func (f *formReader) getInt(field string) int {
+	val := f.getString(field)
+	i, err := strconv.ParseInt(val, 10, 32)
+	if err != nil {
+		f.err = append(f.err, fmt.Errorf("error parsing field %s = %s into int: %v", field, val, err))
+		return 0
+	}
+	return int(i)
+}
+
 func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -357,41 +383,34 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
-
-		itemID, err := strconv.ParseInt(r.Form["item[]"][rowID], 10, 32)
-		if err != nil {
-			log.Printf("unable to parse item[]: %v", err)
+		reader := formReader{r.Form, int(rowID), []error{}}
+		itemID := reader.getInt("item[]")
+		companyID := reader.getInt("company[]")
+		userCompany := reader.getString("usercompany[]")
+		userMake := reader.getString("usermake[]")
+		userModel := reader.getString("usermodel[]")
+		isPledge := reader.getString("isPledge[]")
+		newItemID := reader.getInt("id[]")
+		userID := reader.getString("userID[]")
+		if len(reader.err) > 0 {
+			log.Printf("errors while parsing form line %d: %v", rowID, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
 
-		// TODO: handle all errs
 		var newItem *types.Item
 		if itemID == 0 {
 			// Adding a new item, figure out the company
-			companyID, err := strconv.ParseInt(r.Form["company[]"][rowID], 10, 32)
-			if err != nil {
-				log.Printf("unable to parse company[]: %v", err)
-				http.Error(w, "", http.StatusBadRequest)
-				return
-			}
 			var company *types.Company
 			if companyID == 0 {
-				company, _ = apis.Company.NewCompany(types.Company{Name: r.Form["usercompany[]"][rowID]})
+				company, _ = apis.Company.NewCompany(types.Company{Name: userCompany})
 			}
-			ni := types.Item{Company: *company, Make: r.Form["usermake[]"][rowID], Model: r.Form["usermodel[]"][rowID]}
+			ni := types.Item{Company: *company, Make: userMake, Model: userModel}
 			newItem, _ = apis.Item.AddItem(ni)
 		}
 
-		if r.Form["isPledge[]"][rowID] == "1" {
-			apis.Pledge.NewPledge(newItem.Id, r.Form["userID"][rowID])
-		}
-
-		newItemID, err := strconv.ParseInt(r.Form["id[]"][rowID], 10, 32)
-		if err != nil {
-			log.Printf("unable to parse id[]: %v", err)
-			http.Error(w, "", http.StatusBadRequest)
-			return
+		if isPledge == "1" {
+			apis.Pledge.NewPledge(newItem.Id, userID)
 		}
 
 		err = apis.NewItem.DeleteNewItem(int(newItemID))

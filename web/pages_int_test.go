@@ -269,7 +269,23 @@ func loadNewItems(client http.Client, t *testing.T) {
 	}
 }
 
-func TestNewItemAdminSubmission(t *testing.T) {
+func TestBadNewItemPost(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("admin", t)
+	client := http.Client{Jar: cookie}
+
+	post := url.Values{
+		"add[]":      []string{"0"}, // row selected
+		"isPledge[]": []string{"0"},
+		"userID[]":   []string{"test1"}, // user test1
+	}
+	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
+	testPageStatus(resp, err, http.StatusBadRequest, t)
+
+}
+
+func TestNewItemAdminPost(t *testing.T) {
 	server := newServer(t)
 	defer server.Close()
 	cookie := loginUser("test1", t)
