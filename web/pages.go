@@ -338,31 +338,6 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 	renderPage(w, "admin-new-items.html.tmpl", vars)
 }
 
-type formReader struct {
-	form url.Values
-	row  int
-	err  []error
-}
-
-func (f *formReader) getString(field string) string {
-	v, ok := f.form[field]
-	if !ok || !(f.row < len(v)) {
-		f.err = append(f.err, fmt.Errorf("%s not found in form (looking up row %d in %d items)", field, f.row, len(v)))
-		return ""
-	}
-	return v[f.row]
-}
-
-func (f *formReader) getInt(field string) int {
-	val := f.getString(field)
-	i, err := strconv.ParseInt(val, 10, 32)
-	if err != nil {
-		f.err = append(f.err, fmt.Errorf("error parsing field %s = %s into int: %v", field, val, err))
-		return 0
-	}
-	return int(i)
-}
-
 func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
@@ -370,20 +345,8 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	addItems, ok := r.Form["add[]"]
-	if !ok {
-		log.Printf("no items to add\n")
-		log.Printf("r.Form = %+v\n", r.Form)
-		return
-	}
-	for _, rowString := range addItems {
-		rowID, err := strconv.ParseInt(rowString, 10, 32)
-		if err != nil {
-			log.Printf("unable to parse row Id: %v", err)
-			http.Error(w, "", http.StatusBadRequest)
-			return
-		}
-		reader := formReader{r.Form, int(rowID), []error{}}
+	reader := newFormReader(r.Form)
+	for reader.next() {
 		newItemID := reader.getInt("id[]")
 		userID := reader.getString("userID[]")
 		itemID := reader.getInt("item[]")
@@ -393,7 +356,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		userModel := reader.getString("usermodel[]")
 		isPledge := reader.getString("isPledge[]")
 		if len(reader.err) > 0 {
-			log.Printf("errors while parsing form line %d: %v", rowID, err)
+			log.Printf("errors while parsing form line %d: %v", reader.row, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
@@ -420,6 +383,54 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+}
+
+type formReader struct {
+	form url.Values
+	row  int
+	rows []int
+	err  []error
+}
+
+func newFormReader(form url.Values) *formReader {
+	fr := &formReader{form, -1, []int{}, nil}
+	adds, ok := form["add[]"]
+	if !ok {
+		return fr
+	}
+	for _, str := range adds {
+		rowID, err := strconv.ParseInt(str, 10, 32)
+		if err != nil {
+			log.Printf("unable to parse row Id: %v", err)
+			return fr
+		}
+		fr.rows = append(fr.rows, int(rowID))
+	}
+	return fr
+}
+
+func (f *formReader) next() bool {
+	f.row++
+	return f.row < len(f.rows)
+}
+
+func (f *formReader) getString(field string) string {
+	v, ok := f.form[field]
+	if !ok || !(f.row < len(v)) {
+		f.err = append(f.err, fmt.Errorf("%s not found in form (looking up row %d in %d items)", field, f.row, len(v)))
+		return ""
+	}
+	return v[f.row]
+}
+
+func (f *formReader) getInt(field string) int {
+	val := f.getString(field)
+	i, err := strconv.ParseInt(val, 10, 32)
+	if err != nil {
+		f.err = append(f.err, fmt.Errorf("error parsing field %s = %s into int: %v", field, val, err))
+		return 0
+	}
+	return int(i)
 }
 
 type apiTxn struct {
