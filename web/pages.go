@@ -384,41 +384,76 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		reader := formReader{r.Form, int(rowID), []error{}}
+		newItemID := reader.getInt("id[]")
+		userID := reader.getString("userID[]")
 		itemID := reader.getInt("item[]")
 		companyID := reader.getInt("company[]")
 		userCompany := reader.getString("usercompany[]")
 		userMake := reader.getString("usermake[]")
 		userModel := reader.getString("usermodel[]")
 		isPledge := reader.getString("isPledge[]")
-		newItemID := reader.getInt("id[]")
-		userID := reader.getString("userID[]")
 		if len(reader.err) > 0 {
 			log.Printf("errors while parsing form line %d: %v", rowID, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
 
+		txn := apiTxn{nil, apis}
 		var newItem *types.Item
 		if itemID == 0 {
-			// Adding a new item, figure out the company
 			var company *types.Company
 			if companyID == 0 {
-				company, _ = apis.Company.NewCompany(types.Company{Name: userCompany})
+				company = txn.newCompany(types.Company{Name: userCompany})
 			}
 			ni := types.Item{Company: *company, Make: userMake, Model: userModel}
-			newItem, _ = apis.Item.AddItem(ni)
+			newItem = txn.addItem(ni)
 		}
 
 		if isPledge == "1" {
-			apis.Pledge.NewPledge(newItem.Id, userID)
+			txn.addPledge(newItem.Id, userID)
 		}
-
-		err = apis.NewItem.DeleteNewItem(int(newItemID))
-		if err != nil {
-			log.Printf("unable to delete new item %d:  %v", itemID, err)
+		txn.deleteNewItem(int(newItemID))
+		if txn.err != nil {
+			log.Printf("unable to complete transaction for new item %d:  %v", itemID, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
 
 	}
+}
+
+type apiTxn struct {
+	err  error
+	apis API
+}
+
+func (a *apiTxn) newCompany(co types.Company) (c *types.Company) {
+	if a.err != nil {
+		return &co
+	}
+	c, a.err = a.apis.Company.NewCompany(co)
+	return c
+}
+
+func (a *apiTxn) addItem(item types.Item) (i *types.Item) {
+	if a.err != nil {
+		return &item
+	}
+	i, a.err = a.apis.Item.AddItem(item)
+	return i
+}
+
+func (a *apiTxn) addPledge(itemID int, userID string) (p int) {
+	if a.err != nil {
+		return 0
+	}
+	p, a.err = a.apis.Pledge.NewPledge(itemID, userID)
+	return p
+}
+
+func (a *apiTxn) deleteNewItem(id int) {
+	if a.err != nil {
+		return
+	}
+	a.err = apis.NewItem.DeleteNewItem(id)
 }
