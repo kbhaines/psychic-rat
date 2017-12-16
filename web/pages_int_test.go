@@ -176,6 +176,7 @@ func TestListNewItems(t *testing.T) {
 	testNewItemsPage(newItemPostData, t)
 }
 
+// TODO: too much BS like this, need to use more structures
 var newItemPostData = []url.Values{
 	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
 	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
@@ -296,18 +297,14 @@ func TestNewItemAdminPost(t *testing.T) {
 	client = http.Client{Jar: cookie}
 
 	for itemToUse := 3; itemToUse > 0; itemToUse-- {
-		post := url.Values{
-			"add[]":         []string{"0"}, // row selected
-			"id[]":          []string{fmt.Sprintf("%d", itemToUse+1)},
-			"isPledge[]":    []string{"0"},
-			"userID[]":      []string{"test1"}, // user test1
-			"item[]":        []string{"0"},     // add new item
-			"company[]":     []string{"0"},     //add new company
-			"usercompany[]": newItemPostData[itemToUse]["company"],
-			"usermake[]":    newItemPostData[itemToUse]["make"],
-			"usermodel[]":   newItemPostData[itemToUse]["model"],
-		}
-		resp, err := client.PostForm(testUrl+"/admin/newitems", post)
+		pl := postLine{v: url.Values{}}
+		pl = pl.newPostLine(itemToUse + 1).userID("test1").
+			userCompany(newItemPostData[itemToUse]["company"][0]).
+			userMake(newItemPostData[itemToUse]["make"][0]).
+			userModel(newItemPostData[itemToUse]["model"][0]).
+			selectToAdd()
+
+		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
 		testNewItemAdded(newItemPostData[itemToUse], t)
@@ -329,6 +326,92 @@ func testNewItemAdded(item url.Values, t *testing.T) {
 	}
 	t.Fatalf("did not find expected item %s,%s,%s in items db", make, model, company)
 }
+
+func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+	loadNewItems(client, t)
+
+	cookie = loginUser("admin", t)
+	client = http.Client{Jar: cookie}
+
+	currentItems, err := apis.Item.ListItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pl := postLine{v: url.Values{}}
+	pl.newPostLine(4).userID("test1").existingItem(1).selectToAdd()
+	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+
+	newItems, err := apis.Item.ListItems()
+	if len(currentItems) != len(newItems) {
+		t.Fatalf("expected %d items, got %d items", len(currentItems), len(newItems))
+	}
+
+	testPageStatus(resp, err, http.StatusOK, t)
+	testNewItemsPage(newItemPostData[:3], t)
+}
+
+func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+	loadNewItems(client, t)
+
+	cookie = loginUser("admin", t)
+	client = http.Client{Jar: cookie}
+
+	currentCompanies, err := apis.Company.GetCompanies()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	pl := postLine{v: url.Values{}}
+	pl.newPostLine(4).userID("test1").existingCompany(1).selectToAdd()
+	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+
+	newCompanies, err := apis.Company.GetCompanies()
+	if len(currentCompanies) != len(newCompanies) {
+		t.Fatalf("expected %d items, got %d items", len(currentCompanies), len(newCompanies))
+	}
+
+	testPageStatus(resp, err, http.StatusOK, t)
+	testNewItemsPage(newItemPostData[:3], t)
+}
+
+type postLine struct {
+	row int
+	v   url.Values
+}
+
+func spfi(i int) string { return fmt.Sprintf("%d", i) }
+
+func (p postLine) newPostLine(itemID int) postLine {
+	p.row = len(p.v["id[]"])
+	p.v.Add("id[]", spfi(itemID))
+	p.v.Add("isPledge[]", "0")
+	p.v.Add("item[]", "0")
+	p.v.Add("company[]", "0")
+	p.v.Add("userID[]", "")
+	p.v.Add("usercompany[]", "")
+	p.v.Add("usermake[]", "")
+	p.v.Add("usermodel[]", "")
+	return p
+}
+
+func (p postLine) selectToAdd() postLine          { p.v.Add("add[]", spfi(p.row)); return p }
+func (p postLine) selectToDelete() postLine       { p.v.Add("delete[]", spfi(p.row)); return p }
+func (p postLine) isPledge() postLine             { p.v["isPledge[]"][p.row] = "1"; return p }
+func (p postLine) userID(u string) postLine       { p.v["userID[]"][p.row] = u; return p }
+func (p postLine) existingItem(i int) postLine    { p.v["item[]"][p.row] = spfi(i); return p }
+func (p postLine) existingCompany(c int) postLine { p.v["company[]"][p.row] = spfi(c); return p }
+func (p postLine) userCompany(c string) postLine  { p.v["usercompany[]"][p.row] = c; return p }
+func (p postLine) userMake(m string) postLine     { p.v["usermake[]"][p.row] = m; return p }
+func (p postLine) userModel(m string) postLine    { p.v["usermodel[]"][p.row] = m; return p }
 
 func TestLimitUserNewItems(t *testing.T) {
 }

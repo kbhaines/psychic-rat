@@ -367,9 +367,25 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			var company *types.Company
 			if companyID == 0 {
 				company = txn.newCompany(types.Company{Name: userCompany})
+			} else {
+				c, err := apis.Company.GetCompany(companyID)
+				if err != nil {
+					log.Printf("could not get company %d : %v", companyID, err)
+					http.Error(w, "", http.StatusBadRequest)
+					return
+				}
+				company = &c
 			}
 			ni := types.Item{Company: *company, Make: userMake, Model: userModel}
 			newItem = txn.addItem(ni)
+		} else {
+			i, err := apis.Item.GetItem(itemID)
+			if err != nil {
+				log.Printf("could not get item %d : %v", itemID, err)
+				http.Error(w, "", http.StatusBadRequest)
+				return
+			}
+			newItem = &i
 		}
 
 		if isPledge == "1" {
