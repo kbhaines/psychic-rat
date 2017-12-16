@@ -173,18 +173,21 @@ func TestListNewItems(t *testing.T) {
 	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
 
-	testNewItemsPage(newItemPostData, t)
+	testNewItemsPage(newItemPosts, t)
 }
 
-// TODO: too much BS like this, need to use more structures
-var newItemPostData = []url.Values{
-	url.Values{"company": {"newco1"}, "make": {"newmake1"}, "model": {"newmodel1"}},
-	url.Values{"company": {"newco2"}, "make": {"newmake2"}, "model": {"newmodel2"}},
-	url.Values{"company": {"newco3"}, "make": {"newmake3"}, "model": {"newmodel3"}},
-	url.Values{"company": {"newco4"}, "make": {"newmake4"}, "model": {"newmodel4"}},
+var newItemPosts = []NewItemPost{
+	NewItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1"},
+	NewItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2"},
+	NewItemPost{Company: "newco3", Make: "newmake3", Model: "newmodel3"},
+	NewItemPost{Company: "newco4", Make: "newmake4", Model: "newmodel4"},
 }
 
-func testNewItemsPage(newItems []url.Values, t *testing.T) {
+func (n *NewItemPost) getUrlValues() url.Values {
+	return url.Values{"company": {n.Company}, "make": {n.Make}, "model": {n.Model}}
+}
+
+func testNewItemsPage(newItems []NewItemPost, t *testing.T) {
 
 	type newItemHtml struct {
 		Id          string
@@ -236,14 +239,13 @@ func testNewItemsPage(newItems []url.Values, t *testing.T) {
 			f(v)
 		})
 
-		v := newItems[i]
 		expectedNewItem := newItemHtml{
 			Id:          strconv.Itoa(i + 1),
 			IsPledge:    "true",
 			UserID:      "test1",
-			UserCompany: v["company"][0],
-			UserMake:    v["make"][0],
-			UserModel:   v["model"][0],
+			UserCompany: newItems[i].Company,
+			UserMake:    newItems[i].Make,
+			UserModel:   newItems[i].Model,
 			UserValue:   "0",
 		}
 		if !reflect.DeepEqual(expectedNewItem, h) {
@@ -255,11 +257,11 @@ func testNewItemsPage(newItems []url.Values, t *testing.T) {
 
 func loadNewItems(client http.Client, t *testing.T) {
 	t.Helper()
-	for i, d := range newItemPostData {
-		resp, err := client.PostForm(testUrl+"/newitem", d)
+	for i, d := range newItemPosts {
+		resp, err := client.PostForm(testUrl+"/newitem", d.getUrlValues())
 		testPageStatus(resp, err, http.StatusOK, t)
 		expected := []string{
-			fmt.Sprintf("boycott of %s %s by %s", newItemPostData[i]["make"][0], newItemPostData[i]["model"][0], newItemPostData[i]["company"][0]),
+			fmt.Sprintf("boycott of %s %s by %s", newItemPosts[i].Make, newItemPosts[i].Model, newItemPosts[i].Company),
 			"Signed in as user1 full",
 			"new item is under review",
 		}
@@ -299,32 +301,31 @@ func TestNewItemAdminPost(t *testing.T) {
 	for itemToUse := 3; itemToUse > 0; itemToUse-- {
 		pl := postLine{v: url.Values{}}
 		pl = pl.newPostLine(itemToUse + 1).userID("test1").
-			userCompany(newItemPostData[itemToUse]["company"][0]).
-			userMake(newItemPostData[itemToUse]["make"][0]).
-			userModel(newItemPostData[itemToUse]["model"][0]).
+			userCompany(newItemPosts[itemToUse].Company).
+			userMake(newItemPosts[itemToUse].Make).
+			userModel(newItemPosts[itemToUse].Model).
 			selectToAdd()
 
 		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
-		testNewItemAdded(newItemPostData[itemToUse], t)
-		testNewItemsPage(newItemPostData[:itemToUse], t)
+		testNewItemAdded(newItemPosts[itemToUse], t)
+		testNewItemsPage(newItemPosts[:itemToUse], t)
 	}
 }
 
-func testNewItemAdded(item url.Values, t *testing.T) {
+func testNewItemAdded(item NewItemPost, t *testing.T) {
 	t.Helper()
 	items, err := apis.Item.ListItems()
 	if err != nil {
 		t.Fatal(err)
 	}
-	make, model, company := item["make"][0], item["model"][0], item["company"][0]
 	for _, i := range items {
-		if i.Make == make && i.Model == model && i.Company.Name == company {
+		if i.Make == item.Make && i.Model == item.Model && i.Company.Name == item.Company {
 			return
 		}
 	}
-	t.Fatalf("did not find expected item %s,%s,%s in items db", make, model, company)
+	t.Fatalf("did not find expected item %v in items db", item)
 }
 
 func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
@@ -352,7 +353,7 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	}
 
 	testPageStatus(resp, err, http.StatusOK, t)
-	testNewItemsPage(newItemPostData[:3], t)
+	testNewItemsPage(newItemPosts[:3], t)
 }
 
 func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
@@ -380,7 +381,7 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	}
 
 	testPageStatus(resp, err, http.StatusOK, t)
-	testNewItemsPage(newItemPostData[:3], t)
+	testNewItemsPage(newItemPosts[:3], t)
 }
 
 type postLine struct {

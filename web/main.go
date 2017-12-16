@@ -53,6 +53,12 @@ type (
 		GetUser(userId string) (*mdl.User, error)
 		CreateUser(mdl.User) error
 	}
+
+	NewItemPost struct {
+		Company string
+		Make    string
+		Model   string
+	}
 )
 
 var (
