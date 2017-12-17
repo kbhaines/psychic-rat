@@ -384,7 +384,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// formReader parses a submitted newItems form POST request
+// formReader parses a submitted New Items form POST request
 type formReader struct {
 	form url.Values
 	row  int
@@ -393,7 +393,7 @@ type formReader struct {
 }
 
 func newFormReader(form url.Values) *formReader {
-	fr := &formReader{form, -1, []int{}, nil}
+	fr := &formReader{form, -1, []int{}, []error{}}
 	adds, ok := form["add[]"]
 	if !ok {
 		return fr
@@ -402,6 +402,7 @@ func newFormReader(form url.Values) *formReader {
 		rowID, err := strconv.ParseInt(str, 10, 32)
 		if err != nil {
 			log.Printf("unable to parse row Id: %v", err)
+			fr.err = append(fr.err, err)
 			return fr
 		}
 		fr.rows = append(fr.rows, int(rowID))
@@ -422,6 +423,10 @@ func (f *formReader) next() bool {
 }
 
 func (f *formReader) getNewItemPost() NewItemAdminPost {
+	if f.errors() {
+		panic("getNewItemPost called when formReader in error state")
+	}
+
 	i := NewItemAdminPost{
 		Id:          f.getInt("id[]"),
 		UserID:      f.getString("userID[]"),

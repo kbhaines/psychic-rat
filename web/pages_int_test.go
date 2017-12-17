@@ -416,3 +416,19 @@ func (p postLine) userModel(m string) postLine    { p.v["usermodel[]"][p.row] = 
 
 func TestLimitUserNewItems(t *testing.T) {
 }
+
+func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
+	server := newServer(t)
+	defer server.Close()
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+	loadNewItems(client, t)
+
+	cookie = loginUser("admin", t)
+	client = http.Client{Jar: cookie}
+
+	v := url.Values{"add[]": []string{"abc"}}
+	resp, err := client.PostForm(testUrl+"/admin/newitems", v)
+	testPageStatus(resp, err, http.StatusBadRequest, t)
+
+}
