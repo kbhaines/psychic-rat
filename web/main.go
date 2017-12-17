@@ -61,7 +61,7 @@ type (
 	}
 
 	NewItemAdminPost struct {
-		Id          int
+		ID          int
 		Add         bool
 		Delete      bool
 		Pledge      bool

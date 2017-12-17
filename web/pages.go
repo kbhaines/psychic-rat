@@ -353,7 +353,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 
 		txn := apiTxn{nil, apis}
-		var newItem *types.Item
+		var item *types.Item
 		if nip.ItemID == 0 {
 			var company *types.Company
 			if nip.CompanyID == 0 {
@@ -361,17 +361,17 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			} else {
 				company = txn.getCompany(nip.CompanyID)
 			}
-			newItem = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel})
+			item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel})
 		} else {
-			newItem = txn.getItem(nip.ItemID)
+			item = txn.getItem(nip.ItemID)
 		}
 
 		if nip.Pledge {
-			txn.addPledge(newItem.Id, nip.UserID)
+			txn.addPledge(item.Id, nip.UserID)
 		}
-		txn.deleteNewItem(nip.Id)
+		txn.deleteNewItem(nip.ID)
 		if txn.err != nil {
-			log.Printf("unable to complete transaction for new item %d:  %v", nip.Id, err)
+			log.Printf("unable to complete transaction for new item %d:  %v", nip.ID, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
@@ -384,7 +384,8 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// formReader parses a submitted New Items form POST request
+// formReader parses a submitted New Items form POST request, captures multiple
+// errors that resulted from parsing.
 type formReader struct {
 	form url.Values
 	row  int
@@ -428,7 +429,7 @@ func (f *formReader) getNewItemPost() NewItemAdminPost {
 	}
 
 	i := NewItemAdminPost{
-		Id:          f.getInt("id[]"),
+		ID:          f.getInt("id[]"),
 		UserID:      f.getString("userID[]"),
 		ItemID:      f.getInt("item[]"),
 		CompanyID:   f.getInt("company[]"),
