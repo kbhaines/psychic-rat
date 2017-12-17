@@ -352,26 +352,8 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		txn := apiTxn{nil, apis}
-		var item *types.Item
-		if nip.ItemID == 0 {
-			var company *types.Company
-			if nip.CompanyID == 0 {
-				company = txn.addCompany(types.Company{Name: nip.UserCompany})
-			} else {
-				company = txn.getCompany(nip.CompanyID)
-			}
-			item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel})
-		} else {
-			item = txn.getItem(nip.ItemID)
-		}
-
-		if nip.Pledge {
-			txn.addPledge(item.Id, nip.UserID)
-		}
-		txn.deleteNewItem(nip.ID)
-		if txn.err != nil {
-			log.Printf("unable to complete transaction for new item %d:  %v", nip.ID, err)
+		if err := processNewItemPost(nip); err != nil {
+			log.Printf("unable to complete transactions for new item %d:  %v", nip.ID, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
@@ -382,6 +364,28 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
+}
+
+func processNewItemPost(nip NewItemAdminPost) error {
+	txn := apiTxn{nil, apis}
+	var item *types.Item
+	if nip.ItemID == 0 {
+		var company *types.Company
+		if nip.CompanyID == 0 {
+			company = txn.addCompany(types.Company{Name: nip.UserCompany})
+		} else {
+			company = txn.getCompany(nip.CompanyID)
+		}
+		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel})
+	} else {
+		item = txn.getItem(nip.ItemID)
+	}
+
+	if nip.Pledge {
+		txn.addPledge(item.Id, nip.UserID)
+	}
+	txn.deleteNewItem(nip.ID)
+	return txn.err
 }
 
 // formReader parses a submitted New Items form POST request, captures multiple
