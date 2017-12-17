@@ -59,6 +59,19 @@ type (
 		Make    string
 		Model   string
 	}
+
+	NewItemAdminPost struct {
+		Id          int
+		Add         bool
+		Delete      bool
+		Pledge      bool
+		ItemID      int
+		CompanyID   int
+		UserID      string
+		UserCompany string
+		UserMake    string
+		UserModel   string
+	}
 )
 
 var (

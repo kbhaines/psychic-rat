@@ -347,14 +347,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 	reader := newFormReader(r.Form)
 	for reader.next() {
-		newItemID := reader.getInt("id[]")
-		userID := reader.getString("userID[]")
-		itemID := reader.getInt("item[]")
-		companyID := reader.getInt("company[]")
-		userCompany := reader.getString("usercompany[]")
-		userMake := reader.getString("usermake[]")
-		userModel := reader.getString("usermodel[]")
-		isPledge := reader.getString("isPledge[]")
+		nip := reader.getNewItemPost()
 		if len(reader.err) > 0 {
 			log.Printf("errors while parsing form line %d: %v", reader.row, err)
 			http.Error(w, "", http.StatusBadRequest)
@@ -363,37 +356,37 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 
 		txn := apiTxn{nil, apis}
 		var newItem *types.Item
-		if itemID == 0 {
+		if nip.ItemID == 0 {
 			var company *types.Company
-			if companyID == 0 {
-				company = txn.newCompany(types.Company{Name: userCompany})
+			if nip.CompanyID == 0 {
+				company = txn.newCompany(types.Company{Name: nip.UserCompany})
 			} else {
-				c, err := apis.Company.GetCompany(companyID)
+				c, err := apis.Company.GetCompany(nip.CompanyID)
 				if err != nil {
-					log.Printf("could not get company %d : %v", companyID, err)
+					log.Printf("could not get company %d : %v", nip.CompanyID, err)
 					http.Error(w, "", http.StatusBadRequest)
 					return
 				}
 				company = &c
 			}
-			ni := types.Item{Company: *company, Make: userMake, Model: userModel}
+			ni := types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel}
 			newItem = txn.addItem(ni)
 		} else {
-			i, err := apis.Item.GetItem(itemID)
+			i, err := apis.Item.GetItem(nip.ItemID)
 			if err != nil {
-				log.Printf("could not get item %d : %v", itemID, err)
+				log.Printf("could not get item %d : %v", nip.ItemID, err)
 				http.Error(w, "", http.StatusBadRequest)
 				return
 			}
 			newItem = &i
 		}
 
-		if isPledge == "1" {
-			txn.addPledge(newItem.Id, userID)
+		if nip.Pledge {
+			txn.addPledge(newItem.Id, nip.UserID)
 		}
-		txn.deleteNewItem(int(newItemID))
+		txn.deleteNewItem(nip.Id)
 		if txn.err != nil {
-			log.Printf("unable to complete transaction for new item %d:  %v", itemID, err)
+			log.Printf("unable to complete transaction for new item %d:  %v", nip.Id, err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
@@ -428,6 +421,20 @@ func newFormReader(form url.Values) *formReader {
 func (f *formReader) next() bool {
 	f.row++
 	return f.row < len(f.rows)
+}
+
+func (f *formReader) getNewItemPost() NewItemAdminPost {
+	i := NewItemAdminPost{
+		Id:          f.getInt("id[]"),
+		UserID:      f.getString("userID[]"),
+		ItemID:      f.getInt("item[]"),
+		CompanyID:   f.getInt("company[]"),
+		UserCompany: f.getString("usercompany[]"),
+		UserMake:    f.getString("usermake[]"),
+		UserModel:   f.getString("usermodel[]"),
+		Pledge:      f.getString("isPledge[]") == "1",
+	}
+	return i
 }
 
 func (f *formReader) getString(field string) string {
