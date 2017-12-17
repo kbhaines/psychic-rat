@@ -348,10 +348,8 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	reader := newFormReader(r.Form)
 	for reader.next() {
 		nip := reader.getNewItemPost()
-		if len(reader.err) > 0 {
-			log.Printf("errors while parsing form line %d: %v", reader.row, err)
-			http.Error(w, "", http.StatusBadRequest)
-			return
+		if reader.errors() {
+			break
 		}
 
 		txn := apiTxn{nil, apis}
@@ -359,26 +357,13 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		if nip.ItemID == 0 {
 			var company *types.Company
 			if nip.CompanyID == 0 {
-				company = txn.newCompany(types.Company{Name: nip.UserCompany})
+				company = txn.addCompany(types.Company{Name: nip.UserCompany})
 			} else {
-				c, err := apis.Company.GetCompany(nip.CompanyID)
-				if err != nil {
-					log.Printf("could not get company %d : %v", nip.CompanyID, err)
-					http.Error(w, "", http.StatusBadRequest)
-					return
-				}
-				company = &c
+				company = txn.getCompany(nip.CompanyID)
 			}
-			ni := types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel}
-			newItem = txn.addItem(ni)
+			newItem = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel})
 		} else {
-			i, err := apis.Item.GetItem(nip.ItemID)
-			if err != nil {
-				log.Printf("could not get item %d : %v", nip.ItemID, err)
-				http.Error(w, "", http.StatusBadRequest)
-				return
-			}
-			newItem = &i
+			newItem = txn.getItem(nip.ItemID)
 		}
 
 		if nip.Pledge {
@@ -392,8 +377,14 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
+	if reader.errors() {
+		log.Printf("errors while parsing form line %d: %v", reader.row, err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
 }
 
+// formReader parses a submitted newItems form POST request
 type formReader struct {
 	form url.Values
 	row  int
@@ -418,7 +409,14 @@ func newFormReader(form url.Values) *formReader {
 	return fr
 }
 
+func (f *formReader) errors() bool {
+	return len(f.err) > 0
+}
+
 func (f *formReader) next() bool {
+	if f.errors() {
+		return false
+	}
 	f.row++
 	return f.row < len(f.rows)
 }
@@ -456,17 +454,28 @@ func (f *formReader) getInt(field string) int {
 	return int(i)
 }
 
+// apiTxn wraps the error handling of multiple transactions with the API; the
+// user just checks the 'err' field at the end of the transaction block.
 type apiTxn struct {
 	err  error
 	apis API
 }
 
-func (a *apiTxn) newCompany(co types.Company) (c *types.Company) {
+func (a *apiTxn) addCompany(co types.Company) (c *types.Company) {
 	if a.err != nil {
 		return &co
 	}
 	c, a.err = a.apis.Company.NewCompany(co)
 	return c
+}
+
+func (a *apiTxn) getCompany(id int) (c *types.Company) {
+	if a.err != nil {
+		return c
+	}
+	var co types.Company
+	co, a.err = a.apis.Company.GetCompany(id)
+	return &co
 }
 
 func (a *apiTxn) addItem(item types.Item) (i *types.Item) {
@@ -475,6 +484,16 @@ func (a *apiTxn) addItem(item types.Item) (i *types.Item) {
 	}
 	i, a.err = a.apis.Item.AddItem(item)
 	return i
+}
+
+func (a *apiTxn) getItem(id int) (i *types.Item) {
+	if a.err != nil {
+		return i
+	}
+	var item types.Item
+	item, a.err = a.apis.Item.GetItem(id)
+	return &item
+
 }
 
 func (a *apiTxn) addPledge(itemID int, userID string) (p int) {
