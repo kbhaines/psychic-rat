@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"psychic-rat/api/rest"
 	"psychic-rat/auth0"
-	"psychic-rat/mdl"
 	"psychic-rat/types"
 )
 
@@ -21,6 +20,9 @@ type (
 		Pledge  PledgeAPI
 		User    UserAPI
 	}
+
+	// TODO: lots of interfaces here and they need to be split into smaller
+	// ones, along with splitting the web module as well.
 
 	CompanyAPI interface {
 		GetCompanies() ([]types.Company, error)
@@ -50,8 +52,8 @@ type (
 	}
 
 	UserAPI interface {
-		GetUser(userId string) (*mdl.User, error)
-		CreateUser(mdl.User) error
+		GetUser(userId string) (*types.User, error)
+		CreateUser(types.User) error
 	}
 
 	NewItemPost struct {

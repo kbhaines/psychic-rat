@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
-	"psychic-rat/mdl"
 	"psychic-rat/types"
 	"time"
 
@@ -222,8 +221,8 @@ func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 	return &i, nil
 }
 
-func (d *DB) GetUser(userId string) (*mdl.User, error) {
-	u := mdl.User{}
+func (d *DB) GetUser(userId string) (*types.User, error) {
+	u := types.User{}
 	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userId).Scan(&u.Id, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
 	if err != nil {
 		return &u, err
@@ -231,7 +230,7 @@ func (d *DB) GetUser(userId string) (*mdl.User, error) {
 	return &u, nil
 }
 
-func (d *DB) CreateUser(u mdl.User) error {
+func (d *DB) CreateUser(u types.User) error {
 	_, err := d.insertUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	if err != nil {
 		return err

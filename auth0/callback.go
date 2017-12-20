@@ -7,15 +7,15 @@ import (
 	"net/http"
 	"os"
 	"psychic-rat/api/rest"
-	"psychic-rat/mdl"
 	"psychic-rat/sess"
+	"psychic-rat/types"
 
 	"golang.org/x/oauth2"
 )
 
 type UserAPI interface {
-	GetUser(id string) (*mdl.User, error)
-	CreateUser(mdl.User) error
+	GetUser(id string) (*types.User, error)
+	CreateUser(types.User) error
 }
 
 var (
@@ -25,6 +25,8 @@ var (
 func Init(a UserAPI) {
 	userAPI = a
 }
+
+// TODO: taken from Auth2's sample, refactor
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	domain := os.Getenv("AUTH0_DOMAIN")
@@ -81,7 +83,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	userId := profile["sub"].(string)
 	userRecord, error := userAPI.GetUser(userId)
 	if error != nil {
-		userRecord = &mdl.User{
+		userRecord = &types.User{
 			Id:        userId,
 			Fullname:  profile["name"].(string),
 			FirstName: profile["given_name"].(string),

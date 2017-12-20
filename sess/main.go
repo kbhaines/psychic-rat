@@ -5,14 +5,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"psychic-rat/mdl"
+	"psychic-rat/types"
 
 	"github.com/gorilla/sessions"
 )
 
 func init() {
-	gob.Register(mdl.ID(0))
-	gob.Register(mdl.User{})
+	gob.Register(types.User{})
 }
 
 func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
@@ -27,7 +26,7 @@ type (
 	}
 )
 
-func (s *SessionStore) Get() (*mdl.User, error) {
+func (s *SessionStore) Get() (*types.User, error) {
 	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
 		return nil, fmt.Errorf("cannot retrieve from store: %v", err)
@@ -36,7 +35,7 @@ func (s *SessionStore) Get() (*mdl.User, error) {
 	if !found {
 		return nil, nil
 	}
-	userRecord, ok := userFromSession.(mdl.User)
+	userRecord, ok := userFromSession.(types.User)
 	if !ok {
 		return nil, fmt.Errorf("conversion error: %v", err)
 	}
@@ -44,7 +43,7 @@ func (s *SessionStore) Get() (*mdl.User, error) {
 	return &userRecord, nil
 }
 
-func (s *SessionStore) Save(user mdl.User) error {
+func (s *SessionStore) Save(user types.User) error {
 	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
 		return fmt.Errorf("cannot retrieve from store: %v", err)

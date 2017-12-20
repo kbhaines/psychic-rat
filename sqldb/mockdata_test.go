@@ -1,23 +1,22 @@
 package sqldb
 
 import (
-	"psychic-rat/mdl"
 	"psychic-rat/types"
 	"testing"
 )
 
 var (
-	testUsers = []mdl.User{
-		mdl.User{Id: "test1", FirstName: "user1", Email: "user1@user.com"},
-		mdl.User{Id: "test2", FirstName: "user2", Email: "user2@user.com"},
-		mdl.User{Id: "test3", FirstName: "user3", Email: "user3@user.com"},
-		mdl.User{Id: "test4", FirstName: "user4", Email: "user4@user.com"},
-		mdl.User{Id: "test5", FirstName: "user5", Email: "user5@user.com"},
-		mdl.User{Id: "test6", FirstName: "user6", Email: "user6@user.com"},
-		mdl.User{Id: "test7", FirstName: "user7", Email: "user7@user.com"},
-		mdl.User{Id: "test8", FirstName: "user8", Email: "user8@user.com"},
-		mdl.User{Id: "test9", FirstName: "user9", Email: "user9@user.com"},
-		mdl.User{Id: "test10", FirstName: "user10", Email: "user10@user.com"},
+	testUsers = []types.User{
+		types.User{Id: "test1", FirstName: "user1", Email: "user1@user.com"},
+		types.User{Id: "test2", FirstName: "user2", Email: "user2@user.com"},
+		types.User{Id: "test3", FirstName: "user3", Email: "user3@user.com"},
+		types.User{Id: "test4", FirstName: "user4", Email: "user4@user.com"},
+		types.User{Id: "test5", FirstName: "user5", Email: "user5@user.com"},
+		types.User{Id: "test6", FirstName: "user6", Email: "user6@user.com"},
+		types.User{Id: "test7", FirstName: "user7", Email: "user7@user.com"},
+		types.User{Id: "test8", FirstName: "user8", Email: "user8@user.com"},
+		types.User{Id: "test9", FirstName: "user9", Email: "user9@user.com"},
+		types.User{Id: "test10", FirstName: "user10", Email: "user10@user.com"},
 	}
 
 	testCos = []string{"testco1", "testco2", "testco3"}

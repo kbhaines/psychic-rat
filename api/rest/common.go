@@ -1,3 +1,6 @@
+// TODO: package doesn't need to exist; not going down the web-app route
+// anymore
+
 package rest
 
 import (

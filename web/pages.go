@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"psychic-rat/mdl"
 	"psychic-rat/sess"
 	"psychic-rat/types"
 	"strconv"
 
 	"github.com/gorilla/sessions"
 )
+
+// TODO: split into subpackages; separate user & admin stuff for starters.
 
 type (
 	Auth0 struct {
@@ -25,7 +26,7 @@ type (
 	pageVariables struct {
 		Auth0
 		Items     []types.Item
-		User      mdl.User
+		User      types.User
 		NewItems  []types.NewItem
 		Companies []types.Company
 	}
@@ -64,6 +65,7 @@ func (pv *pageVariables) withAuth0Vars() *pageVariables {
 	return pv
 }
 
+// TODO: handling template errors
 func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
 	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl", "navi.html.tmpl"))
 	tpt.Execute(writer, variables)

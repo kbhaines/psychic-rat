@@ -3,7 +3,6 @@ package datagen
 import (
 	"fmt"
 	"log"
-	"psychic-rat/mdl"
 	"psychic-rat/sqldb"
 	"psychic-rat/types"
 	"time"
@@ -82,8 +81,8 @@ func generateNewItem(i, maxCompanyId int) types.NewItem {
 	return types.NewItem{UserID: spf("user%03d", i), Make: spf("newmake%03d", i), Model: spf("newmodel%03d", i), Company: spf("newco%03d", i)}
 }
 
-func generateUser(u int) mdl.User {
-	return mdl.User{Id: spf("user%03d", u), FirstName: spf("User%03d", u), Fullname: spf("User%03d Fullname", u), Email: spf("user%03d@domain.com", u), IsAdmin: u == 42}
+func generateUser(u int) types.User {
+	return types.User{Id: spf("user%03d", u), FirstName: spf("User%03d", u), Fullname: spf("User%03d Fullname", u), Email: spf("user%03d@domain.com", u), IsAdmin: u == 42}
 }
 
 func timeTrack(start time.Time, name string) {
