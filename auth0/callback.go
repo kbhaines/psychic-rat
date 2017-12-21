@@ -83,7 +83,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	userRecord, error := userAPI.GetUser(userId)
 	if error != nil {
 		userRecord = &types.User{
-			Id:        userId,
+			ID:        userId,
 			Fullname:  profile["name"].(string),
 			FirstName: profile["given_name"].(string),
 			Country:   profile["locale"].(string),

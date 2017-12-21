@@ -24,8 +24,8 @@ func TestGetCompanyById(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.Id != id {
-		t.Fatalf("wanted id %v, got %v", id, c.Id)
+	if c.ID != id {
+		t.Fatalf("wanted id %v, got %v", id, c.ID)
 	}
 	if c.Name != testCos[0] {
 		t.Fatalf("wanted name %v, got %v", testCos[0], c.Name)
@@ -76,7 +76,7 @@ func TestNewUser(t *testing.T) {
 	initUsers(db, t)
 
 	for _, u := range testUsers {
-		user, err := db.GetUser(u.Id)
+		user, err := db.GetUser(u.ID)
 		if err != nil {
 			t.Fatal("error from db.GetUser:" + err.Error())
 		}
@@ -115,7 +115,7 @@ func TestAddNewItem(t *testing.T) {
 
 	var n types.NewItem
 	var timestamp int64
-	err = db.QueryRow("select id, make, model, company, userID, timestamp from newItems where id=?", newItem.Id).Scan(&n.Id, &n.Make, &n.Model, &n.Company, &n.UserID, &timestamp)
+	err = db.QueryRow("select id, make, model, company, userID, timestamp from newItems where id=?", newItem.ID).Scan(&n.ID, &n.Make, &n.Model, &n.Company, &n.UserID, &timestamp)
 	if err != nil {
 		t.Fatal(err)
 	}

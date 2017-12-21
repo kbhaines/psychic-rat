@@ -7,16 +7,16 @@ import (
 
 var (
 	testUsers = []types.User{
-		types.User{Id: "test1", FirstName: "user1", Email: "user1@user.com"},
-		types.User{Id: "test2", FirstName: "user2", Email: "user2@user.com"},
-		types.User{Id: "test3", FirstName: "user3", Email: "user3@user.com"},
-		types.User{Id: "test4", FirstName: "user4", Email: "user4@user.com"},
-		types.User{Id: "test5", FirstName: "user5", Email: "user5@user.com"},
-		types.User{Id: "test6", FirstName: "user6", Email: "user6@user.com"},
-		types.User{Id: "test7", FirstName: "user7", Email: "user7@user.com"},
-		types.User{Id: "test8", FirstName: "user8", Email: "user8@user.com"},
-		types.User{Id: "test9", FirstName: "user9", Email: "user9@user.com"},
-		types.User{Id: "test10", FirstName: "user10", Email: "user10@user.com"},
+		types.User{ID: "test1", FirstName: "user1", Email: "user1@user.com"},
+		types.User{ID: "test2", FirstName: "user2", Email: "user2@user.com"},
+		types.User{ID: "test3", FirstName: "user3", Email: "user3@user.com"},
+		types.User{ID: "test4", FirstName: "user4", Email: "user4@user.com"},
+		types.User{ID: "test5", FirstName: "user5", Email: "user5@user.com"},
+		types.User{ID: "test6", FirstName: "user6", Email: "user6@user.com"},
+		types.User{ID: "test7", FirstName: "user7", Email: "user7@user.com"},
+		types.User{ID: "test8", FirstName: "user8", Email: "user8@user.com"},
+		types.User{ID: "test9", FirstName: "user9", Email: "user9@user.com"},
+		types.User{ID: "test10", FirstName: "user10", Email: "user10@user.com"},
 	}
 
 	testCos = []string{"testco1", "testco2", "testco3"}
@@ -27,10 +27,10 @@ var (
 	}
 
 	testItems = []types.Item{
-		types.Item{Id: 0, Make: "phone", Model: "xyz", Company: companies[0]},
-		types.Item{Id: 0, Make: "phone", Model: "133", Company: companies[0]},
-		types.Item{Id: 0, Make: "tablet", Model: "ab1", Company: companies[1]},
-		types.Item{Id: 0, Make: "tablet", Model: "xy1", Company: companies[1]},
+		types.Item{ID: 0, Make: "phone", Model: "xyz", Company: companies[0]},
+		types.Item{ID: 0, Make: "phone", Model: "133", Company: companies[0]},
+		types.Item{ID: 0, Make: "tablet", Model: "ab1", Company: companies[1]},
+		types.Item{ID: 0, Make: "tablet", Model: "xy1", Company: companies[1]},
 	}
 
 	newItems = []types.NewItem{
@@ -66,7 +66,7 @@ func initItems(db *DB, t *testing.T) []int {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ids = append(ids, i.Id)
+		ids = append(ids, i.ID)
 	}
 	return ids
 }

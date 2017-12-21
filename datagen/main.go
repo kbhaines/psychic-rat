@@ -73,7 +73,7 @@ func generateCompany(c int) types.Company {
 }
 
 func generateItem(i, maxCompanyId int) types.Item {
-	company := types.Company{Id: i % maxCompanyId}
+	company := types.Company{ID: i % maxCompanyId}
 	return types.Item{Make: spf("make%03d", i), Model: spf("model%03d", i), Company: company}
 }
 
@@ -82,7 +82,7 @@ func generateNewItem(i, maxCompanyId int) types.NewItem {
 }
 
 func generateUser(u int) types.User {
-	return types.User{Id: spf("user%03d", u), FirstName: spf("User%03d", u), Fullname: spf("User%03d Fullname", u), Email: spf("user%03d@domain.com", u), IsAdmin: u == 42}
+	return types.User{ID: spf("user%03d", u), FirstName: spf("User%03d", u), Fullname: spf("User%03d Fullname", u), Email: spf("user%03d@domain.com", u), IsAdmin: u == 42}
 }
 
 func timeTrack(start time.Time, name string) {

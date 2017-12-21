@@ -201,7 +201,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	// TODO ignoring a couple of errors
 	s := sess.NewSessionStore(request, writer)
 	user, _ := s.Get()
-	userId := user.Id
+	userId := user.ID
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
 	plId, err := apis.Pledge.AddPledge(itemId, userId)
@@ -244,7 +244,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO ignoring a couple of errors
 	s := sess.NewSessionStore(r, w)
 	user, _ := s.Get()
-	userId := user.Id
+	userId := user.ID
 
 	company := r.FormValue("company")
 	make := r.FormValue("make")
@@ -373,7 +373,7 @@ func processNewItemPost(nip NewItemAdminPost) error {
 	}
 
 	if nip.Pledge {
-		txn.addPledge(item.Id, nip.UserID)
+		txn.addPledge(item.ID, nip.UserID)
 	}
 	txn.deleteNewItem(nip.ID)
 	return txn.err

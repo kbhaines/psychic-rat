@@ -5,20 +5,20 @@ import (
 )
 
 type Company struct {
-	Id   int    `json:"id"`
+	ID   int    `json:"id"`
 	Name string `json:"name"`
 }
 
 type Item struct {
-	Id      int    `json:"id"`
+	ID      int    `json:"id"`
 	Make    string `json:"make"`
 	Model   string `json:"model"`
 	Company Company
 }
 
 type Pledge struct {
-	PledgeId  int `json:"id"`
-	UserId    int
+	PledgeID  int `json:"id"`
+	UserID    int
 	Item      Item      `json:"item"`
 	Timestamp time.Time `json:"timestamp"`
 }
@@ -28,7 +28,7 @@ type PledgeRequest struct {
 }
 
 type User struct {
-	Id        string
+	ID        string
 	Country   string
 	FirstName string
 	Email     string
@@ -41,7 +41,7 @@ type User struct {
 // Items. 'Company' will be used if also adding in a new company to the
 // database. IsPledge is true if the user also pledged the item
 type NewItem struct {
-	Id        int
+	ID        int
 	UserID    string
 	IsPledge  bool
 	Make      string

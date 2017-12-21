@@ -16,10 +16,10 @@ var (
 	}
 
 	mockItemReport = []types.Item{
-		types.Item{Id: 123, Make: "phone", Model: "x124", Company: mockCompanies[0]},
-		types.Item{Id: 124, Make: "phone", Model: "x125", Company: mockCompanies[1]},
-		types.Item{Id: 125, Make: "phone", Model: "x126", Company: mockCompanies[1]},
-		types.Item{Id: 126, Make: "phone", Model: "x127", Company: mockCompanies[2]},
+		types.Item{ID: 123, Make: "phone", Model: "x124", Company: mockCompanies[0]},
+		types.Item{ID: 124, Make: "phone", Model: "x125", Company: mockCompanies[1]},
+		types.Item{ID: 125, Make: "phone", Model: "x126", Company: mockCompanies[1]},
+		types.Item{ID: 126, Make: "phone", Model: "x127", Company: mockCompanies[2]},
 	}
 )
 

@@ -99,7 +99,7 @@ func (d *DB) AddCompany(c types.Company) (*types.Company, error) {
 	if err != nil {
 		return nil, err
 	}
-	c.Id = int(lastId)
+	c.ID = int(lastId)
 	return &c, nil
 }
 
@@ -111,7 +111,7 @@ func (d *DB) GetCompanies() ([]types.Company, error) {
 	}
 	for rows.Next() {
 		var co types.Company
-		err = rows.Scan(&co.Id, &co.Name)
+		err = rows.Scan(&co.ID, &co.Name)
 		if err != nil {
 			return result, err
 		}
@@ -122,7 +122,7 @@ func (d *DB) GetCompanies() ([]types.Company, error) {
 
 func (d *DB) GetCompany(id int) (types.Company, error) {
 	result := types.Company{}
-	err := d.QueryRow("select id, name from companies where id = ?", id).Scan(&result.Id, &result.Name)
+	err := d.QueryRow("select id, name from companies where id = ?", id).Scan(&result.ID, &result.Name)
 	if err != nil {
 		return result, err
 	}
@@ -137,7 +137,7 @@ func (d *DB) ListItems() ([]types.Item, error) {
 	}
 	for rows.Next() {
 		item := types.Item{}
-		err = rows.Scan(&item.Id, &item.Make, &item.Model, &item.Company.Id, &item.Company.Name)
+		err = rows.Scan(&item.ID, &item.Make, &item.Model, &item.Company.ID, &item.Company.Name)
 		if err != nil {
 			return ir, err
 		}
@@ -148,7 +148,7 @@ func (d *DB) ListItems() ([]types.Item, error) {
 
 func (d *DB) GetItem(id int) (types.Item, error) {
 	i := types.Item{}
-	err := d.QueryRow("select id, make, model, companyId, companyName from itemsCompany where id = ?", id).Scan(&i.Id, &i.Make, &i.Model, &i.Company.Id, &i.Company.Name)
+	err := d.QueryRow("select id, make, model, companyId, companyName from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name)
 	if err != nil {
 		return i, fmt.Errorf("could not get item %d: %v ", id, err)
 	}
@@ -156,7 +156,7 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 }
 
 func (d *DB) AddItem(i types.Item) (*types.Item, error) {
-	r, err := d.Exec("insert into items(make, model, companyId) values (?,?,?)", i.Make, i.Model, i.Company.Id)
+	r, err := d.Exec("insert into items(make, model, companyId) values (?,?,?)", i.Make, i.Model, i.Company.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -165,7 +165,7 @@ func (d *DB) AddItem(i types.Item) (*types.Item, error) {
 		return nil, err
 	}
 	new := i
-	new.Id = int(lastId)
+	new.ID = int(lastId)
 	return &new, nil
 }
 
@@ -181,7 +181,7 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	}
 	new := i
 	new.Timestamp = timestamp
-	new.Id = int(lastId)
+	new.ID = int(lastId)
 	return &new, nil
 }
 
@@ -194,7 +194,7 @@ func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	for rows.Next() {
 		var n types.NewItem
 		var timestamp int64
-		err = rows.Scan(&n.Id, &n.UserID, &n.IsPledge, &n.Make, &n.Model, &n.Company, &n.CompanyID, &timestamp)
+		err = rows.Scan(&n.ID, &n.UserID, &n.IsPledge, &n.Make, &n.Model, &n.Company, &n.CompanyID, &timestamp)
 		if err != nil {
 			return result, err
 		}
@@ -212,7 +212,7 @@ func (d *DB) DeleteNewItem(id int) error {
 func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 	i := types.NewItem{}
 	var timestamp int64
-	err := d.QueryRow("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems where id = ?", id).Scan(&i.Id,
+	err := d.QueryRow("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems where id = ?", id).Scan(&i.ID,
 		&i.UserID, &i.IsPledge, &i.Make, &i.Model, &i.Company, &i.CompanyID, &timestamp)
 	if err != nil {
 		return nil, err
@@ -223,7 +223,7 @@ func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 
 func (d *DB) GetUser(userId string) (*types.User, error) {
 	u := types.User{}
-	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userId).Scan(&u.Id, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
+	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userId).Scan(&u.ID, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
 	if err != nil {
 		return &u, err
 	}
@@ -231,7 +231,7 @@ func (d *DB) GetUser(userId string) (*types.User, error) {
 }
 
 func (d *DB) AddUser(u types.User) error {
-	_, err := d.insertUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
+	_, err := d.insertUser.Exec(u.ID, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	if err != nil {
 		return err
 	}

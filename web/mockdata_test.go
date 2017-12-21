@@ -10,17 +10,17 @@ type DB = sqldb.DB
 
 var (
 	testUsers = []types.User{
-		types.User{Id: "test1", Fullname: "user1 full", Email: "user1@user.com"},
-		types.User{Id: "test2", Fullname: "user2 full", Email: "user2@user.com"},
-		types.User{Id: "test3", Fullname: "user3 full", Email: "user3@user.com"},
-		types.User{Id: "test4", Fullname: "user4 full", Email: "user4@user.com"},
-		types.User{Id: "test5", Fullname: "user5 full", Email: "user5@user.com"},
-		types.User{Id: "test6", Fullname: "user6 full", Email: "user6@user.com"},
-		types.User{Id: "test7", Fullname: "user7 full", Email: "user7@user.com"},
-		types.User{Id: "test8", Fullname: "user8 full", Email: "user8@user.com"},
-		types.User{Id: "test9", Fullname: "user9 full", Email: "user9@user.com"},
-		types.User{Id: "test10", Fullname: "user10 full", Email: "user10@user.com"},
-		types.User{Id: "admin", Fullname: "Admin", Email: "admin@admin.com", IsAdmin: true},
+		types.User{ID: "test1", Fullname: "user1 full", Email: "user1@user.com"},
+		types.User{ID: "test2", Fullname: "user2 full", Email: "user2@user.com"},
+		types.User{ID: "test3", Fullname: "user3 full", Email: "user3@user.com"},
+		types.User{ID: "test4", Fullname: "user4 full", Email: "user4@user.com"},
+		types.User{ID: "test5", Fullname: "user5 full", Email: "user5@user.com"},
+		types.User{ID: "test6", Fullname: "user6 full", Email: "user6@user.com"},
+		types.User{ID: "test7", Fullname: "user7 full", Email: "user7@user.com"},
+		types.User{ID: "test8", Fullname: "user8 full", Email: "user8@user.com"},
+		types.User{ID: "test9", Fullname: "user9 full", Email: "user9@user.com"},
+		types.User{ID: "test10", Fullname: "user10 full", Email: "user10@user.com"},
+		types.User{ID: "admin", Fullname: "Admin", Email: "admin@admin.com", IsAdmin: true},
 	}
 
 	testCos = []string{"testco1", "testco2", "testco3"}
@@ -31,19 +31,19 @@ var (
 	}
 
 	testItems = []types.Item{
-		types.Item{Id: 0, Make: "phone", Model: "xyz", Company: companies[0]},
-		types.Item{Id: 0, Make: "phone", Model: "133", Company: companies[0]},
-		types.Item{Id: 0, Make: "tablet", Model: "ab1", Company: companies[1]},
-		types.Item{Id: 0, Make: "tablet", Model: "xy1", Company: companies[1]},
+		types.Item{ID: 0, Make: "phone", Model: "xyz", Company: companies[0]},
+		types.Item{ID: 0, Make: "phone", Model: "133", Company: companies[0]},
+		types.Item{ID: 0, Make: "tablet", Model: "ab1", Company: companies[1]},
+		types.Item{ID: 0, Make: "tablet", Model: "xy1", Company: companies[1]},
 	}
 
 	newItems = []types.NewItem{
-		types.NewItem{Id: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
-		types.NewItem{Id: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co2", CompanyID: 1},
-		types.NewItem{Id: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co3", CompanyID: 1},
-		types.NewItem{Id: 4, UserID: "test4", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co4", CompanyID: 1},
-		types.NewItem{Id: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1},
-		types.NewItem{Id: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1},
+		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
+		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co2", CompanyID: 1},
+		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co3", CompanyID: 1},
+		types.NewItem{ID: 4, UserID: "test4", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co4", CompanyID: 1},
+		types.NewItem{ID: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1},
+		types.NewItem{ID: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1},
 	}
 )
 
@@ -83,7 +83,7 @@ func initItems(db *DB, t *testing.T) []int {
 		if err != nil {
 			t.Fatal(err)
 		}
-		ids = append(ids, i.Id)
+		ids = append(ids, i.ID)
 	}
 	return ids
 }
