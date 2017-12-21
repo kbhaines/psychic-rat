@@ -90,7 +90,7 @@ func createSchema(db *sql.DB) error {
 	return err
 }
 
-func (d *DB) NewCompany(c types.Company) (*types.Company, error) {
+func (d *DB) AddCompany(c types.Company) (*types.Company, error) {
 	r, err := d.Exec("insert into companies(name) values(?)", c.Name)
 	if err != nil {
 		return nil, err
@@ -230,7 +230,7 @@ func (d *DB) GetUser(userId string) (*types.User, error) {
 	return &u, nil
 }
 
-func (d *DB) CreateUser(u types.User) error {
+func (d *DB) AddUser(u types.User) error {
 	_, err := d.insertUser.Exec(u.Id, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	if err != nil {
 		return err
@@ -238,7 +238,7 @@ func (d *DB) CreateUser(u types.User) error {
 	return nil
 }
 
-func (d *DB) NewPledge(itemId int, userId string) (int, error) {
+func (d *DB) AddPledge(itemId int, userId string) (int, error) {
 	timestamp := time.Now().Truncate(time.Second)
 	r, err := d.insertPledge.Exec(itemId, userId, timestamp)
 	if err != nil {

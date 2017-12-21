@@ -15,7 +15,34 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var testUrl string
+// newItemHtml holds a row's worth of data scraped from the admin/items
+// web page
+type newItemHtml struct {
+	ID          string
+	IsPledge    string
+	UserID      string
+	UserCompany string
+	UserMake    string
+	UserModel   string
+	UserValue   string
+}
+
+// postLine allows us to build up an array-based POST request
+type postLine struct {
+	row int        // row is the active row we're populating
+	v   url.Values // v is the values we'll post eventually
+}
+
+var (
+	testUrl string
+
+	newItemPosts = []NewItemPost{
+		NewItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1"},
+		NewItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2"},
+		NewItemPost{Company: "newco3", Make: "newmake3", Model: "newmodel3"},
+		NewItemPost{Company: "newco4", Make: "newmake4", Model: "newmodel4"},
+	}
+)
 
 func TestHomePage(t *testing.T) {
 	server := newServer(t)
@@ -176,29 +203,7 @@ func TestListNewItems(t *testing.T) {
 	testNewItemsPage(newItemPosts, t)
 }
 
-var newItemPosts = []NewItemPost{
-	NewItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1"},
-	NewItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2"},
-	NewItemPost{Company: "newco3", Make: "newmake3", Model: "newmodel3"},
-	NewItemPost{Company: "newco4", Make: "newmake4", Model: "newmodel4"},
-}
-
-func (n *NewItemPost) getUrlValues() url.Values {
-	return url.Values{"company": {n.Company}, "make": {n.Make}, "model": {n.Model}}
-}
-
 func testNewItemsPage(newItems []NewItemPost, t *testing.T) {
-
-	type newItemHtml struct {
-		Id          string
-		IsPledge    string
-		UserID      string
-		UserCompany string
-		UserMake    string
-		UserModel   string
-		UserValue   string
-	}
-
 	t.Helper()
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
@@ -210,24 +215,24 @@ func testNewItemsPage(newItems []NewItemPost, t *testing.T) {
 		t.Fatal(err)
 	}
 
+	fmap := map[string]func(*newItemHtml, string){
+		"id[]":          (*newItemHtml).id,
+		"isPledge[]":    (*newItemHtml).pledge,
+		"userID[]":      (*newItemHtml).userID,
+		"usercompany[]": (*newItemHtml).userCompany,
+		"usermake[]":    (*newItemHtml).userMake,
+		"usermodel[]":   (*newItemHtml).userModel,
+		"uservalue[]":   (*newItemHtml).userValue,
+		"add[]":         (*newItemHtml).nowt,
+		"delete[]":      (*newItemHtml).nowt,
+	}
+
 	rows := doc.Find(".items-table .item-entry")
 	if rows.Size() != len(newItems) {
 		t.Fatalf("expected %d rows in item listing, got %d", len(newItems), rows.Size())
 	}
 	rows.Each(func(i int, s *goquery.Selection) {
-		h := newItemHtml{}
-
-		fmap := map[string]func(string){
-			"id[]":          func(w string) { h.Id = w },
-			"isPledge[]":    func(w string) { h.IsPledge = w },
-			"userID[]":      func(w string) { h.UserID = w },
-			"usercompany[]": func(w string) { h.UserCompany = w },
-			"usermake[]":    func(w string) { h.UserMake = w },
-			"usermodel[]":   func(w string) { h.UserModel = w },
-			"uservalue[]":   func(w string) { h.UserValue = w },
-			"add[]":         func(string) {},
-			"delete[]":      func(string) {},
-		}
+		actualNewItem := newItemHtml{}
 
 		s.Find("input").Each(func(_ int, s *goquery.Selection) {
 			n := s.AttrOr("name", "")
@@ -236,11 +241,11 @@ func testNewItemsPage(newItems []NewItemPost, t *testing.T) {
 			if !ok {
 				t.Fatalf("unknown input: %s", n)
 			}
-			f(v)
+			f(&actualNewItem, v)
 		})
 
 		expectedNewItem := newItemHtml{
-			Id:          strconv.Itoa(i + 1),
+			ID:          strconv.Itoa(i + 1),
 			IsPledge:    "true",
 			UserID:      "test1",
 			UserCompany: newItems[i].Company,
@@ -248,8 +253,8 @@ func testNewItemsPage(newItems []NewItemPost, t *testing.T) {
 			UserModel:   newItems[i].Model,
 			UserValue:   "0",
 		}
-		if !reflect.DeepEqual(expectedNewItem, h) {
-			t.Errorf("expected html form to have %v, got %v", expectedNewItem, h)
+		if !reflect.DeepEqual(expectedNewItem, actualNewItem) {
+			t.Errorf("expected html form to have %v, got %v", expectedNewItem, actualNewItem)
 		}
 	})
 
@@ -267,9 +272,11 @@ func loadNewItems(client http.Client, t *testing.T) {
 		}
 		body := readResponseBody(resp, t)
 		testStrings(body, expected, t)
-		// Round-tripping of database items is tested in sqldb package, no need
-		// to replicate the work here
 	}
+}
+
+func (n *NewItemPost) getUrlValues() url.Values {
+	return url.Values{"company": {n.Company}, "make": {n.Make}, "model": {n.Model}}
 }
 
 func TestBadNewItemPost(t *testing.T) {
@@ -298,8 +305,10 @@ func TestNewItemAdminPost(t *testing.T) {
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
 
+	// Going backwards so we don't have to adjust the index for each row
+	// and can just use the coincident index values from the DB. Bit lazy....
 	for itemToUse := 3; itemToUse > 0; itemToUse-- {
-		pl := postLine{v: url.Values{}}
+		pl := &postLine{v: url.Values{}}
 		pl = pl.newPostLine(itemToUse + 1).userID("test1").
 			userCompany(newItemPosts[itemToUse].Company).
 			userMake(newItemPosts[itemToUse].Make).
@@ -384,36 +393,6 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	testNewItemsPage(newItemPosts[:3], t)
 }
 
-type postLine struct {
-	row int
-	v   url.Values
-}
-
-func spfi(i int) string { return fmt.Sprintf("%d", i) }
-
-func (p postLine) newPostLine(itemID int) postLine {
-	p.row = len(p.v["id[]"])
-	p.v.Add("id[]", spfi(itemID))
-	p.v.Add("isPledge[]", "0")
-	p.v.Add("item[]", "0")
-	p.v.Add("company[]", "0")
-	p.v.Add("userID[]", "")
-	p.v.Add("usercompany[]", "")
-	p.v.Add("usermake[]", "")
-	p.v.Add("usermodel[]", "")
-	return p
-}
-
-func (p postLine) selectToAdd() postLine          { p.v.Add("add[]", spfi(p.row)); return p }
-func (p postLine) selectToDelete() postLine       { p.v.Add("delete[]", spfi(p.row)); return p }
-func (p postLine) isPledge() postLine             { p.v["isPledge[]"][p.row] = "1"; return p }
-func (p postLine) userID(u string) postLine       { p.v["userID[]"][p.row] = u; return p }
-func (p postLine) existingItem(i int) postLine    { p.v["item[]"][p.row] = spfi(i); return p }
-func (p postLine) existingCompany(c int) postLine { p.v["company[]"][p.row] = spfi(c); return p }
-func (p postLine) userCompany(c string) postLine  { p.v["usercompany[]"][p.row] = c; return p }
-func (p postLine) userMake(m string) postLine     { p.v["usermake[]"][p.row] = m; return p }
-func (p postLine) userModel(m string) postLine    { p.v["usermodel[]"][p.row] = m; return p }
-
 func TestLimitUserNewItems(t *testing.T) {
 }
 
@@ -426,3 +405,37 @@ func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
 	resp, err := client.PostForm(testUrl+"/admin/newitems", v)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }
+
+func (n *newItemHtml) id(w string)          { n.ID = w }
+func (n *newItemHtml) pledge(w string)      { n.IsPledge = w }
+func (n *newItemHtml) userID(w string)      { n.UserID = w }
+func (n *newItemHtml) userCompany(w string) { n.UserCompany = w }
+func (n *newItemHtml) userMake(w string)    { n.UserMake = w }
+func (n *newItemHtml) userModel(w string)   { n.UserModel = w }
+func (n *newItemHtml) userValue(w string)   { n.UserValue = w }
+func (n *newItemHtml) nowt(w string)        {}
+
+func spfi(i int) string { return fmt.Sprintf("%d", i) }
+
+func (p *postLine) newPostLine(itemID int) *postLine {
+	p.row = len(p.v["id[]"])
+	p.v.Add("id[]", spfi(itemID))
+	p.v.Add("isPledge[]", "0")
+	p.v.Add("item[]", "0")
+	p.v.Add("company[]", "0")
+	p.v.Add("userID[]", "")
+	p.v.Add("usercompany[]", "")
+	p.v.Add("usermake[]", "")
+	p.v.Add("usermodel[]", "")
+	return p
+}
+
+func (p *postLine) selectToAdd() *postLine          { p.v.Add("add[]", spfi(p.row)); return p }
+func (p *postLine) selectToDelete() *postLine       { p.v.Add("delete[]", spfi(p.row)); return p }
+func (p *postLine) isPledge() *postLine             { p.v["isPledge[]"][p.row] = "1"; return p }
+func (p *postLine) userID(u string) *postLine       { p.v["userID[]"][p.row] = u; return p }
+func (p *postLine) existingItem(i int) *postLine    { p.v["item[]"][p.row] = spfi(i); return p }
+func (p *postLine) existingCompany(c int) *postLine { p.v["company[]"][p.row] = spfi(c); return p }
+func (p *postLine) userCompany(c string) *postLine  { p.v["usercompany[]"][p.row] = c; return p }
+func (p *postLine) userMake(m string) *postLine     { p.v["usermake[]"][p.row] = m; return p }
+func (p *postLine) userModel(m string) *postLine    { p.v["usermodel[]"][p.row] = m; return p }

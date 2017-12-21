@@ -6,7 +6,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"psychic-rat/api/rest"
 	"psychic-rat/sess"
 	"psychic-rat/types"
 
@@ -15,7 +14,7 @@ import (
 
 type UserAPI interface {
 	GetUser(id string) (*types.User, error)
-	CreateUser(types.User) error
+	AddUser(types.User) error
 }
 
 var (
@@ -89,7 +88,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 			FirstName: profile["given_name"].(string),
 			Country:   profile["locale"].(string),
 		}
-		err := userAPI.CreateUser(*userRecord)
+		err := userAPI.AddUser(*userRecord)
 		if err != nil {
 			log.Fatal("unable to create a user %v :%v", userRecord, err)
 			return
@@ -104,5 +103,5 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Redirect to logged in page
-	http.Redirect(w, r, rest.HomePage, http.StatusSeeOther)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }

@@ -1,8 +1,8 @@
 package web
 
 import (
-	"psychic-rat/types"
 	"psychic-rat/sqldb"
+	"psychic-rat/types"
 	"testing"
 )
 
@@ -49,7 +49,7 @@ var (
 
 func initDB(t *testing.T) {
 	t.Helper()
-	db,err := sqldb.NewDB("test.dat")
+	db, err := sqldb.NewDB("test.dat")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,15 +60,15 @@ func initDB(t *testing.T) {
 		Pledge:  db,
 		User:    db,
 	}
-	initCompanies(db,t)
-	initUsers(db,t)
+	initCompanies(db, t)
+	initUsers(db, t)
 	//initNewItems(db,t)
-	initItems(db,t)
+	initItems(db, t)
 }
 
 func initCompanies(db *DB, t *testing.T) {
 	for _, c := range testCos {
-		_, err := db.NewCompany(types.Company{Name: c})
+		_, err := db.AddCompany(types.Company{Name: c})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +102,7 @@ func initNewItems(db *DB, t *testing.T) []types.NewItem {
 func initUsers(db *DB, t *testing.T) {
 	t.Helper()
 	for _, u := range testUsers {
-		err := db.CreateUser(u)
+		err := db.AddUser(u)
 		if err != nil {
 			t.Fatal(err)
 		}

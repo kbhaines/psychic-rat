@@ -2,7 +2,6 @@ package web
 
 import (
 	"net/http"
-	"psychic-rat/api/rest"
 	"psychic-rat/auth0"
 	"psychic-rat/types"
 )
@@ -13,6 +12,7 @@ type (
 		Handler http.HandlerFunc
 	}
 
+	// TODO: Need for this should go when package is split/refactored
 	API struct {
 		Company CompanyAPI
 		Item    ItemAPI
@@ -24,10 +24,12 @@ type (
 	// TODO: lots of interfaces here and they need to be split into smaller
 	// ones, along with splitting the web module as well.
 
+	// TODO: APIs need consistent parameter and return style
+
 	CompanyAPI interface {
 		GetCompanies() ([]types.Company, error)
 		GetCompany(int) (types.Company, error)
-		NewCompany(co types.Company) (*types.Company, error)
+		AddCompany(co types.Company) (*types.Company, error)
 	}
 
 	ItemAPI interface {
@@ -47,13 +49,13 @@ type (
 	}
 
 	PledgeAPI interface {
-		NewPledge(itemId int, userId string) (int, error)
+		AddPledge(itemId int, userId string) (int, error)
 		//ListPledges() PledgeListing
 	}
 
 	UserAPI interface {
 		GetUser(userId string) (*types.User, error)
-		CreateUser(types.User) error
+		AddUser(types.User) error
 	}
 
 	NewItemPost struct {
@@ -76,15 +78,22 @@ type (
 	}
 )
 
+const (
+	HomePage   = "/"
+	SignInPage = "/signin"
+	PledgePage = "/pledge"
+	ThanksPage = "/thanks"
+	NewItem    = "/newitem"
+)
+
 var (
 	uriHandlers = []URIHandler{
-		{rest.HomePage, HomePageHandler},
-		{rest.SignInPage, SignInPageHandler},
-		{rest.PledgePage, PledgePageHandler},
-		{rest.NewItem, NewItemHandler},
-		{rest.ThanksPage, ThanksPageHandler},
+		{HomePage, HomePageHandler},
+		{SignInPage, SignInPageHandler},
+		{PledgePage, PledgePageHandler},
+		{NewItem, NewItemHandler},
+		{ThanksPage, ThanksPageHandler},
 		{"/callback", auth0.CallbackHandler},
-
 		{"/admin/newitems", AdminItemHandler},
 	}
 

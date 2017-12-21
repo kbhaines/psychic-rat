@@ -50,7 +50,7 @@ func TestPledgeListItems(t *testing.T) {
 	PledgePageHandler(nil, req)
 }
 
-func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) renderFunc {
+func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) func(http.ResponseWriter, string, *pageVariables) {
 	return func(writer http.ResponseWriter, templateName string, templateVars *pageVariables) {
 		t.Logf("Rendering %s with %v", templateName, templateVars)
 		if templateName != expectedTemplate {
@@ -71,7 +71,7 @@ func TestHomePageTemplate(t *testing.T) {
 	HomePageHandler(nil, req)
 }
 
-var protectedPages = []handlerFunc{
+var protectedPages = []http.HandlerFunc{
 	PledgePageHandler,
 	ThanksPageHandler,
 }

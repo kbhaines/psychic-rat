@@ -17,55 +17,49 @@ import (
 // TODO: split into subpackages; separate user & admin stuff for starters.
 
 type (
-	Auth0 struct {
+	authInfo struct {
 		Auth0ClientId    string
 		Auth0CallbackURL string
 		Auth0Domain      string
 	}
 
+	// pageVariables holds data for the templates. Stuffed into one struct for now.
 	pageVariables struct {
-		Auth0
+		authInfo
 		Items     []types.Item
 		User      types.User
 		NewItems  []types.NewItem
 		Companies []types.Company
 	}
 
-	renderFunc     func(writer http.ResponseWriter, templateName string, vars *pageVariables)
-	handlerFunc    func(http.ResponseWriter, *http.Request)
-	methodSelector map[string]handlerFunc
+	// apiTxn wraps the error handling of multiple transactions with the API; the
+	// user just checks the 'err' field at the end of the transaction block.
+	apiTxn struct {
+		err  error
+		apis API
+	}
+
+	// formReader parses a submitted New Items form POST request, captures multiple
+	// errors that resulted from parsing.
+	formReader struct {
+		form url.Values
+		row  int
+		rows []int
+		err  []error
+	}
+
+	methodSelector map[string]http.HandlerFunc
 )
 
 var (
+	// function variables, allows us to swap out for mocks for easier testing
 	renderPage     = renderPageUsingTemplate
 	isUserLoggedIn = isUserLoggedInSession
-	auth0Store     = sessions.NewCookieStore([]byte("something-very-secret"))
-	logDbg         = log.New(os.Stderr, "DBG:", 0).Print
-	logDbgf        = log.New(os.Stderr, "DBG:", 0).Printf
+
+	auth0Store = sessions.NewCookieStore([]byte("something-very-secret")) // TODO: Env var
 )
 
-func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
-	// TODO: nil is a smell. StoreReader/Writer interfaces.
-	s := sess.NewSessionStore(r, nil)
-	user, err := s.Get()
-	if err != nil {
-		// todo - return error?
-		log.Fatal(err)
-	}
-	if user != nil {
-		pv.User = *user
-	}
-	return pv
-}
-
-func (pv *pageVariables) withAuth0Vars() *pageVariables {
-	pv.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
-	pv.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
-	pv.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
-	return pv
-}
-
-// TODO: handling template errors
+// TODO: handle template errors
 func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
 	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl", "navi.html.tmpl"))
 	tpt.Execute(writer, variables)
@@ -106,7 +100,7 @@ func signInSimple(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if user == nil {
-		logDbg("no user, attempting auth")
+		log.Print("no user, attempting auth")
 		if err := authUser(request, s); err != nil {
 			log.Print(err)
 			http.Error(writer, "authentication failed", http.StatusForbidden)
@@ -141,7 +135,7 @@ func signInAuth0(writer http.ResponseWriter, request *http.Request) {
 	renderPage(writer, "signin-auth0.html.tmpl", vars)
 }
 
-func userLoginRequired(h handlerFunc) handlerFunc {
+func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !isUserLoggedIn(r) {
 			log.Print("user not logged in")
@@ -150,25 +144,6 @@ func userLoginRequired(h handlerFunc) handlerFunc {
 		}
 		h(w, r)
 	}
-}
-
-func adminLoginRequired(h handlerFunc) handlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !isUserAdmin(r) {
-			log.Print("user not admin")
-			http.Error(w, "", http.StatusForbidden)
-			return
-		}
-		h(w, r)
-	}
-}
-
-func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
-	selector := methodSelector{
-		"GET":  userLoginRequired(pledgeGetHandler),
-		"POST": userLoginRequired(pledgePostHandler),
-	}
-	execHandlerForMethod(selector, writer, request)
 }
 
 func isUserLoggedInSession(request *http.Request) bool {
@@ -182,14 +157,12 @@ func isUserLoggedInSession(request *http.Request) bool {
 	return user != nil
 }
 
-func isUserAdmin(request *http.Request) bool {
-	s := sess.NewSessionStore(request, nil)
-	user, err := s.Get()
-	if err != nil {
-		log.Print(err)
-		return false
+func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
+	selector := methodSelector{
+		"GET":  userLoginRequired(pledgeGetHandler),
+		"POST": userLoginRequired(pledgePostHandler),
 	}
-	return user != nil && user.IsAdmin
+	execHandlerForMethod(selector, writer, request)
 }
 
 func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
@@ -231,7 +204,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	userId := user.Id
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
-	plId, err := apis.Pledge.NewPledge(itemId, userId)
+	plId, err := apis.Pledge.AddPledge(itemId, userId)
 	if err != nil {
 		log.Print("unable to pledge : ", err)
 		return
@@ -257,14 +230,9 @@ func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 
 func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 	selector := methodSelector{
-		"GET":  userLoginRequired(newItemListHandler),
 		"POST": userLoginRequired(newItemPostHandler),
 	}
 	execHandlerForMethod(selector, w, r)
-}
-
-func newItemListHandler(w http.ResponseWriter, r *http.Request) {
-
 }
 
 func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -314,6 +282,27 @@ func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
 		"POST": adminLoginRequired(approveNewItems),
 	}
 	execHandlerForMethod(selector, w, r)
+}
+
+func adminLoginRequired(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !isUserAdmin(r) {
+			log.Print("user not admin")
+			http.Error(w, "", http.StatusForbidden)
+			return
+		}
+		h(w, r)
+	}
+}
+
+func isUserAdmin(request *http.Request) bool {
+	s := sess.NewSessionStore(request, nil)
+	user, err := s.Get()
+	if err != nil {
+		log.Print(err)
+		return false
+	}
+	return user != nil && user.IsAdmin
 }
 
 func listNewItems(w http.ResponseWriter, r *http.Request) {
@@ -390,15 +379,6 @@ func processNewItemPost(nip NewItemAdminPost) error {
 	return txn.err
 }
 
-// formReader parses a submitted New Items form POST request, captures multiple
-// errors that resulted from parsing.
-type formReader struct {
-	form url.Values
-	row  int
-	rows []int
-	err  []error
-}
-
 func newFormReader(form url.Values) *formReader {
 	fr := &formReader{form, -1, []int{}, []error{}}
 	adds, ok := form["add[]"]
@@ -466,18 +446,11 @@ func (f *formReader) getInt(field string) int {
 	return int(i)
 }
 
-// apiTxn wraps the error handling of multiple transactions with the API; the
-// user just checks the 'err' field at the end of the transaction block.
-type apiTxn struct {
-	err  error
-	apis API
-}
-
 func (a *apiTxn) addCompany(co types.Company) (c *types.Company) {
 	if a.err != nil {
 		return &co
 	}
-	c, a.err = a.apis.Company.NewCompany(co)
+	c, a.err = a.apis.Company.AddCompany(co)
 	return c
 }
 
@@ -512,7 +485,7 @@ func (a *apiTxn) addPledge(itemID int, userID string) (p int) {
 	if a.err != nil {
 		return 0
 	}
-	p, a.err = a.apis.Pledge.NewPledge(itemID, userID)
+	p, a.err = a.apis.Pledge.AddPledge(itemID, userID)
 	return p
 }
 
@@ -521,4 +494,25 @@ func (a *apiTxn) deleteNewItem(id int) {
 		return
 	}
 	a.err = apis.NewItem.DeleteNewItem(id)
+}
+
+func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
+	// TODO: nil is a smell. StoreReader/Writer interfaces.
+	s := sess.NewSessionStore(r, nil)
+	user, err := s.Get()
+	if err != nil {
+		// todo - return error?
+		log.Fatal(err)
+	}
+	if user != nil {
+		pv.User = *user
+	}
+	return pv
+}
+
+func (pv *pageVariables) withAuth0Vars() *pageVariables {
+	pv.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
+	pv.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
+	pv.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
+	return pv
 }
