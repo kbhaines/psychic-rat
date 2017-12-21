@@ -34,7 +34,7 @@ var webAuth = new auth0.WebAuth({
 }
 </script>
 
-{{ if eq .User.Id "" }}
+{{ if eq .User.ID "" }}
 <h1>Sign in</h1>
 
     <button onclick="authClick()" class=".btn-login">Login</button>

@@ -79,11 +79,13 @@ type (
 )
 
 const (
-	HomePage   = "/"
-	SignInPage = "/signin"
-	PledgePage = "/pledge"
-	ThanksPage = "/thanks"
-	NewItem    = "/newitem"
+	HomePage      = "/"
+	SignInPage    = "/signin"
+	PledgePage    = "/pledge"
+	ThanksPage    = "/thanks"
+	NewItem       = "/newitem"
+	AdminNewItems = "/admin/newitems"
+	Callback      = "/callback"
 )
 
 var (
@@ -93,8 +95,8 @@ var (
 		{PledgePage, PledgePageHandler},
 		{NewItem, NewItemHandler},
 		{ThanksPage, ThanksPageHandler},
-		{"/callback", auth0.CallbackHandler},
-		{"/admin/newitems", AdminItemHandler},
+		{Callback, auth0.CallbackHandler},
+		{AdminNewItems, AdminItemHandler},
 	}
 
 	apis API

@@ -1,6 +1,6 @@
 <ul>
     <li><a href="/">Home</a></li>
-    {{ if ne .User.Id "" }}
+    {{ if ne .User.ID "" }}
         <li> <a href="/pledge">Pledge Support</a></li>
         <li> <a href="/logout">Log out</a></li>
         <li> Signed in as {{ .User.Fullname }} </li>

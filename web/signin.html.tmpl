@@ -1,6 +1,6 @@
 {{ template "header.html.tmpl" . }}
 
-{{ if eq .User.Id "" }}
+{{ if eq .User.ID "" }}
 <h1>Sign in</h1>
 {{ else }}
     <h1> Already signed in as {{ .User.Fullname }} </h1>

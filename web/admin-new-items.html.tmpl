@@ -5,7 +5,7 @@
 <select name="item[]">
     <option value="0"> --- </option>
     {{ range .Items }}
-    <option value="{{.Id}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
+    <option value="{{.ID}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
     {{ end }}
 </select>
 {{ end -}}
@@ -14,7 +14,7 @@
 <select name="company[]">
     <option value="0"> --- </option>
     {{ range .Companies }}
-    <option value="{{.Id}}"> {{ .Name }}</option>
+    <option value="{{.ID}}"> {{ .Name }}</option>
     {{ end }}
 </select>
 {{ end -}}
@@ -34,7 +34,7 @@
     </tr>
     {{ range $index, $element := .NewItems }}
     <tr class="item-entry">
-        <input type="hidden" name="id[]" value="{{ .Id }}">
+        <input type="hidden" name="id[]" value="{{ .ID }}">
         <input type="hidden" name="isPledge[]" value="{{ .IsPledge }}">
         <td><input type="checkbox" name="add[]" value="{{ $index }}"></td>
         <td><input type="input" name="userID[]" value="{{ .UserID }}"></td>
