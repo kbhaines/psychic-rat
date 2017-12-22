@@ -50,14 +50,14 @@ func TestPledgeListItems(t *testing.T) {
 	PledgePageHandler(nil, req)
 }
 
-func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) func(http.ResponseWriter, string, *pageVariables) {
-	return func(writer http.ResponseWriter, templateName string, templateVars *pageVariables) {
+func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) func(http.ResponseWriter, string, interface{}) {
+	return func(writer http.ResponseWriter, templateName string, templateVars interface{}) {
 		t.Logf("Rendering %s with %v", templateName, templateVars)
 		if templateName != expectedTemplate {
 			t.Errorf("wrong template, got %s but wanted %s", templateName, expectedTemplate)
 		}
-		if !reflect.DeepEqual(*templateVars, expectedVars) {
-			t.Errorf("wrong variables, wanted %v, got %v", expectedVars, *templateVars)
+		if !reflect.DeepEqual(*templateVars.(*pageVariables), expectedVars) {
+			t.Errorf("wrong variables, wanted %v, got %v", expectedVars, *templateVars.(*pageVariables))
 		}
 	}
 }

@@ -2,13 +2,13 @@ package web
 
 import (
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
 	"psychic-rat/sess"
 	"psychic-rat/types"
+	"psychic-rat/web/tmpl"
 	"strconv"
 
 	"github.com/gorilla/sessions"
@@ -53,17 +53,11 @@ type (
 
 var (
 	// function variables, allows us to swap out for mocks for easier testing
-	renderPage     = renderPageUsingTemplate
+	renderPage     = tmpl.RenderTemplate
 	isUserLoggedIn = isUserLoggedInSession
 
 	auth0Store = sessions.NewCookieStore([]byte("something-very-secret")) // TODO: Env var
 )
-
-// TODO: handle template errors
-func renderPageUsingTemplate(writer http.ResponseWriter, templateName string, variables *pageVariables) {
-	tpt := template.Must(template.New(templateName).ParseFiles(templateName, "header.html.tmpl", "footer.html.tmpl", "navi.html.tmpl"))
-	tpt.Execute(writer, variables)
-}
 
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := methodSelector{
