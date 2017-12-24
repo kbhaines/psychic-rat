@@ -9,9 +9,7 @@ import (
 )
 
 type (
-
-	// TODO: Need for this should go when package is split/refactored
-	API struct {
+	APIS struct {
 		Company CompanyAPI
 		Item    ItemAPI
 		NewItem NewItemAPI
@@ -40,10 +38,6 @@ type (
 		AddNewItem(types.NewItem) (*types.NewItem, error)
 		ListNewItems() ([]types.NewItem, error)
 		DeleteNewItem(int) error
-	}
-
-	AdminApi interface {
-		ApproveItem(id int) error
 	}
 
 	PledgeAPI interface {
@@ -84,12 +78,16 @@ var (
 		{AdminNewItems, admin.AdminItemHandler},
 	}
 
-	apis API
+	apis APIS
 
 	flags struct {
 		enableAuth0, sqldb bool
 	}
 )
+
+func InitDeps(a APIS) {
+	apis = a
+}
 
 func Handler() http.Handler {
 	hmux := http.NewServeMux()

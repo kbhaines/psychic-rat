@@ -4,9 +4,20 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 )
 
-var templates = map[string]*template.Template{}
+var (
+	path      string
+	templates = map[string]*template.Template{}
+)
+
+func Init(templatePath string) {
+	path = templatePath
+	if !strings.HasSuffix(path, "/") {
+		path += "/"
+	}
+}
 
 func RenderTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
 	template, ok := templates[templateName]
@@ -20,6 +31,6 @@ func RenderTemplate(writer http.ResponseWriter, templateName string, variables i
 }
 
 func loadTemplate(name string) *template.Template {
-	tFiles := []string{"res/" + name, "res/header.html.tmpl", "res/footer.html.tmpl", "res/navi.html.tmpl"}
+	tFiles := []string{path + name, path + "header.html.tmpl", path + "footer.html.tmpl", path + "navi.html.tmpl"}
 	return template.Must(template.New(name).ParseFiles(tFiles...))
 }

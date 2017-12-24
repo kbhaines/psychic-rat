@@ -3,7 +3,11 @@ package main
 import (
 	"flag"
 	"net/http"
+	"psychic-rat/auth0"
+	"psychic-rat/sqldb"
 	"psychic-rat/web"
+	"psychic-rat/web/admin"
+	"psychic-rat/web/tmpl"
 
 	"github.com/gorilla/context"
 )
@@ -20,4 +24,23 @@ func main() {
 	flag.Parse()
 
 	http.ListenAndServe("localhost:8080", context.ClearHandler(web.Handler()))
+}
+
+func init() {
+	db, err := sqldb.OpenDB("pr.dat")
+	if err != nil {
+		panic("unable to init db: " + err.Error())
+	}
+
+	apis := web.APIS{
+		Company: db,
+		Item:    db,
+		NewItem: db,
+		Pledge:  db,
+		User:    db,
+	}
+	web.InitDeps(apis)
+	auth0.Init(apis.User)
+	admin.InitDeps(db, db, db, db)
+	tmpl.Init("res/")
 }
