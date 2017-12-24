@@ -4,13 +4,11 @@ import (
 	"net/http"
 	"psychic-rat/auth0"
 	"psychic-rat/types"
+	"psychic-rat/web/admin"
+	"psychic-rat/web/dispatch"
 )
 
 type (
-	URIHandler struct {
-		URI     string
-		Handler http.HandlerFunc
-	}
 
 	// TODO: Need for this should go when package is split/refactored
 	API struct {
@@ -63,19 +61,6 @@ type (
 		Make    string
 		Model   string
 	}
-
-	NewItemAdminPost struct {
-		ID          int
-		Add         bool
-		Delete      bool
-		Pledge      bool
-		ItemID      int
-		CompanyID   int
-		UserID      string
-		UserCompany string
-		UserMake    string
-		UserModel   string
-	}
 )
 
 const (
@@ -89,14 +74,14 @@ const (
 )
 
 var (
-	uriHandlers = []URIHandler{
+	uriHandlers = []dispatch.URIHandler{
 		{HomePage, HomePageHandler},
 		{SignInPage, SignInPageHandler},
 		{PledgePage, PledgePageHandler},
 		{NewItem, NewItemHandler},
 		{ThanksPage, ThanksPageHandler},
 		{Callback, auth0.CallbackHandler},
-		{AdminNewItems, AdminItemHandler},
+		{AdminNewItems, admin.AdminItemHandler},
 	}
 
 	apis API

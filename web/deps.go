@@ -3,6 +3,7 @@ package web
 import (
 	"psychic-rat/auth0"
 	"psychic-rat/sqldb"
+	"psychic-rat/web/admin"
 )
 
 func init() {
@@ -21,4 +22,5 @@ func init() {
 		User:    db,
 	}
 	auth0.Init(apis.User)
+	admin.InitDeps(db, db, db, db)
 }
