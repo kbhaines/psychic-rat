@@ -77,7 +77,7 @@ var (
 	renderPage  = tmpl.RenderTemplate
 )
 
-func InitDeps(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI) {
+func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI) {
 	companyAPI = co
 	itemsAPI = item
 	newItemsAPI = newItems

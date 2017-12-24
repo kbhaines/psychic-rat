@@ -74,8 +74,8 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 		Pledge:  db,
 		User:    db,
 	}
-	web.InitDeps(apis)
-	admin.InitDeps(db, db, db, db)
+	web.Init(apis)
+	admin.Init(db, db, db, db)
 	tmpl.Init("../res/")
 	return server, db
 }

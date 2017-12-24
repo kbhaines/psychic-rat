@@ -85,7 +85,7 @@ var (
 	}
 )
 
-func InitDeps(a APIS) {
+func Init(a APIS) {
 	apis = a
 }
 

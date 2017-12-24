@@ -39,8 +39,8 @@ func init() {
 		Pledge:  db,
 		User:    db,
 	}
-	web.InitDeps(apis)
+	web.Init(apis)
 	auth0.Init(apis.User)
-	admin.InitDeps(db, db, db, db)
+	admin.Init(db, db, db, db)
 	tmpl.Init("res/")
 }
