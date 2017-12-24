@@ -1,20 +1,22 @@
 package tmpl
 
 import (
+	"fmt"
 	"html/template"
 	"net/http"
 )
 
 var templates = map[string]*template.Template{}
 
-// TODO: handle template errors
 func RenderTemplate(writer http.ResponseWriter, templateName string, variables interface{}) {
 	template, ok := templates[templateName]
 	if !ok {
 		template = loadTemplate(templateName)
 		templates[templateName] = template
 	}
-	template.Execute(writer, variables)
+	if err := template.Execute(writer, variables); err != nil {
+		panic(fmt.Sprintf("template error: %v", err))
+	}
 }
 
 func loadTemplate(name string) *template.Template {

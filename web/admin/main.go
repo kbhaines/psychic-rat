@@ -65,6 +65,7 @@ type (
 		Items     []types.Item
 		NewItems  []types.NewItem
 		Companies []types.Company
+		User      types.User
 	}
 )
 

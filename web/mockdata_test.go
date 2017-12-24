@@ -3,6 +3,7 @@ package web
 import (
 	"psychic-rat/sqldb"
 	"psychic-rat/types"
+	"psychic-rat/web/admin"
 	"testing"
 )
 
@@ -60,6 +61,7 @@ func initDB(t *testing.T) {
 		Pledge:  db,
 		User:    db,
 	}
+	admin.InitDeps(db,db,db,db)
 	initCompanies(db, t)
 	initUsers(db, t)
 	//initNewItems(db,t)
