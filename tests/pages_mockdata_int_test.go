@@ -4,6 +4,7 @@ import (
 	"psychic-rat/sqldb"
 	"psychic-rat/types"
 	"testing"
+	"os"
 )
 
 type DB = sqldb.DB
@@ -58,6 +59,11 @@ func initDB(t *testing.T) *sqldb.DB {
 	//initNewItems(db,t)
 	initItems(db, t)
 	return db
+}
+
+func closeDB(db *sqldb.DB) {
+	db.Close()
+	os.Remove("test.dat")
 }
 
 func initCompanies(db *DB, t *testing.T) {

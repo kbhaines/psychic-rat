@@ -57,8 +57,8 @@ var (
 )
 
 func TestHomePage(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	resp, err := http.Get(testUrl + "/")
 	testPageStatus(resp, err, http.StatusOK, t)
 }
@@ -90,23 +90,28 @@ func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing
 	}
 }
 
+func cleanUp(server *httptest.Server, db *sqldb.DB) {
+	server.Close()
+	closeDB(db)
+}
+
 func TestPledgeWithoutLogin(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	resp, err := http.Get(testUrl + "/pledge")
 	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
 func TestThankYouWithoutLogin(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	resp, err := http.Get(testUrl + "/thanks")
 	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
 func TestSignin(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	loginUser("test1", t)
 }
 
@@ -123,8 +128,8 @@ func loginUser(user string, t *testing.T) http.CookieJar {
 }
 
 func TestPledgeWithLogin(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
@@ -163,8 +168,8 @@ func testStrings(body string, expectedStrings []string, t *testing.T) {
 }
 
 func TestHappyPathPledge(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	data := url.Values{"item": {"1"}}
@@ -181,7 +186,7 @@ func TestHappyPathPledge(t *testing.T) {
 
 func TestBadNewItems(t *testing.T) {
 	server, db := newServer(t)
-	defer server.Close()
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 
@@ -206,8 +211,8 @@ func TestBadNewItems(t *testing.T) {
 }
 
 func TestBlockAccessToItemListing(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 
@@ -216,8 +221,8 @@ func TestBlockAccessToItemListing(t *testing.T) {
 }
 
 func TestListNewItems(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
@@ -302,8 +307,8 @@ func (n *newItemPost) getUrlValues() url.Values {
 }
 
 func TestBadnewItemPost(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
 
@@ -319,7 +324,7 @@ func TestBadnewItemPost(t *testing.T) {
 
 func TestNewItemAdminPost(t *testing.T) {
 	server, db := newServer(t)
-	defer server.Close()
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
@@ -361,7 +366,7 @@ func testNewItemAdded(item newItemPost, db *sqldb.DB, t *testing.T) {
 
 func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	server, db := newServer(t)
-	defer server.Close()
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
@@ -389,7 +394,7 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 
 func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	server, db := newServer(t)
-	defer server.Close()
+	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 	loadNewItems(client, t)
@@ -419,8 +424,8 @@ func TestLimitUserNewItems(t *testing.T) {
 }
 
 func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
-	server, _ := newServer(t)
-	defer server.Close()
+	server, db := newServer(t)
+	defer cleanUp(server, db)
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
 	v := url.Values{"add[]": []string{"abc"}}
