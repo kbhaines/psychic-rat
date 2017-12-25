@@ -1,19 +1,12 @@
-package web
+package tests
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
-	"net/http/cookiejar"
-	"net/http/httptest"
 	"net/url"
 	"psychic-rat/sqldb"
-	"psychic-rat/web"
-	"psychic-rat/web/admin"
-	"psychic-rat/web/tmpl"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -46,8 +39,6 @@ type (
 )
 
 var (
-	testUrl string
-
 	newItemPosts = []newItemPost{
 		newItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1"},
 		newItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2"},
@@ -61,38 +52,6 @@ func TestHomePage(t *testing.T) {
 	defer cleanUp(server, db)
 	resp, err := http.Get(testUrl + "/")
 	testPageStatus(resp, err, http.StatusOK, t)
-}
-
-func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
-	server := httptest.NewServer(web.Handler())
-	testUrl = server.URL
-	db := initDB(t)
-	apis := web.APIS{
-		Company: db,
-		Item:    db,
-		NewItem: db,
-		Pledge:  db,
-		User:    db,
-	}
-	web.Init(apis)
-	admin.Init(db, db, db, db)
-	tmpl.Init("../res/")
-	return server, db
-}
-
-func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing.T) {
-	t.Helper()
-	if err != nil {
-		t.Fatalf("unexpected error", err)
-	}
-	if resp.StatusCode != expectedCode {
-		t.Fatalf("wanted %v, got %v. Response was %v", expectedCode, resp.StatusCode, resp)
-	}
-}
-
-func cleanUp(server *httptest.Server, db *sqldb.DB) {
-	server.Close()
-	closeDB(db)
 }
 
 func TestPledgeWithoutLogin(t *testing.T) {
@@ -115,18 +74,6 @@ func TestSignin(t *testing.T) {
 	loginUser("test1", t)
 }
 
-func loginUser(user string, t *testing.T) http.CookieJar {
-	t.Helper()
-	resp, err := http.Get(testUrl + "/signin?u=" + user)
-	if err != nil || resp.StatusCode != http.StatusOK {
-		t.Fatalf("unable to signin, error was %v, response %v", err, resp)
-	}
-	jar, _ := cookiejar.New(nil)
-	url, _ := url.Parse(testUrl)
-	jar.SetCookies(url, resp.Cookies())
-	return jar
-}
-
 func TestPledgeWithLogin(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
@@ -143,28 +90,6 @@ func TestPledgeWithLogin(t *testing.T) {
 		"<input type=\"submit\"",
 	}
 	testStrings(strBody, expected, t)
-}
-
-func readResponseBody(resp *http.Response, t *testing.T) string {
-	t.Helper()
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return string(body)
-}
-
-func testStrings(body string, expectedStrings []string, t *testing.T) {
-	t.Helper()
-	for _, s := range expectedStrings {
-		if !strings.Contains(body, s) {
-			t.Errorf("body did not contain '%s'", s)
-		}
-	}
-	if t.Failed() {
-		t.Errorf("body was %s", body)
-	}
 }
 
 func TestHappyPathPledge(t *testing.T) {

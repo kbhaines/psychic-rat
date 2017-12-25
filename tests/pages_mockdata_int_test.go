@@ -1,4 +1,4 @@
-package web
+package tests
 
 import (
 	"psychic-rat/sqldb"
