@@ -9,6 +9,7 @@ import (
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
+	"psychic-rat/web/pub"
 	"psychic-rat/web/tmpl"
 	"strings"
 	"testing"
@@ -20,14 +21,13 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	server := httptest.NewServer(web.Handler())
 	testUrl = server.URL
 	db := initDB(t)
-	apis := web.APIS{
-		Company: db,
+	apis := pub.APIS{
 		Item:    db,
 		NewItem: db,
 		Pledge:  db,
 		User:    db,
 	}
-	web.Init(apis)
+	pub.Init(apis, false)
 	admin.Init(db, db, db, db)
 	tmpl.Init("../res/")
 	return server, db

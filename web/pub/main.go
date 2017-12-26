@@ -1,4 +1,4 @@
-package web
+package pub
 
 import (
 	"fmt"
@@ -17,6 +17,41 @@ import (
 // TODO: split into subpackages; separate user & admin stuff for starters.
 
 type (
+	APIS struct {
+		Item    ItemAPI
+		NewItem NewItemAPI
+		Pledge  PledgeAPI
+		User    UserAPI
+	}
+
+	// TODO: lots of interfaces here and they need to be split into smaller
+	// ones, along with splitting the web module as well.
+
+	// TODO: APIs need consistent parameter and return style
+
+	ItemAPI interface {
+		ListItems() ([]types.Item, error)
+		GetItem(id int) (types.Item, error)
+	}
+
+	NewItemAPI interface {
+		AddNewItem(types.NewItem) (*types.NewItem, error)
+	}
+
+	PledgeAPI interface {
+		AddPledge(itemId int, userId string) (int, error)
+	}
+
+	UserAPI interface {
+		GetUser(userId string) (*types.User, error)
+	}
+
+	NewItemPost struct {
+		Company string
+		Make    string
+		Model   string
+	}
+
 	authInfo struct {
 		Auth0ClientId    string
 		Auth0CallbackURL string
@@ -34,6 +69,10 @@ type (
 )
 
 var (
+	apis APIS
+
+	auth0Mode bool
+
 	// function variables, allows us to swap out for mocks for easier testing
 	renderPage     = tmpl.RenderTemplate
 	isUserLoggedIn = isUserLoggedInSession
@@ -41,6 +80,11 @@ var (
 	// TODO: Env var
 	auth0Store = sessions.NewCookieStore([]byte("something-very-secret"))
 )
+
+func Init(a APIS, useAuth0 bool) {
+	apis = a
+	auth0Mode = useAuth0
+}
 
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := dispatch.MethodSelector{
@@ -54,7 +98,7 @@ func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	method := signInSimple
-	if flags.enableAuth0 {
+	if auth0Mode {
 		method = signInAuth0
 	}
 	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": method}, writer, request)

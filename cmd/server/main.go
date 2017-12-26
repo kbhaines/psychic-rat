@@ -7,6 +7,7 @@ import (
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
+	"psychic-rat/web/pub"
 	"psychic-rat/web/tmpl"
 
 	"github.com/gorilla/context"
@@ -32,14 +33,14 @@ func init() {
 		panic("unable to init db: " + err.Error())
 	}
 
-	apis := web.APIS{
+	apis := pub.APIS{
 		Item:    db,
 		NewItem: db,
 		Pledge:  db,
 		User:    db,
 	}
-	web.Init(apis)
 	auth0.Init(db)
-	admin.Init(db, db, db, db)
 	tmpl.Init("res/")
+	pub.Init(apis, flags.enableAuth0)
+	admin.Init(db, db, db, db)
 }
