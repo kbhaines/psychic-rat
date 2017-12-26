@@ -33,14 +33,13 @@ func init() {
 	}
 
 	apis := web.APIS{
-		Company: db,
 		Item:    db,
 		NewItem: db,
 		Pledge:  db,
 		User:    db,
 	}
 	web.Init(apis)
-	auth0.Init(apis.User)
+	auth0.Init(db)
 	admin.Init(db, db, db, db)
 	tmpl.Init("res/")
 }

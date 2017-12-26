@@ -10,7 +10,6 @@ import (
 
 type (
 	APIS struct {
-		Company CompanyAPI
 		Item    ItemAPI
 		NewItem NewItemAPI
 		Pledge  PledgeAPI
@@ -22,32 +21,21 @@ type (
 
 	// TODO: APIs need consistent parameter and return style
 
-	CompanyAPI interface {
-		GetCompanies() ([]types.Company, error)
-		GetCompany(int) (types.Company, error)
-		AddCompany(co types.Company) (*types.Company, error)
-	}
-
 	ItemAPI interface {
 		ListItems() ([]types.Item, error)
-		AddItem(types.Item) (*types.Item, error)
 		GetItem(id int) (types.Item, error)
 	}
 
 	NewItemAPI interface {
 		AddNewItem(types.NewItem) (*types.NewItem, error)
-		ListNewItems() ([]types.NewItem, error)
-		DeleteNewItem(int) error
 	}
 
 	PledgeAPI interface {
 		AddPledge(itemId int, userId string) (int, error)
-		//ListPledges() PledgeListing
 	}
 
 	UserAPI interface {
 		GetUser(userId string) (*types.User, error)
-		AddUser(types.User) error
 	}
 
 	NewItemPost struct {
