@@ -3,7 +3,6 @@ package pub
 import (
 	"log"
 	"net/http"
-	"os"
 	"psychic-rat/sess"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
@@ -96,12 +95,6 @@ func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": authHandler.Handler}, writer, request)
-}
-
-func signInAuth0(writer http.ResponseWriter, request *http.Request) {
-	vars := (&pageVariables{}).withAuth0Vars()
-	log.Printf("vars = %+v\n", vars)
-	renderer.Render(writer, "signin-auth0.html.tmpl", vars)
 }
 
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
@@ -246,12 +239,5 @@ func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 	if user != nil {
 		pv.User = *user
 	}
-	return pv
-}
-
-func (pv *pageVariables) withAuth0Vars() *pageVariables {
-	pv.Auth0Domain = os.Getenv("AUTH0_DOMAIN")
-	pv.Auth0CallbackURL = os.Getenv("AUTH0_CALLBACK_URL")
-	pv.Auth0ClientId = os.Getenv("AUTH0_CLIENT_ID")
 	return pv
 }

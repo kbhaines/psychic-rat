@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"net/http"
+	"os"
 	"psychic-rat/auth0"
 	"psychic-rat/authsimple"
 	"psychic-rat/sqldb"
@@ -25,10 +26,11 @@ func main() {
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.Parse()
 
+	initModules()
 	http.ListenAndServe("localhost:8080", context.ClearHandler(web.Handler()))
 }
 
-func init() {
+func initModules() {
 	db, err := sqldb.OpenDB("pr.dat")
 	if err != nil {
 		panic("unable to init db: " + err.Error())
@@ -40,9 +42,16 @@ func init() {
 		Pledge:  db,
 		User:    db,
 	}
+
 	auth0.Init(db)
 	renderer := tmpl.NewRenderer("res/")
-	authHandler := authsimple.NewAuthSimple(db, renderer)
+	var authHandler pub.AuthHandler
+	if flags.enableAuth0 {
+		authHandler = auth0.NewAuth0Handler(renderer, os.Getenv("AUTH0_DOMAIN"), os.Getenv("AUTH0_CALLBACK_URL"), os.Getenv("AUTH0_CLIENT_ID"))
+	} else {
+		authHandler = authsimple.NewAuthSimple(db, renderer)
+	}
 	pub.Init(apis, flags.enableAuth0, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
+
 }
