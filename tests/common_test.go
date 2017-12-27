@@ -28,9 +28,9 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 		Pledge:  db,
 		User:    db,
 	}
-	pub.Init(apis, false, authsimple.NewAuthSimple(db))
-	admin.Init(db, db, db, db)
-	tmpl.Init("../res/")
+	renderer := tmpl.NewRenderer("../res/")
+	pub.Init(apis, false, authsimple.NewAuthSimple(db, renderer), renderer)
+	admin.Init(db, db, db, db, renderer)
 	return server, db
 }
 

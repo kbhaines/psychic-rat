@@ -8,7 +8,6 @@ import (
 	"psychic-rat/sess"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
-	"psychic-rat/web/tmpl"
 	"strconv"
 )
 
@@ -61,6 +60,10 @@ type (
 		AddPledge(itemId int, userId string) (int, error)
 	}
 
+	Renderer interface {
+		Render(writer http.ResponseWriter, templateName string, variables interface{}) error
+	}
+
 	pageVariables struct {
 		Items     []types.Item
 		NewItems  []types.NewItem
@@ -74,14 +77,15 @@ var (
 	itemsAPI    ItemAPI
 	newItemsAPI NewItemAPI
 	pledgeAPI   PledgeAPI
-	renderPage  = tmpl.RenderTemplate
+	renderer    Renderer
 )
 
-func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI) {
+func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, rendr Renderer) {
 	companyAPI = co
 	itemsAPI = item
 	newItemsAPI = newItems
 	pledgeAPI = pledge
+	renderer = rendr
 }
 
 func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
@@ -134,7 +138,7 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 
 	vars := &pageVariables{Items: items, NewItems: newItems, Companies: companies}
-	renderPage(w, "admin-new-items.html.tmpl", vars)
+	renderer.Render(w, "admin-new-items.html.tmpl", vars)
 }
 
 func approveNewItems(w http.ResponseWriter, r *http.Request) {

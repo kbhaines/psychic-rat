@@ -7,7 +7,6 @@ import (
 	"psychic-rat/sess"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
-	"psychic-rat/web/tmpl"
 	"strconv"
 
 	"github.com/gorilla/sessions"
@@ -45,6 +44,10 @@ type (
 		GetLoggedInUser(*http.Request) *types.User
 	}
 
+	Renderer interface {
+		Render(http.ResponseWriter, string, interface{}) error
+	}
+
 	authInfo struct {
 		Auth0ClientId    string
 		Auth0CallbackURL string
@@ -66,8 +69,7 @@ var (
 
 	auth0Mode bool
 
-	// function variables, allows us to swap out for mocks for easier testing
-	renderPage = tmpl.RenderTemplate
+	renderer Renderer
 
 	// TODO: Env var
 	auth0Store = sessions.NewCookieStore([]byte("something-very-secret"))
@@ -75,17 +77,18 @@ var (
 	authHandler AuthHandler
 )
 
-func Init(a APIS, useAuth0 bool, ah AuthHandler) {
+func Init(a APIS, useAuth0 bool, ah AuthHandler, rend Renderer) {
 	apis = a
 	auth0Mode = useAuth0
 	authHandler = ah
+	renderer = rend
 }
 
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET": func(writer http.ResponseWriter, request *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(request)
-			renderPage(writer, "home.html.tmpl", vars)
+			renderer.Render(writer, "home.html.tmpl", vars)
 		},
 	}
 	dispatch.ExecHandlerForMethod(selector, writer, request)
@@ -98,7 +101,7 @@ func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
 func signInAuth0(writer http.ResponseWriter, request *http.Request) {
 	vars := (&pageVariables{}).withAuth0Vars()
 	log.Printf("vars = %+v\n", vars)
-	renderPage(writer, "signin-auth0.html.tmpl", vars)
+	renderer.Render(writer, "signin-auth0.html.tmpl", vars)
 }
 
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
@@ -129,7 +132,7 @@ func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
 	}
 	vars := &pageVariables{Items: report}
 	vars = vars.withSessionVars(request)
-	renderPage(writer, "pledge.html.tmpl", vars)
+	renderer.Render(writer, "pledge.html.tmpl", vars)
 }
 
 func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
@@ -170,14 +173,14 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		User:  *user,
 		Items: []types.Item{item},
 	}
-	renderPage(writer, "pledge-post.html.tmpl", vars)
+	renderer.Render(writer, "pledge-post.html.tmpl", vars)
 }
 
 func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET": userLoginRequired(func(writer http.ResponseWriter, request *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(request)
-			renderPage(writer, "thanks.html.tmpl", vars)
+			renderer.Render(writer, "thanks.html.tmpl", vars)
 		}),
 	}
 	dispatch.ExecHandlerForMethod(selector, writer, request)
@@ -228,7 +231,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		User:  *user,
 		Items: []types.Item{item},
 	}
-	renderPage(w, "pledge-post-new-item.html.tmpl", vars)
+	renderer.Render(w, "pledge-post-new-item.html.tmpl", vars)
 }
 
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {

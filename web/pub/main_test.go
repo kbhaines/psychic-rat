@@ -34,38 +34,40 @@ type mockAuthHandler struct {
 	user *types.User
 }
 
+type mockRenderer struct {
+	expectedTemplate string
+	expectedVars     pageVariables
+	t                *testing.T
+}
+
 func TestPledgeListItems(t *testing.T) {
 	apis = APIS{Item: &mockItemAPI{}}
 	authHandler = &mockAuthHandler{user: &types.User{}}
 
 	expectedVars := pageVariables{Items: mockItemReport}
-	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
+	renderer = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	req := &http.Request{Method: "GET"}
 	PledgePageHandler(nil, req)
 }
 
-func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) func(http.ResponseWriter, string, interface{}) {
-	return func(writer http.ResponseWriter, templateName string, templateVars interface{}) {
-		t.Logf("Rendering %s with %v", templateName, templateVars)
-		if templateName != expectedTemplate {
-			t.Errorf("wrong template, got %s but wanted %s", templateName, expectedTemplate)
-		}
-		if !reflect.DeepEqual(*templateVars.(*pageVariables), expectedVars) {
-			t.Errorf("wrong variables, wanted %v, got %v", expectedVars, *templateVars.(*pageVariables))
-		}
+func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVariables) Renderer {
+	return &mockRenderer{
+		expectedTemplate: expectedTemplate,
+		expectedVars:     expectedVars,
+		t:                t,
 	}
 }
 
 func TestHomePageTemplate(t *testing.T) {
 	apis = APIS{}
 	expectedVars := pageVariables{}
-	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
+	renderer = getRenderMock(t, "home.html.tmpl", expectedVars)
 	req := &http.Request{Method: "GET"}
 	HomePageHandler(nil, req)
 }
 
 func TestProtectedPages(t *testing.T) {
-	renderPage = func(w http.ResponseWriter, name string, vars interface{}) {}
+	renderer = getRenderMock(t, "", pageVariables{})
 	apis = APIS{Item: &mockItemAPI{}}
 	authHandler = &mockAuthHandler{}
 	req := &http.Request{Method: "GET"}
@@ -95,3 +97,15 @@ func (m *mockItemAPI) GetItem(id int) (types.Item, error) { panic("not implement
 
 func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request) {}
 func (a *mockAuthHandler) GetLoggedInUser(*http.Request) *types.User  { return a.user }
+
+func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars interface{}) error {
+	t := r.t
+	t.Logf("Rendering %s with %v", templateName, vars)
+	if templateName != r.expectedTemplate {
+		t.Errorf("wrong template, got %s but wanted %s", templateName, r.expectedTemplate)
+	}
+	if !reflect.DeepEqual(*vars.(*pageVariables), r.expectedVars) {
+		t.Errorf("wrong variables, wanted %v, got %v", r.expectedVars, *vars.(*pageVariables))
+	}
+	return nil
+}
