@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"net/url"
-	"psychic-rat/sess"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
 	"strconv"
@@ -64,6 +63,10 @@ type (
 		Render(writer http.ResponseWriter, templateName string, variables interface{}) error
 	}
 
+	AuthHandler interface {
+		GetLoggedInUser(*http.Request) (*types.User, error)
+	}
+
 	pageVariables struct {
 		Items     []types.Item
 		NewItems  []types.NewItem
@@ -78,14 +81,16 @@ var (
 	newItemsAPI NewItemAPI
 	pledgeAPI   PledgeAPI
 	renderer    Renderer
+	authHandler AuthHandler
 )
 
-func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, rendr Renderer) {
+func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler, rendr Renderer) {
 	companyAPI = co
 	itemsAPI = item
 	newItemsAPI = newItems
 	pledgeAPI = pledge
 	renderer = rendr
+	authHandler = auth
 }
 
 func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
@@ -108,8 +113,7 @@ func adminLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func isUserAdmin(request *http.Request) bool {
-	s := sess.NewSessionStore(request, nil)
-	user, err := s.Get()
+	user, err := authHandler.GetLoggedInUser(request)
 	if err != nil {
 		log.Print(err)
 		return false

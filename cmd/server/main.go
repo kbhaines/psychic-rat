@@ -42,6 +42,7 @@ func init() {
 	}
 	auth0.Init(db)
 	renderer := tmpl.NewRenderer("res/")
-	pub.Init(apis, flags.enableAuth0, authsimple.NewAuthSimple(db, renderer), renderer)
-	admin.Init(db, db, db, db, renderer)
+	authHandler := authsimple.NewAuthSimple(db, renderer)
+	pub.Init(apis, flags.enableAuth0, authHandler, renderer)
+	admin.Init(db, db, db, db, authHandler, renderer)
 }
