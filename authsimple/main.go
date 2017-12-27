@@ -26,27 +26,24 @@ func NewAuthSimple(u UserAPI, r Renderer) *SimpleSignIn {
 }
 
 func (s *SimpleSignIn) SignIn(sess *sess.SessionStore) {
-	user, err := sess.Get()
-	if err != nil {
-		http.Error(sess.Writer(), err.Error(), http.StatusInternalServerError)
+	if err := s.authUser(sess); err != nil {
+		log.Print(err)
+		http.Error(sess.Writer(), "authentication failed", http.StatusForbidden)
 		return
 	}
-	if user == nil {
-		log.Print("no user, attempting auth")
-		if err := s.authUser(sess); err != nil {
-			log.Print(err)
-			http.Error(sess.Writer(), "authentication failed", http.StatusForbidden)
-			return
-		}
-	}
-
 }
 
 func (s *SimpleSignIn) Handler(w http.ResponseWriter, r *http.Request) {
 	session := sess.NewSessionStore(r, w)
 	s.SignIn(session)
 	var loggedInUser types.User
-	user := s.GetLoggedInUser(r)
+	user, err := s.GetLoggedInUser(r)
+	if err != nil {
+		log.Print(err)
+		http.Error(w, "authentication failed", http.StatusForbidden)
+		return
+	}
+
 	if user != nil {
 		loggedInUser = *user
 	}
@@ -55,15 +52,14 @@ func (s *SimpleSignIn) Handler(w http.ResponseWriter, r *http.Request) {
 	s.renderer.Render(w, "signin.html.tmpl", vars)
 }
 
-func (_ *SimpleSignIn) GetLoggedInUser(r *http.Request) *types.User {
+func (_ *SimpleSignIn) GetLoggedInUser(r *http.Request) (*types.User, error) {
 	// TODO: nil is a smell. StoreReader/Writer interfaces.
 	s := sess.NewSessionStore(r, nil)
 	user, err := s.Get()
 	if err != nil {
-		log.Print(err)
-		return nil
+		return nil, err
 	}
-	return user
+	return user, nil
 }
 
 func (s *SimpleSignIn) authUser(session *sess.SessionStore) error {

@@ -95,8 +95,8 @@ func TestPledgeAuthFailure(t *testing.T) {
 func (m *mockItemAPI) ListItems() ([]types.Item, error)   { return mockItemReport, nil }
 func (m *mockItemAPI) GetItem(id int) (types.Item, error) { panic("not implemented") }
 
-func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request) {}
-func (a *mockAuthHandler) GetLoggedInUser(*http.Request) *types.User  { return a.user }
+func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request)         {}
+func (a *mockAuthHandler) GetLoggedInUser(*http.Request) (*types.User, error) { return a.user, nil }
 
 func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars interface{}) error {
 	t := r.t

@@ -41,7 +41,7 @@ type (
 
 	AuthHandler interface {
 		Handler(http.ResponseWriter, *http.Request)
-		GetLoggedInUser(*http.Request) *types.User
+		GetLoggedInUser(*http.Request) (*types.User, error)
 	}
 
 	Renderer interface {
@@ -106,8 +106,9 @@ func signInAuth0(writer http.ResponseWriter, request *http.Request) {
 
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if authHandler.GetLoggedInUser(r) == nil {
-			log.Print("user not logged in")
+		user, err := authHandler.GetLoggedInUser(r)
+		if user == nil || err != nil {
+			log.Print("user not logged in, or error occurred: %v", err)
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
