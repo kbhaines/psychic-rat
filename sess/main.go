@@ -56,3 +56,6 @@ func (s *SessionStore) Save(user types.User) error {
 	log.Printf("saved user %v in session", user)
 	return nil
 }
+
+func (s *SessionStore) Request() *http.Request      { return s.r }
+func (s *SessionStore) Writer() http.ResponseWriter { return s.w }

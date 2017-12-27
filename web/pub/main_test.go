@@ -21,31 +21,25 @@ var (
 		types.Item{ID: 125, Make: "phone", Model: "x126", Company: mockCompanies[1]},
 		types.Item{ID: 126, Make: "phone", Model: "x127", Company: mockCompanies[2]},
 	}
+
+	protectedPages = []http.HandlerFunc{
+		PledgePageHandler,
+		ThanksPageHandler,
+	}
 )
 
-type mockItemApi struct{}
+type mockItemAPI struct{}
 
-func (m *mockItemApi) AddItem(types.Item) (*types.Item, error) {
-	panic("not implemented")
-}
-
-func (m *mockItemApi) ListItems() ([]types.Item, error) {
-	return mockItemReport, nil
-}
-
-func (m *mockItemApi) GetItem(id int) (types.Item, error) {
-	panic("not implemented")
-}
-
-func mockSession(request *http.Request) bool {
-	return true
+type mockAuthHandler struct {
+	user *types.User
 }
 
 func TestPledgeListItems(t *testing.T) {
-	apis = APIS{Item: &mockItemApi{}}
+	apis = APIS{Item: &mockItemAPI{}}
+	authHandler = &mockAuthHandler{user: &types.User{}}
+
 	expectedVars := pageVariables{Items: mockItemReport}
 	renderPage = getRenderMock(t, "pledge.html.tmpl", expectedVars)
-	isUserLoggedIn = mockSession
 	req := &http.Request{Method: "GET"}
 	PledgePageHandler(nil, req)
 }
@@ -66,19 +60,15 @@ func TestHomePageTemplate(t *testing.T) {
 	apis = APIS{}
 	expectedVars := pageVariables{}
 	renderPage = getRenderMock(t, "home.html.tmpl", expectedVars)
-	isUserLoggedIn = mockSession
 	req := &http.Request{Method: "GET"}
 	HomePageHandler(nil, req)
 }
 
-var protectedPages = []http.HandlerFunc{
-	PledgePageHandler,
-	ThanksPageHandler,
-}
-
 func TestProtectedPages(t *testing.T) {
+	renderPage = func(w http.ResponseWriter, name string, vars interface{}) {}
+	apis = APIS{Item: &mockItemAPI{}}
+	authHandler = &mockAuthHandler{}
 	req := &http.Request{Method: "GET"}
-	isUserLoggedIn = func(r *http.Request) bool { return false }
 	for _, page := range protectedPages {
 		writer := httptest.NewRecorder()
 		page(writer, req)
@@ -90,8 +80,6 @@ func TestProtectedPages(t *testing.T) {
 }
 
 func TestPledgeAuthFailure(t *testing.T) {
-	isUserLoggedIn = func(r *http.Request) bool { return false }
-
 	for _, method := range []string{"GET", "POST"} {
 		writer := httptest.NewRecorder()
 		req := &http.Request{Method: method}
@@ -102,3 +90,8 @@ func TestPledgeAuthFailure(t *testing.T) {
 		}
 	}
 }
+func (m *mockItemAPI) ListItems() ([]types.Item, error)   { return mockItemReport, nil }
+func (m *mockItemAPI) GetItem(id int) (types.Item, error) { panic("not implemented") }
+
+func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request) {}
+func (a *mockAuthHandler) GetLoggedInUser(*http.Request) *types.User  { return a.user }

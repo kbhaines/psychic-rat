@@ -6,6 +6,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"psychic-rat/authsimple"
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
@@ -27,7 +28,7 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 		Pledge:  db,
 		User:    db,
 	}
-	pub.Init(apis, false)
+	pub.Init(apis, false, authsimple.NewAuthSimple(db))
 	admin.Init(db, db, db, db)
 	tmpl.Init("../res/")
 	return server, db

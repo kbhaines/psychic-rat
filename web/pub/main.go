@@ -1,7 +1,6 @@
 package pub
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -14,8 +13,6 @@ import (
 	"github.com/gorilla/sessions"
 )
 
-// TODO: split into subpackages; separate user & admin stuff for starters.
-
 type (
 	APIS struct {
 		Item    ItemAPI
@@ -23,9 +20,6 @@ type (
 		Pledge  PledgeAPI
 		User    UserAPI
 	}
-
-	// TODO: lots of interfaces here and they need to be split into smaller
-	// ones, along with splitting the web module as well.
 
 	// TODO: APIs need consistent parameter and return style
 
@@ -46,10 +40,9 @@ type (
 		GetUser(userId string) (*types.User, error)
 	}
 
-	NewItemPost struct {
-		Company string
-		Make    string
-		Model   string
+	AuthHandler interface {
+		Handler(http.ResponseWriter, *http.Request)
+		GetLoggedInUser(*http.Request) *types.User
 	}
 
 	authInfo struct {
@@ -74,16 +67,18 @@ var (
 	auth0Mode bool
 
 	// function variables, allows us to swap out for mocks for easier testing
-	renderPage     = tmpl.RenderTemplate
-	isUserLoggedIn = isUserLoggedInSession
+	renderPage = tmpl.RenderTemplate
 
 	// TODO: Env var
 	auth0Store = sessions.NewCookieStore([]byte("something-very-secret"))
+
+	authHandler AuthHandler
 )
 
-func Init(a APIS, useAuth0 bool) {
+func Init(a APIS, useAuth0 bool, ah AuthHandler) {
 	apis = a
 	auth0Mode = useAuth0
+	authHandler = ah
 }
 
 func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
@@ -97,48 +92,7 @@ func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
 }
 
 func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
-	method := signInSimple
-	if auth0Mode {
-		method = signInAuth0
-	}
-	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": method}, writer, request)
-}
-
-func signInSimple(writer http.ResponseWriter, request *http.Request) {
-	s := sess.NewSessionStore(request, writer)
-	user, err := s.Get()
-	if err != nil {
-		http.Error(writer, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if user == nil {
-		log.Print("no user, attempting auth")
-		if err := authUser(request, s); err != nil {
-			log.Print(err)
-			http.Error(writer, "authentication failed", http.StatusForbidden)
-			return
-		}
-	}
-
-	vars := (&pageVariables{}).withSessionVars(request)
-	renderPage(writer, "signin.html.tmpl", vars)
-}
-
-func authUser(request *http.Request, session *sess.SessionStore) error {
-	if err := request.ParseForm(); err != nil {
-		return err
-	}
-
-	userId := request.FormValue("u")
-	if userId == "" {
-		return fmt.Errorf("userId not specified")
-	}
-
-	user, err := apis.User.GetUser(userId)
-	if err != nil {
-		return fmt.Errorf("can't get user by id %v : %v", userId, err)
-	}
-	return session.Save(*user)
+	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": authHandler.Handler}, writer, request)
 }
 
 func signInAuth0(writer http.ResponseWriter, request *http.Request) {
@@ -149,24 +103,13 @@ func signInAuth0(writer http.ResponseWriter, request *http.Request) {
 
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if !isUserLoggedIn(r) {
+		if authHandler.GetLoggedInUser(r) == nil {
 			log.Print("user not logged in")
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
 		h(w, r)
 	}
-}
-
-func isUserLoggedInSession(request *http.Request) bool {
-	// TODO: nil is a smell. StoreReader/Writer interfaces.
-	s := sess.NewSessionStore(request, nil)
-	user, err := s.Get()
-	if err != nil {
-		log.Print(err)
-		return false
-	}
-	return user != nil
 }
 
 func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {

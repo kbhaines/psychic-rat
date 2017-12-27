@@ -4,6 +4,7 @@ import (
 	"flag"
 	"net/http"
 	"psychic-rat/auth0"
+	"psychic-rat/authsimple"
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
@@ -41,6 +42,6 @@ func init() {
 	}
 	auth0.Init(db)
 	tmpl.Init("res/")
-	pub.Init(apis, flags.enableAuth0)
+	pub.Init(apis, flags.enableAuth0, authsimple.NewAuthSimple(db))
 	admin.Init(db, db, db, db)
 }
