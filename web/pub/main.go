@@ -3,12 +3,9 @@ package pub
 import (
 	"log"
 	"net/http"
-	"psychic-rat/sess"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
 	"strconv"
-
-	"github.com/gorilla/sessions"
 )
 
 type (
@@ -64,21 +61,13 @@ type (
 )
 
 var (
-	apis APIS
-
-	auth0Mode bool
-
-	renderer Renderer
-
-	// TODO: Env var
-	auth0Store = sessions.NewCookieStore([]byte("something-very-secret"))
-
+	apis        APIS
+	renderer    Renderer
 	authHandler AuthHandler
 )
 
-func Init(a APIS, useAuth0 bool, ah AuthHandler, rend Renderer) {
+func Init(a APIS, ah AuthHandler, rend Renderer) {
 	apis = a
-	auth0Mode = useAuth0
 	authHandler = ah
 	renderer = rend
 }
@@ -150,9 +139,7 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	// TODO ignoring a couple of errors
-	s := sess.NewSessionStore(request, writer)
-	user, _ := s.Get()
+	user, _ := authHandler.GetLoggedInUser(request)
 	userId := user.ID
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
@@ -193,9 +180,9 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
+
 	// TODO ignoring a couple of errors
-	s := sess.NewSessionStore(r, w)
-	user, _ := s.Get()
+	user, _ := authHandler.GetLoggedInUser(r)
 	userId := user.ID
 
 	company := r.FormValue("company")
@@ -229,9 +216,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
-	// TODO: nil is a smell. StoreReader/Writer interfaces.
-	s := sess.NewSessionStore(r, nil)
-	user, err := s.Get()
+	user, err := authHandler.GetLoggedInUser(r)
 	if err != nil {
 		// todo - return error?
 		log.Fatal(err)

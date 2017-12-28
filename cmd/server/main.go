@@ -51,7 +51,7 @@ func initModules() {
 	} else {
 		authHandler = authsimple.NewAuthSimple(db, renderer)
 	}
-	pub.Init(apis, flags.enableAuth0, authHandler, renderer)
+	pub.Init(apis, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
 
 }
