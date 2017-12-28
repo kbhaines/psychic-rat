@@ -72,18 +72,18 @@ func Init(a APIS, ah AuthHandler, rend Renderer) {
 	renderer = rend
 }
 
-func HomePageHandler(writer http.ResponseWriter, request *http.Request) {
+func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
-		"GET": func(writer http.ResponseWriter, request *http.Request) {
-			vars := (&pageVariables{}).withSessionVars(request)
-			renderer.Render(writer, "home.html.tmpl", vars)
+		"GET": func(w http.ResponseWriter, r *http.Request) {
+			vars := (&pageVariables{}).withSessionVars(r)
+			renderer.Render(w, "home.html.tmpl", vars)
 		},
 	}
-	dispatch.ExecHandlerForMethod(selector, writer, request)
+	dispatch.ExecHandlerForMethod(selector, w, r)
 }
 
-func SignInPageHandler(writer http.ResponseWriter, request *http.Request) {
-	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": authHandler.Handler}, writer, request)
+func SignInPageHandler(w http.ResponseWriter, r *http.Request) {
+	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": authHandler.Handler}, w, r)
 }
 
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
@@ -98,36 +98,36 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func PledgePageHandler(writer http.ResponseWriter, request *http.Request) {
+func PledgePageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET":  userLoginRequired(pledgeGetHandler),
 		"POST": userLoginRequired(pledgePostHandler),
 	}
-	dispatch.ExecHandlerForMethod(selector, writer, request)
+	dispatch.ExecHandlerForMethod(selector, w, r)
 }
 
-func pledgeGetHandler(writer http.ResponseWriter, request *http.Request) {
+func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 	report, err := apis.Item.ListItems()
 	if err != nil {
 		log.Print(err)
-		http.Error(writer, "", http.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	vars := &pageVariables{Items: report}
-	vars = vars.withSessionVars(request)
-	renderer.Render(writer, "pledge.html.tmpl", vars)
+	vars = vars.withSessionVars(r)
+	renderer.Render(w, "pledge.html.tmpl", vars)
 }
 
-func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
-	if err := request.ParseForm(); err != nil {
+func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
 		log.Print(err)
-		http.Error(writer, "", http.StatusInternalServerError)
+		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
-	itemId64, err := strconv.ParseInt(request.FormValue("item"), 10, 32)
+	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
-		http.Error(writer, "", http.StatusBadRequest)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	itemId := int(itemId64)
@@ -135,11 +135,11 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 	item, err := apis.Item.GetItem(itemId)
 	if err != nil {
 		log.Printf("error looking up item %v : %v", itemId, err)
-		http.Error(writer, "", http.StatusBadRequest)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	user, _ := authHandler.GetLoggedInUser(request)
+	user, _ := authHandler.GetLoggedInUser(r)
 	userId := user.ID
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
@@ -154,17 +154,17 @@ func pledgePostHandler(writer http.ResponseWriter, request *http.Request) {
 		User:  *user,
 		Items: []types.Item{item},
 	}
-	renderer.Render(writer, "pledge-post.html.tmpl", vars)
+	renderer.Render(w, "pledge-post.html.tmpl", vars)
 }
 
-func ThanksPageHandler(writer http.ResponseWriter, request *http.Request) {
+func ThanksPageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
-		"GET": userLoginRequired(func(writer http.ResponseWriter, request *http.Request) {
-			vars := (&pageVariables{}).withSessionVars(request)
-			renderer.Render(writer, "thanks.html.tmpl", vars)
+		"GET": userLoginRequired(func(w http.ResponseWriter, r *http.Request) {
+			vars := (&pageVariables{}).withSessionVars(r)
+			renderer.Render(w, "thanks.html.tmpl", vars)
 		}),
 	}
-	dispatch.ExecHandlerForMethod(selector, writer, request)
+	dispatch.ExecHandlerForMethod(selector, w, r)
 }
 
 func NewItemHandler(w http.ResponseWriter, r *http.Request) {

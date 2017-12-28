@@ -22,13 +22,13 @@ func NewRenderer(templatePath string) *Renderer {
 	return &Renderer{path: path, templates: map[string]*template.Template{}}
 }
 
-func (r *Renderer) Render(writer http.ResponseWriter, templateName string, variables interface{}) error {
+func (r *Renderer) Render(w http.ResponseWriter, templateName string, variables interface{}) error {
 	template, ok := r.templates[templateName]
 	if !ok {
 		template = r.loadTemplate(templateName)
 		r.templates[templateName] = template
 	}
-	if err := template.Execute(writer, variables); err != nil {
+	if err := template.Execute(w, variables); err != nil {
 		panic(fmt.Sprintf("template error: %v", err))
 	}
 	return nil

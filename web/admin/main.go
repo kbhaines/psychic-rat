@@ -60,7 +60,7 @@ type (
 	}
 
 	Renderer interface {
-		Render(writer http.ResponseWriter, templateName string, variables interface{}) error
+		Render(w http.ResponseWriter, templateName string, variables interface{}) error
 	}
 
 	AuthHandler interface {
@@ -94,7 +94,7 @@ func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, au
 }
 
 func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
-	selector := map[string]http.HandlerFunc{
+	selector := dispatch.MethodSelector{
 		"GET":  adminLoginRequired(listNewItems),
 		"POST": adminLoginRequired(approveNewItems),
 	}
