@@ -7,22 +7,20 @@ import (
 	"strings"
 )
 
-var ()
-
-type Renderer struct {
+type renderer struct {
 	path      string
 	templates map[string]*template.Template
 }
 
-func NewRenderer(templatePath string) *Renderer {
+func NewRenderer(templatePath string) *renderer {
 	path := templatePath
 	if !strings.HasSuffix(path, "/") {
 		path += "/"
 	}
-	return &Renderer{path: path, templates: map[string]*template.Template{}}
+	return &renderer{path: path, templates: map[string]*template.Template{}}
 }
 
-func (r *Renderer) Render(w http.ResponseWriter, templateName string, variables interface{}) error {
+func (r *renderer) Render(w http.ResponseWriter, templateName string, variables interface{}) error {
 	template, ok := r.templates[templateName]
 	if !ok {
 		template = r.loadTemplate(templateName)
@@ -34,7 +32,7 @@ func (r *Renderer) Render(w http.ResponseWriter, templateName string, variables 
 	return nil
 }
 
-func (r *Renderer) loadTemplate(name string) *template.Template {
+func (r *renderer) loadTemplate(name string) *template.Template {
 	tFiles := []string{r.path + name, r.path + "header.html.tmpl", r.path + "footer.html.tmpl", r.path + "navi.html.tmpl"}
 	return template.Must(template.New(name).ParseFiles(tFiles...))
 }

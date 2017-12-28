@@ -15,17 +15,17 @@ type (
 	UserAPI interface {
 		GetUser(string) (*types.User, error)
 	}
-	SimpleSignIn struct {
+	simpleAuthHandler struct {
 		userAPI  UserAPI
 		renderer Renderer
 	}
 )
 
-func NewAuthSimple(u UserAPI, r Renderer) *SimpleSignIn {
-	return &SimpleSignIn{userAPI: u, renderer: r}
+func NewAuthSimple(u UserAPI, r Renderer) *simpleAuthHandler {
+	return &simpleAuthHandler{userAPI: u, renderer: r}
 }
 
-func (s *SimpleSignIn) SignIn(sess *sess.SessionStore) {
+func (s *simpleAuthHandler) SignIn(sess *sess.SessionStore) {
 	if err := s.authUser(sess); err != nil {
 		log.Print(err)
 		http.Error(sess.Writer(), "authentication failed", http.StatusForbidden)
@@ -33,7 +33,7 @@ func (s *SimpleSignIn) SignIn(sess *sess.SessionStore) {
 	}
 }
 
-func (s *SimpleSignIn) Handler(w http.ResponseWriter, r *http.Request) {
+func (s *simpleAuthHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	session := sess.NewSessionStore(r, w)
 	s.SignIn(session)
 	var loggedInUser types.User
@@ -52,7 +52,7 @@ func (s *SimpleSignIn) Handler(w http.ResponseWriter, r *http.Request) {
 	s.renderer.Render(w, "signin.html.tmpl", vars)
 }
 
-func (_ *SimpleSignIn) GetLoggedInUser(r *http.Request) (*types.User, error) {
+func (_ *simpleAuthHandler) GetLoggedInUser(r *http.Request) (*types.User, error) {
 	// TODO: nil is a smell. StoreReader/Writer interfaces.
 	s := sess.NewSessionStore(r, nil)
 	user, err := s.Get()
@@ -62,7 +62,7 @@ func (_ *SimpleSignIn) GetLoggedInUser(r *http.Request) (*types.User, error) {
 	return user, nil
 }
 
-func (s *SimpleSignIn) authUser(session *sess.SessionStore) error {
+func (s *simpleAuthHandler) authUser(session *sess.SessionStore) error {
 	if err := session.Request().ParseForm(); err != nil {
 		return err
 	}

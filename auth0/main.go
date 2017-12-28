@@ -7,7 +7,7 @@ import (
 )
 
 type (
-	Auth0Handler struct {
+	auth0Handler struct {
 		renderer    Renderer
 		domain      string
 		callbackURL string
@@ -19,8 +19,8 @@ type (
 	}
 )
 
-func NewAuth0Handler(rendr Renderer, dom string, callback string, client string) *Auth0Handler {
-	return &Auth0Handler{
+func NewAuth0Handler(rendr Renderer, dom string, callback string, client string) *auth0Handler {
+	return &auth0Handler{
 		renderer:    rendr,
 		domain:      dom,
 		callbackURL: callback,
@@ -28,7 +28,7 @@ func NewAuth0Handler(rendr Renderer, dom string, callback string, client string)
 	}
 }
 
-func (a *Auth0Handler) Handler(writer http.ResponseWriter, request *http.Request) {
+func (a *auth0Handler) Handler(writer http.ResponseWriter, request *http.Request) {
 	vars := struct {
 		Auth0Domain      string
 		Auth0CallbackURL string
@@ -42,7 +42,7 @@ func (a *Auth0Handler) Handler(writer http.ResponseWriter, request *http.Request
 	a.renderer.Render(writer, "signin-auth0.html.tmpl", vars)
 }
 
-func (a *Auth0Handler) GetLoggedInUser(r *http.Request) (*types.User, error) {
+func (a *auth0Handler) GetLoggedInUser(r *http.Request) (*types.User, error) {
 	// TODO: nil is a smell. StoreReader/Writer interfaces.
 	s := sess.NewSessionStore(r, nil)
 	user, err := s.Get()
