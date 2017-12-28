@@ -40,7 +40,7 @@ type (
 	}
 
 	CompanyAPI interface {
-		GetCompanies() ([]types.Company, error)
+		ListCompanies() ([]types.Company, error)
 		GetCompany(int) (types.Company, error)
 		AddCompany(co types.Company) (*types.Company, error)
 	}
@@ -134,7 +134,7 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	companies, err := companyAPI.GetCompanies()
+	companies, err := companyAPI.ListCompanies()
 	if err != nil {
 		log.Printf("unable to retrieve companies: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)

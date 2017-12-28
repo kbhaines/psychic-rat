@@ -327,7 +327,7 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
 
-	currentCompanies, err := db.GetCompanies()
+	currentCompanies, err := db.ListCompanies()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -336,7 +336,7 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	pl.newPostLine(4).userID("test1").existingCompany(1).selectToAdd()
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
-	newCompanies, err := db.GetCompanies()
+	newCompanies, err := db.ListCompanies()
 	if len(currentCompanies) != len(newCompanies) {
 		t.Fatalf("expected %d items, got %d items", len(currentCompanies), len(newCompanies))
 	}

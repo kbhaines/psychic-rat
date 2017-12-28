@@ -103,7 +103,7 @@ func (d *DB) AddCompany(c types.Company) (*types.Company, error) {
 	return &c, nil
 }
 
-func (d *DB) GetCompanies() ([]types.Company, error) {
+func (d *DB) ListCompanies() ([]types.Company, error) {
 	result := []types.Company{}
 	rows, err := d.Query("select id, name from companies")
 	if err != nil {
