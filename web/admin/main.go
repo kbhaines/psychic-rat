@@ -56,7 +56,7 @@ type (
 		DeleteNewItem(int) error
 	}
 	PledgeAPI interface {
-		AddPledge(itemId int, userId string) (int, error)
+		AddPledge(itemId int, userId string) (*types.Pledge, error)
 	}
 
 	Renderer interface {
@@ -297,12 +297,11 @@ func (a *apiTxn) getItem(id int) (i *types.Item) {
 
 }
 
-func (a *apiTxn) addPledge(itemID int, userID string) (p int) {
+func (a *apiTxn) addPledge(itemID int, userID string) {
 	if a.err != nil {
-		return 0
+		return
 	}
-	p, a.err = pledgeAPI.AddPledge(itemID, userID)
-	return p
+	_, a.err = pledgeAPI.AddPledge(itemID, userID)
 }
 
 func (a *apiTxn) deleteNewItem(id int) {

@@ -3,7 +3,6 @@ package sqldb
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"psychic-rat/types"
 	"time"
@@ -244,17 +243,17 @@ func (d *DB) AddUser(u types.User) error {
 	return nil
 }
 
-func (d *DB) AddPledge(itemID int, userID string) (int, error) {
+func (d *DB) AddPledge(itemID int, userID string) (*types.Pledge, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.insertPledge.Exec(itemID, userID, timestamp)
+	r, err := d.insertPledge.Exec(itemID, userID, timestamp.Unix())
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	lastID, err := r.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemID, userID, err)
+		return nil, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemID, userID, err)
 	}
-	return int(lastID), nil
+	return &types.Pledge{PledgeID: int(lastID), UserID: userID, Timestamp: timestamp}, nil
 }
 
 func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
@@ -265,13 +264,12 @@ func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
 	result := make([]types.Pledge, 0, 5)
 	for rows.Next() {
 		var p types.Pledge
-		var timestamp string
+		var timestamp int64
 		err = rows.Scan(&p.PledgeID, &p.UserID, &p.Item.Make, &p.Item.Model, &p.Item.Company.ID, &p.Item.Company.Name, &timestamp)
 		if err != nil {
 			return result, fmt.Errorf("ListUserPledges: unable to parse result row: %v", err)
 		}
-		log.Printf("timestamp = %+v\n", timestamp)
-		//p.Timestamp = time.Unix(timestamp, 0)
+		p.Timestamp = time.Unix(timestamp, 0)
 		result = append(result, p)
 	}
 	return result, nil
