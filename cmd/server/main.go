@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"net/http"
 	"os"
 	"psychic-rat/auth0"
@@ -27,7 +28,10 @@ func main() {
 	flag.Parse()
 
 	initModules()
-	http.ListenAndServe("localhost:8080", context.ClearHandler(web.Handler()))
+	err := http.ListenAndServe("localhost:8080", context.ClearHandler(web.Handler()))
+	if err != nil {
+		log.Fatalf("web server aborted: %v", err)
+	}
 }
 
 func initModules() {
