@@ -44,15 +44,8 @@ type (
 		Render(http.ResponseWriter, string, interface{}) error
 	}
 
-	authInfo struct {
-		Auth0ClientId    string
-		Auth0CallbackURL string
-		Auth0Domain      string
-	}
-
 	// pageVariables holds data for the templates. Stuffed into one struct for now.
 	pageVariables struct {
-		authInfo
 		Items     []types.Item
 		User      types.User
 		NewItems  []types.NewItem

@@ -53,5 +53,4 @@ func initModules() {
 	}
 	pub.Init(apis, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
-
 }
