@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"psychic-rat/sqldb"
+	"psychic-rat/types"
 	"reflect"
 	"strconv"
 	"testing"
@@ -155,7 +156,7 @@ func TestListNewItems(t *testing.T) {
 	testNewItemsPage(newItemPosts, t)
 }
 
-func testNewItemsPage(newItems []newItemPost, t *testing.T) {
+func testNewItemsPage(expectedNewItems []newItemPost, t *testing.T) {
 	t.Helper()
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
@@ -180,8 +181,8 @@ func testNewItemsPage(newItems []newItemPost, t *testing.T) {
 	}
 
 	rows := doc.Find(".items-table .item-entry")
-	if rows.Size() != len(newItems) {
-		t.Fatalf("expected %d rows in item listing, got %d", len(newItems), rows.Size())
+	if rows.Size() != len(expectedNewItems) {
+		t.Fatalf("expected %d rows in item listing, got %d", len(expectedNewItems), rows.Size())
 	}
 	rows.Each(func(i int, s *goquery.Selection) {
 		actualNewItem := newItemHtml{}
@@ -200,9 +201,9 @@ func testNewItemsPage(newItems []newItemPost, t *testing.T) {
 			ID:          strconv.Itoa(i + 1),
 			IsPledge:    "true",
 			UserID:      "test1",
-			UserCompany: newItems[i].Company,
-			UserMake:    newItems[i].Make,
-			UserModel:   newItems[i].Model,
+			UserCompany: expectedNewItems[i].Company,
+			UserMake:    expectedNewItems[i].Make,
+			UserModel:   expectedNewItems[i].Model,
 			UserValue:   "0",
 		}
 		if !reflect.DeepEqual(expectedNewItem, actualNewItem) {
@@ -265,17 +266,19 @@ func TestNewItemAdminPost(t *testing.T) {
 			userCompany(newItemPosts[itemToUse].Company).
 			userMake(newItemPosts[itemToUse].Make).
 			userModel(newItemPosts[itemToUse].Model).
+			isPledge().
 			selectToAdd()
 
 		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
-		testNewItemAdded(newItemPosts[itemToUse], db, t)
+		item := findAddedNewItem(newItemPosts[itemToUse], db, t)
+		testNewItemPledged(*item, db, t)
 		testNewItemsPage(newItemPosts[:itemToUse], t)
 	}
 }
 
-func testNewItemAdded(item newItemPost, db *sqldb.DB, t *testing.T) {
+func findAddedNewItem(item newItemPost, db *sqldb.DB, t *testing.T) *types.Item {
 	t.Helper()
 	items, err := db.ListItems()
 	if err != nil {
@@ -283,10 +286,27 @@ func testNewItemAdded(item newItemPost, db *sqldb.DB, t *testing.T) {
 	}
 	for _, i := range items {
 		if i.Make == item.Make && i.Model == item.Model && i.Company.Name == item.Company {
-			return
+			return &i
 		}
 	}
 	t.Fatalf("did not find expected item %v in items db", item)
+	return nil
+}
+
+func testNewItemPledged(item types.Item, db *sqldb.DB, t *testing.T) {
+	t.Helper()
+	pledges, err := db.ListUserPledges("test1")
+	if err != nil {
+		t.Fatalf("could not list pledges for %s: %v", "test1", err)
+		return
+	}
+	for _, p := range pledges {
+		pi := p.Item
+		if pi.Make == item.Make && pi.Model == item.Model && pi.Company.ID == item.Company.ID {
+			return
+		}
+	}
+	t.Fatalf("expected to find %v in pledges for user %s, found %v", item, "test1", pledges)
 }
 
 func TestNewItemAdminPostUsingExistingItem(t *testing.T) {

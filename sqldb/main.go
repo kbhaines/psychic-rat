@@ -3,6 +3,7 @@ package sqldb
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"psychic-rat/types"
 	"time"
@@ -46,7 +47,7 @@ func OpenDB(name string) (*DB, error) {
 	}
 
 	insertUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
-	insertPledge, err := db.Prepare("insert into pledges(itemId, userId, timestamp) values (?,?,?)")
+	insertPledge, err := db.Prepare("insert into pledges(itemID, userID, timestamp) values (?,?,?)")
 	if err != nil {
 		panic("prep failed" + err.Error())
 	}
@@ -66,7 +67,7 @@ func createSchema(db *sql.DB) error {
 	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyId = c.id;
 
 	create table newItems(id integer primary key, 
-	  userId integer,
+	  userID integer,
 	  isPledge boolean,
 	  make string, 
 	  model string, 
@@ -82,9 +83,14 @@ func createSchema(db *sql.DB) error {
   	  isAdmin bool);
 
 	create table pledges (id integer primary key,
-	  userId integer,
-	  itemId integer,
+	  userID integer,
+	  itemID integer,
 	  timestamp integer);
+
+	create view userPledges as select p.id pledgeID, p.userID, p.timestamp, 
+		i.id itemID, i.Make, i.Model, c.id companyID, c.name 
+		from pledges p, items i, companies c 
+		where p.itemID = i.id and i.companyId = c.id;
 	`
 	_, err := db.Exec(stmt)
 	return err
@@ -95,11 +101,11 @@ func (d *DB) AddCompany(c types.Company) (*types.Company, error) {
 	if err != nil {
 		return nil, err
 	}
-	lastId, err := r.LastInsertId()
+	lastID, err := r.LastInsertId()
 	if err != nil {
 		return nil, err
 	}
-	c.ID = int(lastId)
+	c.ID = int(lastID)
 	return &c, nil
 }
 
@@ -160,34 +166,34 @@ func (d *DB) AddItem(i types.Item) (*types.Item, error) {
 	if err != nil {
 		return nil, err
 	}
-	lastId, err := r.LastInsertId()
+	lastID, err := r.LastInsertId()
 	if err != nil {
 		return nil, err
 	}
 	new := i
-	new.ID = int(lastId)
+	new.ID = int(lastID)
 	return &new, nil
 }
 
 func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.Exec("insert into newItems(userId, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
+	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
-	lastId, err := r.LastInsertId()
+	lastID, err := r.LastInsertId()
 	if err != nil {
 		return nil, err
 	}
 	new := i
 	new.Timestamp = timestamp
-	new.ID = int(lastId)
+	new.ID = int(lastID)
 	return &new, nil
 }
 
 func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	result := []types.NewItem{}
-	rows, err := d.Query("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems")
+	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyId, timestamp from newItems")
 	if err != nil {
 		return nil, err
 	}
@@ -212,7 +218,7 @@ func (d *DB) DeleteNewItem(id int) error {
 func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 	i := types.NewItem{}
 	var timestamp int64
-	err := d.QueryRow("select id, userId, isPledge, make, model, company, companyId, timestamp from newItems where id = ?", id).Scan(&i.ID,
+	err := d.QueryRow("select id, userID, isPledge, make, model, company, companyId, timestamp from newItems where id = ?", id).Scan(&i.ID,
 		&i.UserID, &i.IsPledge, &i.Make, &i.Model, &i.Company, &i.CompanyID, &timestamp)
 	if err != nil {
 		return nil, err
@@ -221,9 +227,9 @@ func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 	return &i, nil
 }
 
-func (d *DB) GetUser(userId string) (*types.User, error) {
+func (d *DB) GetUser(userID string) (*types.User, error) {
 	u := types.User{}
-	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userId).Scan(&u.ID, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
+	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userID).Scan(&u.ID, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
 	if err != nil {
 		return &u, err
 	}
@@ -238,15 +244,35 @@ func (d *DB) AddUser(u types.User) error {
 	return nil
 }
 
-func (d *DB) AddPledge(itemId int, userId string) (int, error) {
+func (d *DB) AddPledge(itemID int, userID string) (int, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.insertPledge.Exec(itemId, userId, timestamp)
+	r, err := d.insertPledge.Exec(itemID, userID, timestamp)
 	if err != nil {
 		return 0, err
 	}
-	lastId, err := r.LastInsertId()
+	lastID, err := r.LastInsertId()
 	if err != nil {
-		return 0, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemId, userId, err)
+		return 0, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemID, userID, err)
 	}
-	return int(lastId), nil
+	return int(lastID), nil
+}
+
+func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
+	rows, err := d.Query("select pledgeID, userID, make, model, companyID, name, timestamp from userPledges where userID = ?", userID)
+	if err != nil {
+		return nil, fmt.Errorf("ListUserPledges: unable to query: %v", err)
+	}
+	result := make([]types.Pledge, 0, 5)
+	for rows.Next() {
+		var p types.Pledge
+		var timestamp string
+		err = rows.Scan(&p.PledgeID, &p.UserID, &p.Item.Make, &p.Item.Model, &p.Item.Company.ID, &p.Item.Company.Name, &timestamp)
+		if err != nil {
+			return result, fmt.Errorf("ListUserPledges: unable to parse result row: %v", err)
+		}
+		log.Printf("timestamp = %+v\n", timestamp)
+		//p.Timestamp = time.Unix(timestamp, 0)
+		result = append(result, p)
+	}
+	return result, nil
 }

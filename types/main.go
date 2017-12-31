@@ -18,7 +18,7 @@ type Item struct {
 
 type Pledge struct {
 	PledgeID  int `json:"id"`
-	UserID    int
+	UserID    string
 	Item      Item      `json:"item"`
 	Timestamp time.Time `json:"timestamp"`
 }

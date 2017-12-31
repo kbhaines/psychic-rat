@@ -73,12 +73,12 @@ func generateCompany(c int) types.Company {
 }
 
 func generateItem(i, maxCompanyId int) types.Item {
-	company := types.Company{ID: i % maxCompanyId}
+	company := types.Company{ID: (i % maxCompanyId) + 1}
 	return types.Item{Make: spf("make%03d", i), Model: spf("model%03d", i), Company: company}
 }
 
 func generateNewItem(i, maxCompanyId int) types.NewItem {
-	return types.NewItem{UserID: spf("user%03d", i), Make: spf("newmake%03d", i), Model: spf("newmodel%03d", i), Company: spf("newco%03d", i)}
+	return types.NewItem{UserID: spf("user%03d", i), Make: spf("newmake%03d", i), Model: spf("newmodel%03d", i), Company: spf("newco%03d", i), IsPledge: true}
 }
 
 func generateUser(u int) types.User {
