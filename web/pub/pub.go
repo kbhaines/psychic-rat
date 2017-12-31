@@ -9,15 +9,7 @@ import (
 )
 
 type (
-	APIS struct {
-		Item    ItemAPI
-		NewItem NewItemAPI
-		Pledge  PledgeAPI
-		User    UserAPI
-	}
-
 	// TODO: APIs need consistent parameter and return style
-
 	ItemAPI interface {
 		ListItems() ([]types.Item, error)
 		GetItem(id int) (types.Item, error)
@@ -54,15 +46,19 @@ type (
 )
 
 var (
-	apis        APIS
+	itemsAPI    ItemAPI
+	newItemsAPI NewItemAPI
+	pledgeAPI   PledgeAPI
 	renderer    Renderer
 	authHandler AuthHandler
 )
 
-func Init(a APIS, ah AuthHandler, rend Renderer) {
-	apis = a
-	authHandler = ah
-	renderer = rend
+func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler, rendr Renderer) {
+	itemsAPI = item
+	newItemsAPI = newItems
+	pledgeAPI = pledge
+	authHandler = auth
+	renderer = rendr
 }
 
 func HomePageHandler(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +96,7 @@ func PledgePageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
-	report, err := apis.Item.ListItems()
+	report, err := itemsAPI.ListItems()
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "", http.StatusInternalServerError)
@@ -125,7 +121,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	itemId := int(itemId64)
 
-	item, err := apis.Item.GetItem(itemId)
+	item, err := itemsAPI.GetItem(itemId)
 	if err != nil {
 		log.Printf("error looking up item %v : %v", itemId, err)
 		http.Error(w, "", http.StatusBadRequest)
@@ -136,7 +132,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	userId := user.ID
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
-	pledge, err := apis.Pledge.AddPledge(itemId, userId)
+	pledge, err := pledgeAPI.AddPledge(itemId, userId)
 	if err != nil {
 		log.Print("unable to pledge : ", err)
 		return
@@ -193,7 +189,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	//}
 
 	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company}
-	_, err := apis.NewItem.AddNewItem(newItem)
+	_, err := newItemsAPI.AddNewItem(newItem)
 	if err != nil {
 		log.Printf("unable to add new item %v:", newItem, err)
 		http.Error(w, "", http.StatusInternalServerError)

@@ -40,13 +40,6 @@ func initModules() {
 		panic("unable to init db: " + err.Error())
 	}
 
-	apis := pub.APIS{
-		Item:    db,
-		NewItem: db,
-		Pledge:  db,
-		User:    db,
-	}
-
 	auth0.Init(db)
 	renderer := tmpl.NewRenderer("res/")
 	var authHandler pub.AuthHandler
@@ -55,6 +48,6 @@ func initModules() {
 	} else {
 		authHandler = authsimple.NewAuthSimple(db, renderer)
 	}
-	pub.Init(apis, authHandler, renderer)
+	pub.Init(db, db, db, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
 }

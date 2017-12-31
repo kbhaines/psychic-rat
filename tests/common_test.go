@@ -22,15 +22,9 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	server := httptest.NewServer(web.Handler())
 	testUrl = server.URL
 	db := initDB(t)
-	apis := pub.APIS{
-		Item:    db,
-		NewItem: db,
-		Pledge:  db,
-		User:    db,
-	}
 	renderer := tmpl.NewRenderer("../res/")
 	authHandler := authsimple.NewAuthSimple(db, renderer)
-	pub.Init(apis, authHandler, renderer)
+	pub.Init(db, db, db, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
 	return server, db
 }

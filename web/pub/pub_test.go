@@ -41,7 +41,7 @@ type mockRenderer struct {
 }
 
 func TestPledgeListItems(t *testing.T) {
-	apis = APIS{Item: &mockItemAPI{}}
+	itemsAPI = &mockItemAPI{}
 	authHandler = &mockAuthHandler{user: &types.User{}}
 
 	expectedVars := pageVariables{Items: mockItemReport}
@@ -59,7 +59,6 @@ func getRenderMock(t *testing.T, expectedTemplate string, expectedVars pageVaria
 }
 
 func TestHomePageTemplate(t *testing.T) {
-	apis = APIS{}
 	expectedVars := pageVariables{}
 	renderer = getRenderMock(t, "home.html.tmpl", expectedVars)
 	req := &http.Request{Method: "GET"}
@@ -68,7 +67,7 @@ func TestHomePageTemplate(t *testing.T) {
 
 func TestProtectedPages(t *testing.T) {
 	renderer = getRenderMock(t, "", pageVariables{})
-	apis = APIS{Item: &mockItemAPI{}}
+	itemsAPI = &mockItemAPI{}
 	authHandler = &mockAuthHandler{}
 	req := &http.Request{Method: "GET"}
 	for _, page := range protectedPages {
