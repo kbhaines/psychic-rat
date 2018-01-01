@@ -38,7 +38,7 @@ type mockPledgeAPI struct {
 }
 
 type mockNewItemsAPI struct {
-	newItem types.NewItem
+	newItem *types.NewItem
 	t       *testing.T
 }
 
@@ -117,6 +117,8 @@ func TestPledgePost(t *testing.T) {
 	if writer.Result().StatusCode != http.StatusOK {
 		t.Fatalf("expected OK, got %s", writer.Result().Status)
 	}
+	pledgeAPI.(*mockPledgeAPI).checkUsed()
+	renderer.(*mockRenderer).checkUsed()
 }
 
 func TestNewItemPledgePost(t *testing.T) {
@@ -130,7 +132,7 @@ func TestNewItemPledgePost(t *testing.T) {
 	itemsAPI = &mockItemAPI{}
 	newItemsAPI = &mockNewItemsAPI{
 		t: t,
-		newItem: types.NewItem{
+		newItem: &types.NewItem{
 			Company:  newItem.company,
 			Make:     newItem.make,
 			Model:    newItem.model,
@@ -152,6 +154,8 @@ func TestNewItemPledgePost(t *testing.T) {
 	if writer.Result().StatusCode != http.StatusOK {
 		t.Fatalf("expected OK, got %s", writer.Result().Status)
 	}
+	newItemsAPI.(*mockNewItemsAPI).checkUsed()
+	renderer.(*mockRenderer).checkUsed()
 }
 
 func (m *mockItemAPI) ListItems() ([]types.Item, error)   { return mockItemReport, nil }
@@ -164,7 +168,15 @@ func (p *mockPledgeAPI) AddPledge(itemID int, userID string) (*types.Pledge, err
 		p.t.Fatal(err)
 		return nil, err
 	}
+	p.userID = ""
 	return &types.Pledge{Item: mockItemReport[itemID], PledgeID: 1, UserID: userID}, nil
+}
+
+func (p *mockPledgeAPI) checkUsed() {
+	p.t.Helper()
+	if p.userID != "" {
+		p.t.Fatalf("expected call to AddPledge with %d,%s, didn't happen", p.itemID, p.userID)
+	}
 }
 
 func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request)         {}
@@ -180,19 +192,36 @@ func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars i
 	if !reflect.DeepEqual(*vars.(*pageVariables), r.expectedVars) {
 		t.Errorf("wrong variables, wanted %v, got %v", r.expectedVars, *vars.(*pageVariables))
 	}
+	r.expectedTemplate = ""
 	return nil
+}
+
+func (r *mockRenderer) checkUsed() {
+	r.t.Helper()
+	if r.expectedTemplate != "" {
+		r.t.Fatalf("expected call to Render with template named %s and vars %v didn't occur", r.expectedTemplate, r.expectedVars)
+	}
 }
 
 func (n *mockNewItemsAPI) AddNewItem(item types.NewItem) (*types.NewItem, error) {
 	n.t.Helper()
-	if n.newItem != item {
+	if n.newItem == nil {
+		err := fmt.Errorf("unexpected call to AddNewItem with params %v", item)
+		n.t.Fatal(err)
+		return nil, err
+	}
+	if *n.newItem != item {
 		err := fmt.Errorf("expected AddNewItem to call with %v, got %v", n.newItem, item)
 		n.t.Fatal(err)
 		return nil, err
 	}
+	n.newItem = nil
 	return &item, nil
 }
 
-func (n *mockNewItemsAPI) checkUsage() {
-
+func (n *mockNewItemsAPI) checkUsed() {
+	n.t.Helper()
+	if n.newItem != nil {
+		n.t.Fatalf("expected call to AddNewItem with %v, didn't happen", n.newItem)
+	}
 }
