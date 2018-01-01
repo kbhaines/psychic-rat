@@ -1,8 +1,10 @@
 package pub
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"psychic-rat/types"
 	"reflect"
 	"testing"
@@ -29,6 +31,16 @@ var (
 )
 
 type mockItemAPI struct{}
+type mockPledgeAPI struct {
+	userID string
+	itemID int
+	t      *testing.T
+}
+
+type mockNewItemsAPI struct {
+	newItem types.NewItem
+	t       *testing.T
+}
 
 type mockAuthHandler struct {
 	user *types.User
@@ -91,14 +103,76 @@ func TestPledgeAuthFailure(t *testing.T) {
 		}
 	}
 }
+
+func TestPledgePost(t *testing.T) {
+	values := url.Values{"item": {"1"}}
+	itemsAPI = &mockItemAPI{}
+	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, t: t}
+	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemReport[1]}}
+	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
+	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
+	req := &http.Request{Method: "POST", PostForm: values}
+	writer := httptest.NewRecorder()
+	PledgePageHandler(writer, req)
+	if writer.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected OK, got %s", writer.Result().Status)
+	}
+}
+
+func TestNewItemPledgePost(t *testing.T) {
+	newItem := struct {
+		company string
+		make    string
+		model   string
+	}{"newco", "newmake", "newmodel"}
+
+	values := url.Values{"company": {newItem.company}, "make": {newItem.make}, "model": {newItem.model}}
+	itemsAPI = &mockItemAPI{}
+	newItemsAPI = &mockNewItemsAPI{
+		t: t,
+		newItem: types.NewItem{
+			Company:  newItem.company,
+			Make:     newItem.make,
+			Model:    newItem.model,
+			UserID:   "test1",
+			IsPledge: true,
+		},
+	}
+	expectedVars := pageVariables{
+		User: types.User{ID: "test1"},
+		Items: []types.Item{
+			types.Item{Make: newItem.make, Model: newItem.model, Company: types.Company{Name: newItem.company}},
+		},
+	}
+	renderer = getRenderMock(t, "pledge-post-new-item.html.tmpl", expectedVars)
+	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
+	req := &http.Request{Method: "POST", PostForm: values}
+	writer := httptest.NewRecorder()
+	NewItemHandler(writer, req)
+	if writer.Result().StatusCode != http.StatusOK {
+		t.Fatalf("expected OK, got %s", writer.Result().Status)
+	}
+}
+
 func (m *mockItemAPI) ListItems() ([]types.Item, error)   { return mockItemReport, nil }
-func (m *mockItemAPI) GetItem(id int) (types.Item, error) { panic("not implemented") }
+func (m *mockItemAPI) GetItem(id int) (types.Item, error) { return mockItemReport[id], nil }
+
+func (p *mockPledgeAPI) AddPledge(itemID int, userID string) (*types.Pledge, error) {
+	p.t.Helper()
+	if p.userID != userID || p.itemID != itemID {
+		err := fmt.Errorf("expected AddPledge to be called with userID:%s itemID:%d, got %s %d", p.userID, p.itemID, userID, itemID)
+		p.t.Fatal(err)
+		return nil, err
+	}
+	return &types.Pledge{Item: mockItemReport[itemID], PledgeID: 1, UserID: userID}, nil
+}
 
 func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request)         {}
 func (a *mockAuthHandler) GetLoggedInUser(*http.Request) (*types.User, error) { return a.user, nil }
 
 func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars interface{}) error {
 	t := r.t
+	t.Helper()
 	t.Logf("Rendering %s with %v", templateName, vars)
 	if templateName != r.expectedTemplate {
 		t.Errorf("wrong template, got %s but wanted %s", templateName, r.expectedTemplate)
@@ -107,4 +181,18 @@ func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars i
 		t.Errorf("wrong variables, wanted %v, got %v", r.expectedVars, *vars.(*pageVariables))
 	}
 	return nil
+}
+
+func (n *mockNewItemsAPI) AddNewItem(item types.NewItem) (*types.NewItem, error) {
+	n.t.Helper()
+	if n.newItem != item {
+		err := fmt.Errorf("expected AddNewItem to call with %v, got %v", n.newItem, item)
+		n.t.Fatal(err)
+		return nil, err
+	}
+	return &item, nil
+}
+
+func (n *mockNewItemsAPI) checkUsage() {
+
 }
