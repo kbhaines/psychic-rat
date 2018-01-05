@@ -140,22 +140,26 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		if reader.errors() {
 			break
 		}
-
 		if err := processNewItemPost(nip); err != nil {
 			log.Printf("unable to complete transactions for new item %d:  %v", nip.ID, err)
-			http.Error(w, "", http.StatusBadRequest)
+			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
 
 	}
 	if reader.errors() {
-		log.Printf("errors while parsing form line %d: %v", reader.row, err)
+		log.Printf("errors while parsing form line %d: %v", reader.row, reader.err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
+
 }
 
 func processNewItemPost(nip NewItemAdminPost) error {
+	if nip.Delete {
+		log.Printf("delete nip = %+v\n", nip)
+		return newItemsAPI.DeleteNewItem(nip.ID)
+	}
 	txn := apiTxn{nil}
 	var item *types.Item
 	if nip.ItemID == 0 {

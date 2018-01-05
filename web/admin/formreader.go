@@ -10,26 +10,34 @@ import (
 // formReader parses a submitted New Items form POST request, captures multiple
 // errors that resulted from parsing.
 type formReader struct {
-	form url.Values
-	row  int
-	rows []int
-	err  []error
+	form       url.Values
+	row        int
+	taggedRows []int
+	deleteRows map[int]bool
+	err        []error
 }
 
 func newFormReader(form url.Values) *formReader {
-	fr := &formReader{form, -1, []int{}, []error{}}
-	adds, ok := form["add[]"]
-	if !ok {
-		return fr
+	fr := &formReader{form, -1, []int{}, map[int]bool{}, []error{}}
+	for _, del := range form["delete[]"] {
+		rowID, err := strconv.ParseInt(del, 10, 32)
+		if err != nil {
+			log.Printf("unable to parse row Id: %v", err)
+			fr.err = append(fr.err, err)
+			return fr
+		}
+		log.Printf("rowID = %+v\n", rowID)
+		fr.deleteRows[int(rowID)] = true
 	}
-	for _, str := range adds {
+
+	for _, str := range append(form["add[]"], form["delete[]"]...) {
 		rowID, err := strconv.ParseInt(str, 10, 32)
 		if err != nil {
 			log.Printf("unable to parse row Id: %v", err)
 			fr.err = append(fr.err, err)
 			return fr
 		}
-		fr.rows = append(fr.rows, int(rowID))
+		fr.taggedRows = append(fr.taggedRows, int(rowID))
 	}
 	return fr
 }
@@ -43,7 +51,7 @@ func (f *formReader) next() bool {
 		return false
 	}
 	f.row++
-	return f.row < len(f.rows)
+	return f.row < len(f.taggedRows)
 }
 
 func (f *formReader) getNewItemPost() NewItemAdminPost {
@@ -60,6 +68,7 @@ func (f *formReader) getNewItemPost() NewItemAdminPost {
 		UserMake:    f.getString("usermake[]"),
 		UserModel:   f.getString("usermodel[]"),
 		Pledge:      f.getString("isPledge[]") == "true",
+		Delete:      f.deleteRows[f.row],
 	}
 	return i
 }

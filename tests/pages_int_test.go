@@ -13,9 +13,9 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// newItemHtml holds a row's worth of data scraped from the admin/items
-// web page
 type (
+	// newItemHtml holds a row's worth of data scraped from the admin/items
+	// web page
 	newItemHtml struct {
 		ID          string
 		IsPledge    string
@@ -365,7 +365,22 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	testNewItemsPage(newItemPosts[:3], t)
 }
 
-func TestLimitUserNewItems(t *testing.T) {
+func TestDeleteNewItems(t *testing.T) {
+	server, db := newServer(t)
+	defer cleanUp(server, db)
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+	loadNewItems(client, t)
+
+	cookie = loginUser("admin", t)
+	client = http.Client{Jar: cookie}
+
+	pl := postLine{v: url.Values{}}
+	pl.newPostLine(4).userID("test1").selectToDelete()
+	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+
+	testPageStatus(resp, err, http.StatusOK, t)
+	testNewItemsPage(newItemPosts[:3], t)
 }
 
 func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
