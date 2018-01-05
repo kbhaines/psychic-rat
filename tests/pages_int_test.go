@@ -404,7 +404,7 @@ func (p *postLine) newPostLine(itemID int) *postLine {
 
 func (p *postLine) selectToAdd() *postLine          { p.v.Add("add[]", spfi(p.row)); return p }
 func (p *postLine) selectToDelete() *postLine       { p.v.Add("delete[]", spfi(p.row)); return p }
-func (p *postLine) isPledge() *postLine             { p.v["isPledge[]"][p.row] = "1"; return p }
+func (p *postLine) isPledge() *postLine             { p.v["isPledge[]"][p.row] = "true"; return p }
 func (p *postLine) userID(u string) *postLine       { p.v["userID[]"][p.row] = u; return p }
 func (p *postLine) existingItem(i int) *postLine    { p.v["item[]"][p.row] = spfi(i); return p }
 func (p *postLine) existingCompany(c int) *postLine { p.v["company[]"][p.row] = spfi(c); return p }
