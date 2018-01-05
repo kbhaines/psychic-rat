@@ -59,7 +59,7 @@ func (f *formReader) getNewItemPost() NewItemAdminPost {
 		UserCompany: f.getString("usercompany[]"),
 		UserMake:    f.getString("usermake[]"),
 		UserModel:   f.getString("usermodel[]"),
-		Pledge:      f.getString("isPledge[]") == "1",
+		Pledge:      f.getString("isPledge[]") == "true",
 	}
 	return i
 }
