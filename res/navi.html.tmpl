@@ -2,7 +2,7 @@
     <li><a href="/">Home</a></li>
     {{ if ne .User.ID "" }}
         <li> <a href="/pledge">Pledge Support</a></li>
-        <li> <a href="/logout">Log out</a></li>
+        <li> <a href="/signout">Sign Out</a></li>
         <li> Signed in as {{ .User.Fullname }} </li>
     {{ else }}
         <li> <a href="/signin">Sign In</a></li>

@@ -152,12 +152,10 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-
 }
 
 func processNewItemPost(nip NewItemAdminPost) error {
 	if nip.Delete {
-		log.Printf("delete nip = %+v\n", nip)
 		return newItemsAPI.DeleteNewItem(nip.ID)
 	}
 	txn := apiTxn{nil}

@@ -24,9 +24,7 @@ func newFormReader(form url.Values) *formReader {
 		if err != nil {
 			log.Printf("unable to parse row Id: %v", err)
 			fr.err = append(fr.err, err)
-			return fr
 		}
-		log.Printf("rowID = %+v\n", rowID)
 		fr.deleteRows[int(rowID)] = true
 	}
 
@@ -35,7 +33,6 @@ func newFormReader(form url.Values) *formReader {
 		if err != nil {
 			log.Printf("unable to parse row Id: %v", err)
 			fr.err = append(fr.err, err)
-			return fr
 		}
 		fr.taggedRows = append(fr.taggedRows, int(rowID))
 	}

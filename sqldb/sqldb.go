@@ -136,7 +136,7 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 
 func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
-	rows, err := d.Query("select id, make, model, companyId, companyName from itemsCompany")
+	rows, err := d.Query("select id, make, model, companyId, companyName from itemsCompany order by companyName, make, model")
 	if err != nil {
 		return ir, err
 	}

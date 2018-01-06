@@ -6,7 +6,7 @@
 <form action="/pledge" method="post">
 <select name="item" required>
     {{ range .Items }}
-    <option value="{{.ID}}"> {{ .Company }} {{ .Make }} {{ .Model }} </option>
+    <option value="{{.ID}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
     {{ end }}
 </select>
 <input type="submit" value="Submit">
