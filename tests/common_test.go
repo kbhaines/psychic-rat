@@ -46,8 +46,9 @@ func cleanUp(server *httptest.Server, db *sqldb.DB) {
 
 func loginUser(user string, t *testing.T) http.CookieJar {
 	t.Helper()
-	resp, err := http.Get(testUrl + "/signin?u=" + user)
-	if err != nil || resp.StatusCode != http.StatusOK {
+	req, err := http.NewRequest("GET", testUrl+"/signin?u="+user, nil)
+	resp, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusSeeOther) {
 		t.Fatalf("unable to signin, error was %v, response %v", err, resp)
 	}
 	jar, _ := cookiejar.New(nil)
