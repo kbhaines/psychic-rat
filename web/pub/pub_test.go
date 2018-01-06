@@ -181,6 +181,7 @@ func (p *mockPledgeAPI) checkUsed() {
 
 func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request)         {}
 func (a *mockAuthHandler) GetLoggedInUser(*http.Request) (*types.User, error) { return a.user, nil }
+func (a *mockAuthHandler) LogOut(http.ResponseWriter, *http.Request) error    { return nil }
 
 func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars interface{}) error {
 	t := r.t

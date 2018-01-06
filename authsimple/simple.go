@@ -36,20 +36,13 @@ func (s *simpleAuthHandler) SignIn(sess *sess.SessionStore) {
 func (s *simpleAuthHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	session := sess.NewSessionStore(r, w)
 	s.SignIn(session)
-	var loggedInUser types.User
-	user, err := s.GetLoggedInUser(r)
+	_, err := s.GetLoggedInUser(r)
 	if err != nil {
 		log.Print(err)
 		http.Error(w, "authentication failed", http.StatusForbidden)
 		return
 	}
-
-	if user != nil {
-		loggedInUser = *user
-	}
-
-	vars := struct{ User types.User }{loggedInUser}
-	s.renderer.Render(w, "signin.html.tmpl", vars)
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
 func (_ *simpleAuthHandler) GetLoggedInUser(r *http.Request) (*types.User, error) {
@@ -76,5 +69,14 @@ func (s *simpleAuthHandler) authUser(session *sess.SessionStore) error {
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
-	return session.Save(*user)
+	return session.Save(user)
+}
+
+func (s *simpleAuthHandler) LogOut(w http.ResponseWriter, r *http.Request) error {
+	err := sess.NewSessionStore(r, w).Save(nil)
+	if err != nil {
+		return err
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
 }

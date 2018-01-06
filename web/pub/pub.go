@@ -30,6 +30,7 @@ type (
 	AuthHandler interface {
 		Handler(http.ResponseWriter, *http.Request)
 		GetLoggedInUser(*http.Request) (*types.User, error)
+		LogOut(http.ResponseWriter, *http.Request) error
 	}
 
 	Renderer interface {
@@ -75,6 +76,17 @@ func SignInPageHandler(w http.ResponseWriter, r *http.Request) {
 	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": authHandler.Handler}, w, r)
 }
 
+func SignOutPageHandler(w http.ResponseWriter, r *http.Request) {
+	authHandler.LogOut(w, r)
+}
+
+func PledgePageHandler(w http.ResponseWriter, r *http.Request) {
+	selector := dispatch.MethodSelector{
+		"GET":  userLoginRequired(pledgeGetHandler),
+		"POST": userLoginRequired(pledgePostHandler),
+	}
+	dispatch.ExecHandlerForMethod(selector, w, r)
+}
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := authHandler.GetLoggedInUser(r)
@@ -85,14 +97,6 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 		}
 		h(w, r)
 	}
-}
-
-func PledgePageHandler(w http.ResponseWriter, r *http.Request) {
-	selector := dispatch.MethodSelector{
-		"GET":  userLoginRequired(pledgeGetHandler),
-		"POST": userLoginRequired(pledgePostHandler),
-	}
-	dispatch.ExecHandlerForMethod(selector, w, r)
 }
 
 func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {

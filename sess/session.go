@@ -29,7 +29,7 @@ type (
 func (s *SessionStore) Get() (*types.User, error) {
 	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
-		return nil, fmt.Errorf("cannot retrieve from store: %v", err)
+		return nil, fmt.Errorf("get: cannot retrieve from store: %v", err)
 	}
 	userFromSession, found := session.Values["userRecord"]
 	if !found {
@@ -37,18 +37,23 @@ func (s *SessionStore) Get() (*types.User, error) {
 	}
 	userRecord, ok := userFromSession.(types.User)
 	if !ok {
-		return nil, fmt.Errorf("conversion error: %v", err)
+		return nil, fmt.Errorf("get: conversion error: %v", err)
 	}
 	log.Printf("loaded user %v from session", userRecord)
 	return &userRecord, nil
 }
 
-func (s *SessionStore) Save(user types.User) error {
+func (s *SessionStore) Save(user *types.User) error {
 	session, err := s.store.Get(s.r, "auth-session")
 	if err != nil {
-		return fmt.Errorf("cannot retrieve from store: %v", err)
+		return fmt.Errorf("save: cannot retrieve from store: %v", err)
 	}
-	session.Values["userRecord"] = user
+	if user != nil {
+		session.Values["userRecord"] = *user
+	} else {
+		delete(session.Values, "userRecord")
+	}
+
 	if err := session.Save(s.r, s.w); err != nil {
 		http.Error(s.w, err.Error(), http.StatusInternalServerError)
 		return err

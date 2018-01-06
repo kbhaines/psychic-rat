@@ -96,7 +96,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	}
 	store := sess.NewSessionStore(r, w)
-	store.Save(*userRecord)
+	store.Save(userRecord)
 	if err != nil {
 		log.Fatal("unable to save user into session: %v", err)
 		return

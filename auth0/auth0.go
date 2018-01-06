@@ -51,3 +51,12 @@ func (a *auth0Handler) GetLoggedInUser(r *http.Request) (*types.User, error) {
 	}
 	return user, nil
 }
+
+func (a *auth0Handler) LogOut(w http.ResponseWriter, r *http.Request) error {
+	err := sess.NewSessionStore(r, w).Save(nil)
+	if err != nil {
+		return err
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+	return nil
+}
