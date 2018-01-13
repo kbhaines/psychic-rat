@@ -121,6 +121,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
+		log.Print(err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}

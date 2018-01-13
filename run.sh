@@ -1,5 +1,5 @@
 #!/bin/sh
-set -e
+set -e -x
 
 [ -d rundir ] || mkdir -p rundir/res
 cp res/*tmpl rundir/res/

@@ -40,7 +40,7 @@ func OpenDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, err = db.Exec("PRAGMA journal_mode = OFF")
+	_, err = db.Exec("PRAGMA journal_mode = WAL")
 	if err != nil {
 		return nil, err
 	}
