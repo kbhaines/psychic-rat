@@ -28,7 +28,7 @@ func main() {
 	flag.Parse()
 
 	initModules()
-	err := http.ListenAndServe("localhost:8080", context.ClearHandler(web.Handler()))
+	err := http.ListenAndServe(":8080", context.ClearHandler(web.Handler()))
 	if err != nil {
 		log.Fatalf("web server aborted: %v", err)
 	}
