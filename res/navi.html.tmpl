@@ -1,10 +1,22 @@
 <ul>
-    <li><a href="/">Home</a></li>
-    {{ if ne .User.ID "" }}
-        <li> <a href="/pledge">Pledge Support</a></li>
-        <li> <a href="/signout">Sign Out</a></li>
-        <li> Signed in as {{ .User.Fullname }} </li>
-    {{ else }}
-        <li> <a href="/signin">Sign In</a></li>
-    {{end}}
+  <li><a href="/">Home</a></li>
+  {{ if ne .User.ID "" }}
+    <li> <a href="/pledge">Pledge Support</a></li>
+    <li> <a href="/signout">Sign Out</a></li>
+    <li> Signed in as {{ .User.Fullname }} </li>
+  {{ else }}
+    <li> <a href="/signin">Sign In</a></li>
+  {{end}}
 </ul>
+
+<nav id="nav">
+
+
+  <ul>
+    <li><a href="index.html">Homepage</a></li>
+    <li><a href="threecolumn.html">Sign In</a></li>
+    <li><a href="twocolumn1.html">Pledge Support</a></li>
+    <li class="active"><a href="twocolumn2.html">More Information</a></li>
+  </ul>
+</nav>
+

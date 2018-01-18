@@ -36,8 +36,15 @@ var (
 	}
 )
 
+func handlerForDirs(mux *http.ServeMux, dir ...string) {
+	for _, d := range dir {
+		mux.Handle("/"+d+"/", http.StripPrefix("/"+d, http.FileServer(http.Dir(d+"/"))))
+	}
+}
+
 func Handler() http.Handler {
 	hmux := http.NewServeMux()
+	handlerForDirs(hmux, "css", "js", "images")
 	for _, h := range uriHandlers {
 		hmux.HandleFunc(h.URI, h.Handler)
 	}
