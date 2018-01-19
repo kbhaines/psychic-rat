@@ -104,7 +104,7 @@ func TestHappyPathPledge(t *testing.T) {
 
 	expected := []string{
 		"boycott of phone xyz by testco1",
-		"Signed in as user1 full",
+		"Welcome user1 full",
 	}
 	body := readResponseBody(resp, t)
 	testStrings(body, expected, t)
@@ -220,7 +220,7 @@ func loadNewItems(client http.Client, t *testing.T) {
 		testPageStatus(resp, err, http.StatusOK, t)
 		expected := []string{
 			fmt.Sprintf("boycott of %s %s by %s", newItemPosts[i].Make, newItemPosts[i].Model, newItemPosts[i].Company),
-			"Signed in as user1 full",
+			"Welcome user1 full",
 			"new item is under review",
 		}
 		body := readResponseBody(resp, t)

@@ -22,7 +22,7 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	server := httptest.NewServer(web.Handler())
 	testUrl = server.URL
 	db := initDB(t)
-	renderer := tmpl.NewRenderer("../res/")
+	renderer := tmpl.NewRenderer("../res/", false)
 	authHandler := authsimple.NewAuthSimple(db, renderer)
 	pub.Init(db, db, db, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
