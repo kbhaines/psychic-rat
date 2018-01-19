@@ -1,26 +1,56 @@
 {{ template "header.html.tmpl" . }}
-<h1>Pledge</h1>
+      <div id="page">
+        <div class="container">
+          <div class="row">
+            <div class="3u">
+              <section id="sidebard2">
+                <header>
+                  <h2>Sidebar 2</h2>
+                </header>
+                <ul class="style1">
+                  <li class="first"><span class="fa fa-check"></span><a href="#">Maecenas luctus lectus at sapien</a></li>
+                  <li><span class="fa fa-check"></span><a href="#">Etiam rhoncus volutpat erat</a></li>
+                  <li><span class="fa fa-check"></span><a href="#">Donec dictum metus in sapien</a></li>
+                  <li><span class="fa fa-check"></span><a href="#">Integer gravida nibh quis urna</a></li>
+                  <li><span class="fa fa-check"></span><a href="#">Etiam posuere augue sit amet nisl</a></li>
+                  <li><span class="fa fa-check"></span><a href="#">Nulla luctus eleifend purus</a></li>
+                </ul>
+                <a href="#" class="button">Full Article</a>
+              </section>
+            </div>
+            <div class="9u skel-cell-important">
+              <section id="content" >
+                <header>
+                    <h2>Pledge your boycott</h2>
+                    <p>Select the item you're boycotting from the list below</p>
+                    <form action="/pledge" method="post">
+                    <select name="item" required>
+                        {{ range .Items }}
+                        <option value="{{.ID}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
+                        {{ end }}
+                    </select>
+                    <input type="submit" value="Submit">
+                    </form>
 
-<h2>Select the item you're going to boycott</h2>
+                    <h2>Add an Item</h2>
+                    <p>If you can't see the item in the list above you can add it using this form.
+                    Note that items are checked by an admin before they appear in the main listing,
+                    so there may be a delay of up to 24 hours.</p>
 
-<form action="/pledge" method="post">
-<select name="item" required>
-    {{ range .Items }}
-    <option value="{{.ID}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
-    {{ end }}
-</select>
-<input type="submit" value="Submit">
-</form>
+                    <form action="/newitem" method="post">
+                        <table>
+                            <tr><td>Manufacturer/Company</td><td><input name="company"></td></tr>
+                            <tr><td>Make</td><td><input name="make"></td></tr>
+                            <tr><td>Model</td><td><input name="model"></td></tr>
+                            <tr><td>ApproximateValue(USD)</td><td><input name="value"></td></tr>
+                        </table>
+                        <input type="submit" value="Submit">
+                    </form>
+                </header>
+              </section>
+            </div>
+          </div>
 
-<h2>Don't see the item you're looking for? Add it!</h2>
-
-<form action="/newitem" method="post">
-    <p>Manufacturer/Company    <input name="company"></p>
-    <p>Make    <input name="make"></p>
-    <p>Model    <input name="model"></p>
-    <p>Approximate Value (USD)    <input name="value"></p>
-    <input type="submit" value="Submit">
-</form>
-
-
+        </div>  
+      </div>
 {{ template "footer.html.tmpl" . }}
