@@ -9,22 +9,25 @@ import (
 
 type renderer struct {
 	path      string
+	cache     bool
 	templates map[string]*template.Template
 }
 
-func NewRenderer(templatePath string) *renderer {
+func NewRenderer(templatePath string, cache bool) *renderer {
 	path := templatePath
 	if !strings.HasSuffix(path, "/") {
 		path += "/"
 	}
-	return &renderer{path: path, templates: map[string]*template.Template{}}
+	return &renderer{path: path, cache: cache, templates: map[string]*template.Template{}}
 }
 
 func (r *renderer) Render(w http.ResponseWriter, templateName string, variables interface{}) error {
 	template, ok := r.templates[templateName]
 	if !ok {
 		template = r.loadTemplate(templateName)
-		r.templates[templateName] = template
+		if r.cache {
+			r.templates[templateName] = template
+		}
 	}
 	if err := template.Execute(w, variables); err != nil {
 		panic(fmt.Sprintf("template error: %v", err))

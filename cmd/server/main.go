@@ -18,13 +18,16 @@ import (
 
 var (
 	flags struct {
-		enableAuth0, sqldb bool
+		enableAuth0    bool
+		sqldb          bool
+		cacheTemplates bool
 	}
 )
 
 func main() {
 	flag.BoolVar(&flags.enableAuth0, "auth0", false, "enable auth0 function")
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
+	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
 	flag.Parse()
 
 	initModules()
@@ -41,7 +44,7 @@ func initModules() {
 	}
 
 	auth0.Init(db)
-	renderer := tmpl.NewRenderer("res/")
+	renderer := tmpl.NewRenderer("res/", flags.cacheTemplates)
 	var authHandler pub.AuthHandler
 	if flags.enableAuth0 {
 		authHandler = auth0.NewAuth0Handler(renderer, os.Getenv("AUTH0_DOMAIN"), os.Getenv("AUTH0_CALLBACK_URL"), os.Getenv("AUTH0_CLIENT_ID"))
