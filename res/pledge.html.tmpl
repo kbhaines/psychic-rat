@@ -23,15 +23,20 @@
                 <header>
                     <h2>Pledge your boycott</h2>
                     <p>Select the item you're boycotting from the list below</p>
+                    <label class="wrapper">
                     <form action="/pledge" method="post">
+                    <div class="custom-select">
                     <select name="item" required>
                         {{ range .Items }}
                         <option value="{{.ID}}"> {{ .Company.Name }} {{ .Make }} {{ .Model }} </option>
                         {{ end }}
                     </select>
-                    <input type="submit" value="Submit">
+                    </div>
+                    <br>
+                    <input class="form-submit-button" type="submit" value="Submit">
                     </form>
-
+                    </label>
+                    <h2></h2>
                     <h2>Add an Item</h2>
                     <p>If you can't see the item in the list above you can add it using this form.
                     Note that items are checked by an admin before they appear in the main listing,
@@ -42,9 +47,9 @@
                             <tr><td>Manufacturer/Company</td><td><input name="company"></td></tr>
                             <tr><td>Make</td><td><input name="make"></td></tr>
                             <tr><td>Model</td><td><input name="model"></td></tr>
-                            <tr><td>ApproximateValue(USD)</td><td><input name="value"></td></tr>
+                            <tr><td>Approximate Value (USD)</td><td><input name="value"></td></tr>
                         </table>
-                        <input type="submit" value="Submit">
+                        <input class="form-submit-button" type="submit" value="Submit">
                     </form>
                 </header>
               </section>
