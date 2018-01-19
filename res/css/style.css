@@ -18,7 +18,7 @@
 		font-family: 'Lato', sans-serif;
 		font-size: 12pt;
 		font-weight: 300;
-		color: #8A8A8A;
+		color: #5A5A5A;
 	}
 
 	h1, h2, h3 {
@@ -95,7 +95,7 @@
 	header h2
 	{
 		letter-spacing: -2px;
-		text-transform: uppercase;
+		/*text-transform: uppercase;*/
 		font-weight: 900;
 		font-size: 2em;
 		color: #323338;
@@ -737,9 +737,10 @@ ul.style3 .first {
 		background: #FFF
 	}	
 
-    /************************************************************************/
-    /* Select                                                               */
-    /************************************************************************/
+
+/************************************************************************/
+/* Select                                                               */
+/************************************************************************/
 
     /* Container used for styling the custom select, the buttom class below adds the
  * bg gradient, corners, etc. */
@@ -853,17 +854,6 @@ ul.style3 .first {
 /* Set options to normal weight */
 .custom-select option {
 	font-weight:normal;
-}
-
-.form-submit-button {
-    background: #006610;
-    color: white;
-    border-style: outset;
-    border-color: #006610;
-    height: 50px;
-    width: 100px;
-    font: bold 15px arial, sans-serif;
-    text-shadow:none;
 }
 
 td { 
