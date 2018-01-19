@@ -44,7 +44,7 @@ func initModules() {
 	}
 
 	auth0.Init(db)
-	renderer := tmpl.NewRenderer("res/", flags.cacheTemplates)
+	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	var authHandler pub.AuthHandler
 	if flags.enableAuth0 {
 		authHandler = auth0.NewAuth0Handler(renderer, os.Getenv("AUTH0_DOMAIN"), os.Getenv("AUTH0_CALLBACK_URL"), os.Getenv("AUTH0_CLIENT_ID"))
