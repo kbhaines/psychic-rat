@@ -11,6 +11,7 @@ import (
 const (
 	HomePage      = "/"
 	SignInPage    = "/signin"
+	PreSignIn     = "/signin-pre"
 	SignOutPage   = "/signout"
 	PledgePage    = "/pledge"
 	ThanksPage    = "/thanks"
@@ -22,6 +23,7 @@ const (
 var (
 	uriHandlers = []dispatch.URIHandler{
 		{HomePage, pub.HomePageHandler},
+		{PreSignIn, pub.PreSigninHandler},
 		{SignInPage, pub.SignInPageHandler},
 		{SignOutPage, pub.SignOutPageHandler},
 		{PledgePage, pub.PledgePageHandler},
