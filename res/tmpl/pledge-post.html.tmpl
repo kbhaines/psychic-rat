@@ -1,7 +1,25 @@
 {{ template "header.html.tmpl" . }}
-<h1>Pledge submitted</h1>
+  <div id="page">
+    <div class="container">
+      <div class="row">
+        <div class="3u">
+          <section id="sidebard2">
+              {{ template "home-sidebar-wc.html.tmpl" . }}
+          </section>
+        </div>
+        <div class="9u skel-cell-important">
+          <section id="content" >
+            <header>
+                <h2>Thank you...</h2>
+            </header>
+            {{ $item := index .Items 0 }}
+            <p>Your pledge to boycott {{ printf "%s %s by %s" $item.Make $item.Model $item.Company.Name }} has been gratefully received. Thank you for adding your voice to this campaign!</p>
+            <p>We would be even more grateful if you could spare a few more moments to spread the word to your friend, family and social media contacts.</p>
+          </section>
+        </div>
+      </div>
 
-{{ $item := index .Items 0 }}
-<p>Thank you for supporting this cause with your boycott of {{ printf "%s %s by %s" $item.Make $item.Model $item.Company.Name }} </p>
+    </div>  
+  </div>
 
 {{ template "footer.html.tmpl" . }}

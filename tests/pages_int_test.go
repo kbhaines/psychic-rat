@@ -103,8 +103,8 @@ func TestHappyPathPledge(t *testing.T) {
 	testPageStatus(resp, err, http.StatusOK, t)
 
 	expected := []string{
-		"boycott of phone xyz by testco1",
-		"Welcome user1 full",
+		"phone xyz by testco1",
+		"user1 full",
 	}
 	body := readResponseBody(resp, t)
 	testStrings(body, expected, t)

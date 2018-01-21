@@ -1,5 +1,6 @@
 FROM alpine:3.6
 
-COPY res/* /res/
-COPY server pr.dat /
-CMD server
+CMD server.linux
+COPY res/ /res/
+COPY server.linux pr.dat /
+RUN apk update && apk add ca-certificates

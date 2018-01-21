@@ -72,6 +72,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Printf("profile = %+v\n", profile)
+	log.Printf("profile[identities] = %+v\n", profile["identities"])
 
 	//gob.Register(map[string]interface{}{})
 	//session.Values["id_token"] = token.Extra("id_token")

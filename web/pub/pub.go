@@ -80,15 +80,6 @@ func SignOutPageHandler(w http.ResponseWriter, r *http.Request) {
 	authHandler.LogOut(w, r)
 }
 
-func PreSigninHandler(w http.ResponseWriter, r *http.Request) {
-	selector := dispatch.MethodSelector{
-		"GET": func(w http.ResponseWriter, r *http.Request) {
-			renderer.Render(w, "signin-pre.html.tmpl", pageVariables{})
-		},
-	}
-	dispatch.ExecHandlerForMethod(selector, w, r)
-}
-
 func PledgePageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET":  userLoginRequired(pledgeGetHandler),
