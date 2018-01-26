@@ -41,7 +41,7 @@ func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing
 
 func cleanUp(server *httptest.Server, db *sqldb.DB) {
 	server.Close()
-	closeDB(db)
+	db.Close()
 }
 
 func loginUser(user string, t *testing.T) http.CookieJar {

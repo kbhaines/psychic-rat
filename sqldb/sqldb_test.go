@@ -1,7 +1,6 @@
 package sqldb
 
 import (
-	"os"
 	"psychic-rat/types"
 	"reflect"
 	"testing"
@@ -10,13 +9,11 @@ import (
 
 func TestCreateDB(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
 	initCompanies(db, t)
 }
 
 func TestGetCompanyById(t *testing.T) {
 	db := initDB(t)
-	//defer os.Remove("test.db")
 	initCompanies(db, t)
 
 	id := 1
@@ -34,7 +31,6 @@ func TestGetCompanyById(t *testing.T) {
 
 func TestListItems(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
 	initCompanies(db, t)
 	initItems(db, t)
 	items, err := db.ListItems()
@@ -53,7 +49,7 @@ func TestListItems(t *testing.T) {
 
 func TestNewItems(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
+	initCurrencies(db, t)
 	newItems := initNewItems(db, t)
 	ns, err := db.ListNewItems()
 	if err != nil {
@@ -72,7 +68,6 @@ func TestNewItems(t *testing.T) {
 
 func TestNewUser(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
 	initUsers(db, t)
 
 	for _, u := range testUsers {
@@ -88,7 +83,6 @@ func TestNewUser(t *testing.T) {
 
 func TestGetItem(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
 	ids := initItems(db, t)
 	initCompanies(db, t)
 
@@ -105,9 +99,9 @@ func TestGetItem(t *testing.T) {
 
 func TestAddNewItem(t *testing.T) {
 	db := initDB(t)
-	defer os.Remove("test.db")
+	initCurrencies(db, t)
 
-	newItem := &types.NewItem{Make: "newthing", Model: "newmodel", Company: "newco", UserID: "test1"}
+	newItem := &types.NewItem{Make: "newthing", Model: "newmodel", Company: "newco", UserID: "test1", CurrencyID: 1, Value: 100}
 	newItem, err := db.AddNewItem(*newItem)
 	if err != nil {
 		t.Fatal(err)
@@ -115,7 +109,7 @@ func TestAddNewItem(t *testing.T) {
 
 	var n types.NewItem
 	var timestamp int64
-	err = db.QueryRow("select id, make, model, company, userID, timestamp from newItems where id=?", newItem.ID).Scan(&n.ID, &n.Make, &n.Model, &n.Company, &n.UserID, &timestamp)
+	err = db.QueryRow("select id, make, model, company, userID, currencyID, currencyValue, timestamp from newItems where id=?", newItem.ID).Scan(&n.ID, &n.Make, &n.Model, &n.Company, &n.UserID, &n.CurrencyID, &n.Value, &timestamp)
 	if err != nil {
 		t.Fatal(err)
 	}

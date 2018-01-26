@@ -35,7 +35,16 @@
                             <tr><td>Manufacturer/Company</td><td><input name="company"></td></tr>
                             <tr><td>Make</td><td><input name="make"></td></tr>
                             <tr><td>Model</td><td><input name="model"></td></tr>
-                            <tr><td>Approximate Value (USD)</td><td><input name="value"></td></tr>
+                            <tr><td>Recommended Retail Price (RRP)</td><td><input name="value"></td>
+                                <td>
+                                <div class="custom-select">
+                                <select name="currencyID" required>
+                                    {{ range .Currencies }}
+                                        <option value="{{ .ID }}"> {{ .Ident }} </option>
+                                    {{end}}
+                                </select>
+                                </div>
+                            </td></tr>
                         </table>
                         <input type="submit" class="button" value="Submit">
                     </form>

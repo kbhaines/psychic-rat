@@ -53,8 +53,16 @@ func Generate(db *sqldb.DB, totalSize int) error {
 		return nil
 	}
 
+	genCurrencies := func() error {
+		db.AddCurrency(types.Currency{Ident: "USD", ConversionToUSD: 1.0})
+		db.AddCurrency(types.Currency{Ident: "EUR", ConversionToUSD: 1.24})
+		db.AddCurrency(types.Currency{Ident: "GBP", ConversionToUSD: 1.43})
+		return nil
+	}
+
 	runOrPanic(genCos)
 	runOrPanic(genUsers)
+	runOrPanic(genCurrencies)
 	runOrPanic(genItems)
 	runOrPanic(genNewItems)
 	return nil
@@ -78,7 +86,7 @@ func generateItem(i, maxCompanyId int) types.Item {
 }
 
 func generateNewItem(i, maxCompanyId int) types.NewItem {
-	return types.NewItem{UserID: spf("user%03d", i), Make: spf("newmake%03d", i), Model: spf("newmodel%03d", i), Company: spf("newco%03d", i), IsPledge: true}
+	return types.NewItem{UserID: spf("user%03d", i), Make: spf("newmake%03d", i), Model: spf("newmodel%03d", i), Company: spf("newco%03d", i), IsPledge: true, Value: 100, CurrencyID: 1}
 }
 
 func generateUser(u int) types.User {

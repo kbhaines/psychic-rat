@@ -34,15 +34,21 @@ var (
 	}
 
 	newItems = []types.NewItem{
-		types.NewItem{UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
-		types.NewItem{UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
-		types.NewItem{UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
+		types.NewItem{UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100},
+	}
+
+	testCurrencies = []types.Currency{
+		types.Currency{ID: 1, Ident: "USD", ConversionToUSD: 1.0},
+		types.Currency{ID: 2, Ident: "GBP", ConversionToUSD: 1.2},
+		types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 1.4},
 	}
 )
 
 func initDB(t *testing.T) *DB {
 	t.Helper()
-	db, err := NewDB("test.db")
+	db, err := NewDB(":memory:")
 	if err != nil {
 		t.Fatalf("could not init DB: %v", err)
 	}
@@ -70,6 +76,7 @@ func initItems(db *DB, t *testing.T) []int {
 	}
 	return ids
 }
+
 func initNewItems(db *DB, t *testing.T) []types.NewItem {
 	res := []types.NewItem{}
 	for _, c := range newItems {
@@ -86,6 +93,16 @@ func initUsers(db *DB, t *testing.T) {
 	t.Helper()
 	for _, u := range testUsers {
 		err := db.AddUser(u)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+func initCurrencies(db *DB, t *testing.T) {
+	t.Helper()
+	for _, c := range testCurrencies {
+		_, err := db.AddCurrency(c)
 		if err != nil {
 			t.Fatal(err)
 		}

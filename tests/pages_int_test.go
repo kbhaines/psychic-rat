@@ -33,18 +33,20 @@ type (
 	}
 
 	newItemPost struct {
-		Company string
-		Make    string
-		Model   string
+		Company    string
+		Make       string
+		Model      string
+		CurrencyID string
+		Value      string
 	}
 )
 
 var (
 	newItemPosts = []newItemPost{
-		newItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1"},
-		newItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2"},
-		newItemPost{Company: "newco3", Make: "newmake3", Model: "newmodel3"},
-		newItemPost{Company: "newco4", Make: "newmake4", Model: "newmodel4"},
+		newItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1", CurrencyID: "1", Value: "100"},
+		newItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2", CurrencyID: "1", Value: "100"},
+		newItemPost{Company: "newco3", Make: "newmake3", Model: "newmodel3", CurrencyID: "1", Value: "100"},
+		newItemPost{Company: "newco4", Make: "newmake4", Model: "newmodel4", CurrencyID: "1", Value: "100"},
 	}
 )
 
@@ -203,7 +205,7 @@ func testNewItemsPage(expectedNewItems []newItemPost, t *testing.T) {
 			UserCompany: expectedNewItems[i].Company,
 			UserMake:    expectedNewItems[i].Make,
 			UserModel:   expectedNewItems[i].Model,
-			UserValue:   "0",
+			UserValue:   "100",
 		}
 		if !reflect.DeepEqual(expectedNewItem, actualNewItem) {
 			t.Errorf("expected html form to have %v, got %v", expectedNewItem, actualNewItem)
@@ -228,7 +230,7 @@ func loadNewItems(client http.Client, t *testing.T) {
 }
 
 func (n *newItemPost) getUrlValues() url.Values {
-	return url.Values{"company": {n.Company}, "make": {n.Make}, "model": {n.Model}}
+	return url.Values{"company": {n.Company}, "make": {n.Make}, "model": {n.Model}, "currencyID": {n.CurrencyID}, "value": {n.Value}}
 }
 
 func TestBadnewItemPost(t *testing.T) {
@@ -259,21 +261,23 @@ func TestNewItemAdminPost(t *testing.T) {
 
 	// Going backwards so we don't have to adjust the index for each row
 	// and can just use the coincident index values from the DB. Bit lazy....
-	for itemToUse := 3; itemToUse > 0; itemToUse-- {
+	for i := 3; i > 0; i-- {
 		pl := &postLine{v: url.Values{}}
-		pl = pl.newPostLine(itemToUse + 1).userID("test1").
-			userCompany(newItemPosts[itemToUse].Company).
-			userMake(newItemPosts[itemToUse].Make).
-			userModel(newItemPosts[itemToUse].Model).
+		pl = pl.newPostLine(i + 1).userID("test1").
+			userCompany(newItemPosts[i].Company).
+			userMake(newItemPosts[i].Make).
+			userModel(newItemPosts[i].Model).
+			currency(newItemPosts[i].CurrencyID).
+			value(newItemPosts[i].Value).
 			isPledge().
 			selectToAdd()
 
 		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
-		item := findAddedNewItem(newItemPosts[itemToUse], db, t)
+		item := findAddedNewItem(newItemPosts[i], db, t)
 		testNewItemPledged(*item, db, t)
-		testNewItemsPage(newItemPosts[:itemToUse], t)
+		testNewItemsPage(newItemPosts[:i], t)
 	}
 }
 
@@ -284,11 +288,11 @@ func findAddedNewItem(item newItemPost, db *sqldb.DB, t *testing.T) *types.Item 
 		t.Fatal(err)
 	}
 	for _, i := range items {
-		if i.Make == item.Make && i.Model == item.Model && i.Company.Name == item.Company {
+		if i.Make == item.Make && i.Model == item.Model && i.Company.Name == item.Company && fmt.Sprintf("%d", i.USDValue) == item.Value {
 			return &i
 		}
 	}
-	t.Fatalf("did not find expected item %v in items db", item)
+	t.Fatalf("did not find expected item %v in items db:\n%v", item, items)
 	return nil
 }
 
@@ -414,6 +418,8 @@ func (p *postLine) newPostLine(itemID int) *postLine {
 	p.v.Add("usercompany[]", "")
 	p.v.Add("usermake[]", "")
 	p.v.Add("usermodel[]", "")
+	p.v.Add("currencyID[]", "")
+	p.v.Add("value[]", "")
 	return p
 }
 
@@ -426,3 +432,5 @@ func (p *postLine) existingCompany(c int) *postLine { p.v["company[]"][p.row] = 
 func (p *postLine) userCompany(c string) *postLine  { p.v["usercompany[]"][p.row] = c; return p }
 func (p *postLine) userMake(m string) *postLine     { p.v["usermake[]"][p.row] = m; return p }
 func (p *postLine) userModel(m string) *postLine    { p.v["usermodel[]"][p.row] = m; return p }
+func (p *postLine) value(m string) *postLine        { p.v["value[]"][p.row] = m; return p }
+func (p *postLine) currency(c string) *postLine     { p.v["currencyID[]"][p.row] = c; return p }

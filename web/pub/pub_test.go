@@ -17,7 +17,7 @@ var (
 		types.Company{Name: "bigco3"},
 	}
 
-	mockItemReport = []types.Item{
+	mockItemList = []types.Item{
 		types.Item{ID: 123, Make: "phone", Model: "x124", Company: mockCompanies[0]},
 		types.Item{ID: 124, Make: "phone", Model: "x125", Company: mockCompanies[1]},
 		types.Item{ID: 125, Make: "phone", Model: "x126", Company: mockCompanies[1]},
@@ -56,7 +56,7 @@ func TestPledgeListItems(t *testing.T) {
 	itemsAPI = &mockItemAPI{}
 	authHandler = &mockAuthHandler{user: &types.User{}}
 
-	expectedVars := pageVariables{Items: mockItemReport}
+	expectedVars := pageVariables{Items: mockItemList}
 	renderer = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	req := &http.Request{Method: "GET"}
 	PledgePageHandler(nil, req)
@@ -108,7 +108,7 @@ func TestPledgePost(t *testing.T) {
 	values := url.Values{"item": {"1"}}
 	itemsAPI = &mockItemAPI{}
 	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, t: t}
-	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemReport[1]}}
+	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}}
 	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
 	req := &http.Request{Method: "POST", PostForm: values}
@@ -123,21 +123,25 @@ func TestPledgePost(t *testing.T) {
 
 func TestNewItemPledgePost(t *testing.T) {
 	newItem := struct {
-		company string
-		make    string
-		model   string
-	}{"newco", "newmake", "newmodel"}
+		company  string
+		make     string
+		model    string
+		currency string
+		value    string
+	}{"newco", "newmake", "newmodel", "1", "100"}
 
-	values := url.Values{"company": {newItem.company}, "make": {newItem.make}, "model": {newItem.model}}
+	values := url.Values{"company": {newItem.company}, "make": {newItem.make}, "model": {newItem.model}, "currencyID": {newItem.currency}, "value": {newItem.value}}
 	itemsAPI = &mockItemAPI{}
 	newItemsAPI = &mockNewItemsAPI{
 		t: t,
 		newItem: &types.NewItem{
-			Company:  newItem.company,
-			Make:     newItem.make,
-			Model:    newItem.model,
-			UserID:   "test1",
-			IsPledge: true,
+			Company:    newItem.company,
+			Make:       newItem.make,
+			Model:      newItem.model,
+			UserID:     "test1",
+			CurrencyID: 1,
+			Value:      100,
+			IsPledge:   true,
 		},
 	}
 	expectedVars := pageVariables{
@@ -158,8 +162,9 @@ func TestNewItemPledgePost(t *testing.T) {
 	renderer.(*mockRenderer).checkUsed()
 }
 
-func (m *mockItemAPI) ListItems() ([]types.Item, error)   { return mockItemReport, nil }
-func (m *mockItemAPI) GetItem(id int) (types.Item, error) { return mockItemReport[id], nil }
+func (m *mockItemAPI) ListItems() ([]types.Item, error)          { return mockItemList, nil }
+func (m *mockItemAPI) GetItem(id int) (types.Item, error)        { return mockItemList[id], nil }
+func (m *mockItemAPI) ListCurrencies() ([]types.Currency, error) { return nil, nil }
 
 func (p *mockPledgeAPI) AddPledge(itemID int, userID string) (*types.Pledge, error) {
 	p.t.Helper()
@@ -169,7 +174,7 @@ func (p *mockPledgeAPI) AddPledge(itemID int, userID string) (*types.Pledge, err
 		return nil, err
 	}
 	p.userID = ""
-	return &types.Pledge{Item: mockItemReport[itemID], PledgeID: 1, UserID: userID}, nil
+	return &types.Pledge{Item: mockItemList[itemID], PledgeID: 1, UserID: userID}, nil
 }
 
 func (p *mockPledgeAPI) checkUsed() {

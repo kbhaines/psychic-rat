@@ -4,7 +4,6 @@ import (
 	"psychic-rat/sqldb"
 	"psychic-rat/types"
 	"testing"
-	"os"
 )
 
 type DB = sqldb.DB
@@ -46,11 +45,17 @@ var (
 		types.NewItem{ID: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1},
 		types.NewItem{ID: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1},
 	}
+
+	testCurrencies = []types.Currency {
+		types.Currency{ID:1, Ident: "USD", ConversionToUSD: 1.0 },
+		types.Currency{ID:2, Ident: "GBP", ConversionToUSD: 1.2 },
+		types.Currency{ID:3, Ident: "EUR", ConversionToUSD: 1.4 },
+	}
 )
 
 func initDB(t *testing.T) *sqldb.DB {
 	t.Helper()
-	db, err := sqldb.NewDB("test.dat")
+	db, err := sqldb.NewDB(":memory:")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,12 +63,8 @@ func initDB(t *testing.T) *sqldb.DB {
 	initUsers(db, t)
 	//initNewItems(db,t)
 	initItems(db, t)
+	initCurrencies(db,t)
 	return db
-}
-
-func closeDB(db *sqldb.DB) {
-	db.Close()
-	os.Remove("test.dat")
 }
 
 func initCompanies(db *DB, t *testing.T) {
@@ -108,3 +109,14 @@ func initUsers(db *DB, t *testing.T) {
 		}
 	}
 }
+
+func initCurrencies(db *DB, t *testing.T) {
+	t.Helper()
+	for _, c := range testCurrencies {
+		_, err := db.AddCurrency(c)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+

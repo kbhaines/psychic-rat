@@ -13,6 +13,7 @@ type (
 	ItemAPI interface {
 		ListItems() ([]types.Item, error)
 		GetItem(id int) (types.Item, error)
+		ListCurrencies() ([]types.Currency, error)
 	}
 
 	NewItemAPI interface {
@@ -39,10 +40,11 @@ type (
 
 	// pageVariables holds data for the templates. Stuffed into one struct for now.
 	pageVariables struct {
-		Items     []types.Item
-		User      types.User
-		NewItems  []types.NewItem
-		Companies []types.Company
+		Items      []types.Item
+		User       types.User
+		NewItems   []types.NewItem
+		Companies  []types.Company
+		Currencies []types.Currency
 	}
 )
 
@@ -107,7 +109,13 @@ func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	vars := &pageVariables{Items: report}
+	currencies, err := itemsAPI.ListCurrencies()
+	if err != nil {
+		log.Print(err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+	vars := &pageVariables{Items: report, Currencies: currencies}
 	vars = vars.withSessionVars(r)
 	renderer.Render(w, "pledge.html.tmpl", vars)
 }
@@ -183,19 +191,28 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	company := r.FormValue("company")
 	make := r.FormValue("make")
 	model := r.FormValue("model")
-	if company == "" || model == "" || make == "" {
+	currencyID := r.FormValue("currencyID")
+	value := r.FormValue("value")
+
+	if company == "" || model == "" || make == "" || currencyID == "" || value == "" {
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
-	//value, err := strconv.ParseFloat(r.FormValue("value"), 10)
-	//if err != nil {
-	//	log.Print(err)
-	//	http.Error(w, "", http.StatusBadRequest)
-	//	return
-	//}
+	valueInt, err := strconv.ParseInt(r.FormValue("value"), 10, 32)
+	if err != nil {
+		log.Print(err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+	currencyIDInt, err := strconv.ParseInt(r.FormValue("currencyID"), 10, 32)
+	if err != nil {
+		log.Print(err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
 
-	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company}
-	_, err := newItemsAPI.AddNewItem(newItem)
+	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
+	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
 		log.Printf("unable to add new item %v:", newItem, err)
 		http.Error(w, "", http.StatusInternalServerError)

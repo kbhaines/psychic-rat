@@ -17,7 +17,9 @@ type DB struct {
 }
 
 func NewDB(name string) (*DB, error) {
-	os.Remove(name)
+	if _, err := os.Stat(name); os.IsExist(err) {
+		panic(fmt.Sprintf("refusing to create when DB %s already exists", name))
+	}
 	db, err := sql.Open("sqlite3", name)
 	if err != nil {
 		return nil, err
@@ -26,8 +28,7 @@ func NewDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	db.Close()
-	return OpenDB(name)
+	return setupDB(db)
 }
 
 func OpenDB(name string) (*DB, error) {
@@ -35,8 +36,14 @@ func OpenDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
+	return setupDB(db)
+}
 
-	_, err = db.Exec("PRAGMA synchronous = OFF")
+func setupDB(db *sql.DB) (*DB, error) {
+
+	// TODO: insert schema version checks here
+
+	_, err := db.Exec("PRAGMA synchronous = OFF")
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +55,7 @@ func OpenDB(name string) (*DB, error) {
 	insertUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
 	insertPledge, err := db.Prepare("insert into pledges(itemID, userID, timestamp) values (?,?,?)")
 	if err != nil {
-		panic("prep failed" + err.Error())
+		return nil, err
 	}
 
 	return &DB{db, insertUser, insertPledge}, nil
@@ -65,6 +72,13 @@ func createSchema(db *sql.DB) error {
 	
 	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyId = c.id;
 
+	create table itemValues (itemId integer primary key, usdValue int, currencyId integer, currencyValue integer);
+
+	create table currencies (
+		id integer primary key,
+		ident string,
+		conversionToUSD float);
+
 	create table newItems(id integer primary key, 
 	  userID integer,
 	  isPledge boolean,
@@ -72,6 +86,8 @@ func createSchema(db *sql.DB) error {
 	  model string, 
 	  company string,
 	  companyId integer,
+	  currencyId integer,
+	  currencyValue integer,
 	  timestamp integer);
 
 	create table users (id string primary key,
@@ -151,6 +167,45 @@ func (d *DB) ListItems() ([]types.Item, error) {
 	return ir, nil
 }
 
+func (d *DB) AddCurrency(c types.Currency) (*types.Currency, error) {
+	r, err := d.Exec("insert into currencies(ident, conversionToUSD) values (?,?)", c.Ident, c.ConversionToUSD)
+	if err != nil {
+		return nil, err
+	}
+	lastID, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	c.ID = int(lastID)
+	return &c, nil
+}
+
+func (d *DB) ListCurrencies() ([]types.Currency, error) {
+	cs := []types.Currency{}
+	rows, err := d.Query("select id, ident, conversionToUSD from currencies order by id")
+	if err != nil {
+		return nil, err
+	}
+	for rows.Next() {
+		c := types.Currency{}
+		err = rows.Scan(&c.ID, &c.Ident, &c.ConversionToUSD)
+		if err != nil {
+			return nil, err
+		}
+		cs = append(cs, c)
+	}
+	return cs, nil
+}
+
+func (d *DB) getCurrency(id int) (*types.Currency, error) {
+	c := types.Currency{}
+	err := d.QueryRow("select id, ident, conversionToUSD from currencies where id = ?", id).Scan(&c.ID, &c.Ident, &c.ConversionToUSD)
+	if err != nil {
+		return nil, fmt.Errorf("could not get currency %d", id)
+	}
+	return &c, nil
+}
+
 func (d *DB) GetItem(id int) (types.Item, error) {
 	i := types.Item{}
 	err := d.QueryRow("select id, make, model, companyId, companyName from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name)
@@ -176,7 +231,11 @@ func (d *DB) AddItem(i types.Item) (*types.Item, error) {
 
 func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyId, timestamp) values (?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, timestamp.Unix())
+	_, err := d.getCurrency(i.CurrencyID)
+	if err != nil {
+		return nil, err
+	}
+	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyId, currencyID, currencyValue, timestamp) values (?,?,?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -192,14 +251,14 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 
 func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	result := []types.NewItem{}
-	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyId, timestamp from newItems")
+	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyId, currencyID, currencyValue, timestamp from newItems")
 	if err != nil {
 		return nil, err
 	}
 	for rows.Next() {
 		var n types.NewItem
 		var timestamp int64
-		err = rows.Scan(&n.ID, &n.UserID, &n.IsPledge, &n.Make, &n.Model, &n.Company, &n.CompanyID, &timestamp)
+		err = rows.Scan(&n.ID, &n.UserID, &n.IsPledge, &n.Make, &n.Model, &n.Company, &n.CompanyID, &n.CurrencyID, &n.Value, &timestamp)
 		if err != nil {
 			return result, err
 		}
