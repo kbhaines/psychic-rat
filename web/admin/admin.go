@@ -158,6 +158,10 @@ func processNewItemPost(nip NewItemAdminPost) error {
 	if nip.Delete {
 		return newItemsAPI.DeleteNewItem(nip.ID)
 	}
+	if !nip.Add {
+		return nil
+	}
+
 	txn := apiTxn{nil}
 	var item *types.Item
 	if nip.ItemID == 0 {

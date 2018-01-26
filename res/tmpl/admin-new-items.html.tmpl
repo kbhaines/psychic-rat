@@ -22,7 +22,7 @@
 <form action="/admin/newitems" method="post">
 <table class="items-table">
     <tr>
-        <td>Add?</td>
+        <td>Action</td>
         <td>User Id</td>
         <td>User Company</td>
         <td>Company</td>
@@ -30,13 +30,18 @@
         <td>User Model</td>
         <td>User Value</td>
         <td>Item</td>
-        <td>Delete?</td>
     </tr>
     {{ range $index, $element := .NewItems }}
     <tr class="item-entry">
         <input type="hidden" name="id[]" value="{{ .ID }}">
         <input type="hidden" name="isPledge[]" value="{{ .IsPledge }}">
-        <td><input type="checkbox" name="add[]" value="{{ $index }}"></td>
+        <td>
+            <select name="action[]">
+                <option value="leave" selected>Leave</option>
+                <option value="add">Add</option>
+                <option value="delete">Delete</option>
+            </select>
+        </td>
         <td><input type="input" name="userID[]" value="{{ .UserID }}"></td>
         <td><input type="input" name="usercompany[]" value="{{ .Company }}"></td>
         <td>{{ template "companies" $ }}</td>
@@ -44,7 +49,6 @@
         <td><input type="input" name="usermodel[]" value="{{ .Model }}"></td>
         <td><input type="input" name="uservalue[]" value="{{ .Value }}"></td>
         <td>{{ template "items" $ }}</td>
-        <td><input type="checkbox" name="delete[]" value="{{ $index }}"></td>
     </tr>
     {{ end }}
 </table>

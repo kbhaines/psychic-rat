@@ -176,8 +176,7 @@ func testNewItemsPage(expectedNewItems []newItemPost, t *testing.T) {
 		"usermake[]":    (*newItemHtml).userMake,
 		"usermodel[]":   (*newItemHtml).userModel,
 		"uservalue[]":   (*newItemHtml).userValue,
-		"add[]":         (*newItemHtml).nowt,
-		"delete[]":      (*newItemHtml).nowt,
+		"action[]":      (*newItemHtml).nowt,
 	}
 
 	rows := doc.Find(".items-table .item-entry")
@@ -239,13 +238,13 @@ func TestBadnewItemPost(t *testing.T) {
 	client := http.Client{Jar: cookie}
 
 	post := url.Values{
-		"add[]":      []string{"0"}, // row selected
+		"id[]":       []string{"0"},
+		"action[]":   []string{"blah"}, // row selected
 		"isPledge[]": []string{"0"},
 		"userID[]":   []string{"test1"}, // user test1
 	}
 	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
-
 }
 
 func TestNewItemAdminPost(t *testing.T) {
@@ -388,7 +387,7 @@ func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
 	defer cleanUp(server, db)
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
-	v := url.Values{"add[]": []string{"abc"}}
+	v := url.Values{"action[]": []string{"abc"}, "id[]": []string{"abc"}}
 	resp, err := client.PostForm(testUrl+"/admin/newitems", v)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }
@@ -407,6 +406,7 @@ func spfi(i int) string { return fmt.Sprintf("%d", i) }
 func (p *postLine) newPostLine(itemID int) *postLine {
 	p.row = len(p.v["id[]"])
 	p.v.Add("id[]", spfi(itemID))
+	p.v.Add("action[]", "leave")
 	p.v.Add("isPledge[]", "0")
 	p.v.Add("item[]", "0")
 	p.v.Add("company[]", "0")
@@ -417,8 +417,8 @@ func (p *postLine) newPostLine(itemID int) *postLine {
 	return p
 }
 
-func (p *postLine) selectToAdd() *postLine          { p.v.Add("add[]", spfi(p.row)); return p }
-func (p *postLine) selectToDelete() *postLine       { p.v.Add("delete[]", spfi(p.row)); return p }
+func (p *postLine) selectToAdd() *postLine          { p.v["action[]"][p.row] = "add"; return p }
+func (p *postLine) selectToDelete() *postLine       { p.v["action[]"][p.row] = "delete"; return p }
 func (p *postLine) isPledge() *postLine             { p.v["isPledge[]"][p.row] = "true"; return p }
 func (p *postLine) userID(u string) *postLine       { p.v["userID[]"][p.row] = u; return p }
 func (p *postLine) existingItem(i int) *postLine    { p.v["item[]"][p.row] = spfi(i); return p }
