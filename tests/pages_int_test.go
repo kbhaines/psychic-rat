@@ -150,15 +150,12 @@ func TestBlockAccessToItemListing(t *testing.T) {
 
 func TestListNewItems(t *testing.T) {
 	server, db := newServer(t)
+	initNewItems(db, t)
 	defer cleanUp(server, db)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-	loadNewItems(client, t)
-
-	testNewItemsPage(newItemPosts, t)
+	testNewItemsPage(testNewItems, t)
 }
 
-func testNewItemsPage(expectedNewItems []newItemPost, t *testing.T) {
+func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 	t.Helper()
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
@@ -201,7 +198,7 @@ func testNewItemsPage(expectedNewItems []newItemPost, t *testing.T) {
 		expectedNewItem := newItemHtml{
 			ID:          strconv.Itoa(i + 1),
 			IsPledge:    "true",
-			UserID:      "test1",
+			UserID:      expectedNewItems[i].UserID,
 			UserCompany: expectedNewItems[i].Company,
 			UserMake:    expectedNewItems[i].Make,
 			UserModel:   expectedNewItems[i].Model,
@@ -212,25 +209,6 @@ func testNewItemsPage(expectedNewItems []newItemPost, t *testing.T) {
 		}
 	})
 
-}
-
-func loadNewItems(client http.Client, t *testing.T) {
-	t.Helper()
-	for i, d := range newItemPosts {
-		resp, err := client.PostForm(testUrl+"/newitem", d.getUrlValues())
-		testPageStatus(resp, err, http.StatusOK, t)
-		expected := []string{
-			fmt.Sprintf("boycott of %s %s by %s", newItemPosts[i].Make, newItemPosts[i].Model, newItemPosts[i].Company),
-			"Welcome user1 full",
-			"new item is under review",
-		}
-		body := readResponseBody(resp, t)
-		testStrings(body, expected, t)
-	}
-}
-
-func (n *newItemPost) getUrlValues() url.Values {
-	return url.Values{"company": {n.Company}, "make": {n.Make}, "model": {n.Model}, "currencyID": {n.CurrencyID}, "value": {n.Value}}
 }
 
 func TestBadnewItemPost(t *testing.T) {
@@ -252,43 +230,45 @@ func TestBadnewItemPost(t *testing.T) {
 func TestNewItemAdminPost(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
+	initNewItems(db, t)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
-	loadNewItems(client, t)
 
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
 
 	// Going backwards so we don't have to adjust the index for each row
 	// and can just use the coincident index values from the DB. Bit lazy....
-	for i := 3; i > 0; i-- {
+	for i := len(testNewItems) - 1; i > 0; i-- {
+		ni := testNewItems[i]
 		pl := &postLine{v: url.Values{}}
-		pl = pl.newPostLine(i + 1).userID("test1").
-			userCompany(newItemPosts[i].Company).
-			userMake(newItemPosts[i].Make).
-			userModel(newItemPosts[i].Model).
-			currency(newItemPosts[i].CurrencyID).
-			value(newItemPosts[i].Value).
+		pl = pl.newPostLine(ni.ID).
+			userID(ni.UserID).
+			userCompany(ni.Company).
+			userMake(ni.Make).
+			userModel(ni.Model).
+			currency(ni.CurrencyID).
+			value(ni.Value).
 			isPledge().
 			selectToAdd()
 
 		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
-		item := findAddedNewItem(newItemPosts[i], db, t)
-		testNewItemPledged(*item, db, t)
-		testNewItemsPage(newItemPosts[:i], t)
+		item := findAddedNewItem(ni, db, t)
+		testNewItemPledged(ni.UserID, *item, db, t)
+		testNewItemsPage(testNewItems[:i], t)
 	}
 }
 
-func findAddedNewItem(item newItemPost, db *sqldb.DB, t *testing.T) *types.Item {
+func findAddedNewItem(item types.NewItem, db *sqldb.DB, t *testing.T) *types.Item {
 	t.Helper()
 	items, err := db.ListItems()
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, i := range items {
-		if i.Make == item.Make && i.Model == item.Model && i.Company.Name == item.Company && fmt.Sprintf("%d", i.USDValue) == item.Value {
+		if i.Make == item.Make && i.Model == item.Model && i.Company.Name == item.Company && i.USDValue == item.Value {
 			return &i
 		}
 	}
@@ -296,9 +276,9 @@ func findAddedNewItem(item newItemPost, db *sqldb.DB, t *testing.T) *types.Item 
 	return nil
 }
 
-func testNewItemPledged(item types.Item, db *sqldb.DB, t *testing.T) {
+func testNewItemPledged(userID string, item types.Item, db *sqldb.DB, t *testing.T) {
 	t.Helper()
-	pledges, err := db.ListUserPledges("test1")
+	pledges, err := db.ListUserPledges(userID)
 	if err != nil {
 		t.Fatalf("could not list pledges for %s: %v", "test1", err)
 		return
@@ -314,10 +294,10 @@ func testNewItemPledged(item types.Item, db *sqldb.DB, t *testing.T) {
 
 func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	server, db := newServer(t)
+	initNewItems(db, t)
 	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
-	loadNewItems(client, t)
 
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
@@ -328,7 +308,7 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	}
 
 	pl := postLine{v: url.Values{}}
-	pl.newPostLine(4).userID("test1").existingItem(1).selectToAdd()
+	pl.newPostLine(6).userID(testNewItems[5].UserID).existingItem(1).selectToAdd()
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	newItems, err := db.ListItems()
@@ -337,15 +317,15 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	}
 
 	testPageStatus(resp, err, http.StatusOK, t)
-	testNewItemsPage(newItemPosts[:3], t)
+	testNewItemsPage(testNewItems[:len(testNewItems)-1], t)
 }
 
 func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	server, db := newServer(t)
+	initNewItems(db, t)
 	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
-	loadNewItems(client, t)
 
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
@@ -356,7 +336,9 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	}
 
 	pl := postLine{v: url.Values{}}
-	pl.newPostLine(4).userID("test1").existingCompany(1).selectToAdd()
+	ni := testNewItems[5]
+
+	pl.newPostLine(6).userID(ni.UserID).existingCompany(1).currency(ni.CurrencyID).value(ni.Value).selectToAdd()
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	newCompanies, err := db.ListCompanies()
@@ -365,15 +347,15 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	}
 
 	testPageStatus(resp, err, http.StatusOK, t)
-	testNewItemsPage(newItemPosts[:3], t)
+	testNewItemsPage(testNewItems[:len(testNewItems)-1], t)
 }
 
 func TestDeleteNewItems(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
+	initNewItems(db, t)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
-	loadNewItems(client, t)
 
 	cookie = loginUser("admin", t)
 	client = http.Client{Jar: cookie}
@@ -383,7 +365,7 @@ func TestDeleteNewItems(t *testing.T) {
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	testPageStatus(resp, err, http.StatusOK, t)
-	testNewItemsPage(newItemPosts[:3], t)
+	testNewItemsPage(testNewItems[:len(testNewItems)-1], t)
 }
 
 func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
@@ -418,8 +400,8 @@ func (p *postLine) newPostLine(itemID int) *postLine {
 	p.v.Add("usercompany[]", "")
 	p.v.Add("usermake[]", "")
 	p.v.Add("usermodel[]", "")
-	p.v.Add("currencyID[]", "")
-	p.v.Add("value[]", "")
+	p.v.Add("currencyID[]", "0")
+	p.v.Add("value[]", "0")
 	return p
 }
 
@@ -432,5 +414,5 @@ func (p *postLine) existingCompany(c int) *postLine { p.v["company[]"][p.row] = 
 func (p *postLine) userCompany(c string) *postLine  { p.v["usercompany[]"][p.row] = c; return p }
 func (p *postLine) userMake(m string) *postLine     { p.v["usermake[]"][p.row] = m; return p }
 func (p *postLine) userModel(m string) *postLine    { p.v["usermodel[]"][p.row] = m; return p }
-func (p *postLine) value(m string) *postLine        { p.v["value[]"][p.row] = m; return p }
-func (p *postLine) currency(c string) *postLine     { p.v["currencyID[]"][p.row] = c; return p }
+func (p *postLine) value(v int) *postLine           { p.v["value[]"][p.row] = spfi(v); return p }
+func (p *postLine) currency(c int) *postLine        { p.v["currencyID[]"][p.row] = spfi(c); return p }

@@ -3,6 +3,7 @@ package sqldb
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"os"
 	"psychic-rat/types"
 	"time"
@@ -68,16 +69,17 @@ func createSchema(db *sql.DB) error {
 	create table items (id integer primary key,
 	  make string, 
 	  model string, 
-	  companyId integer);
+	  companyID integer,
+	  currencyID integer,
+	  value integer,
+      usdValue integer );
 	
-	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyId = c.id;
-
-	create table itemValues (itemId integer primary key, usdValue int, currencyId integer, currencyValue integer);
+	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyID = c.id;
 
 	create table currencies (
 		id integer primary key,
 		ident string,
-		conversionToUSD float);
+		usdConversion float);
 
 	create table newItems(id integer primary key, 
 	  userID integer,
@@ -85,7 +87,7 @@ func createSchema(db *sql.DB) error {
 	  make string, 
 	  model string, 
 	  company string,
-	  companyId integer,
+	  companyID integer,
 	  currencyId integer,
 	  currencyValue integer,
 	  timestamp integer);
@@ -105,7 +107,7 @@ func createSchema(db *sql.DB) error {
 	create view userPledges as select p.id pledgeID, p.userID, p.timestamp, 
 		i.id itemID, i.Make, i.Model, c.id companyID, c.name 
 		from pledges p, items i, companies c 
-		where p.itemID = i.id and i.companyId = c.id;
+		where p.itemID = i.id and i.companyID = c.id;
 	`
 	_, err := db.Exec(stmt)
 	return err
@@ -152,13 +154,13 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 
 func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
-	rows, err := d.Query("select id, make, model, companyId, companyName from itemsCompany order by companyName, make, model")
+	rows, err := d.Query("select id, make, model, companyID, companyName, currencyID, value, usdValue from itemsCompany order by companyName, make, model")
 	if err != nil {
 		return ir, err
 	}
 	for rows.Next() {
 		item := types.Item{}
-		err = rows.Scan(&item.ID, &item.Make, &item.Model, &item.Company.ID, &item.Company.Name)
+		err = rows.Scan(&item.ID, &item.Make, &item.Model, &item.Company.ID, &item.Company.Name, &item.CurrencyID, &item.Value, &item.USDValue)
 		if err != nil {
 			return ir, err
 		}
@@ -168,7 +170,7 @@ func (d *DB) ListItems() ([]types.Item, error) {
 }
 
 func (d *DB) AddCurrency(c types.Currency) (*types.Currency, error) {
-	r, err := d.Exec("insert into currencies(ident, conversionToUSD) values (?,?)", c.Ident, c.ConversionToUSD)
+	r, err := d.Exec("insert into currencies(ident, usdConversion) values (?,?)", c.Ident, c.ConversionToUSD)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +184,7 @@ func (d *DB) AddCurrency(c types.Currency) (*types.Currency, error) {
 
 func (d *DB) ListCurrencies() ([]types.Currency, error) {
 	cs := []types.Currency{}
-	rows, err := d.Query("select id, ident, conversionToUSD from currencies order by id")
+	rows, err := d.Query("select id, ident, usdConversion from currencies order by id")
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +201,7 @@ func (d *DB) ListCurrencies() ([]types.Currency, error) {
 
 func (d *DB) getCurrency(id int) (*types.Currency, error) {
 	c := types.Currency{}
-	err := d.QueryRow("select id, ident, conversionToUSD from currencies where id = ?", id).Scan(&c.ID, &c.Ident, &c.ConversionToUSD)
+	err := d.QueryRow("select id, ident, usdConversion from currencies where id = ?", id).Scan(&c.ID, &c.Ident, &c.ConversionToUSD)
 	if err != nil {
 		return nil, fmt.Errorf("could not get currency %d", id)
 	}
@@ -208,7 +210,7 @@ func (d *DB) getCurrency(id int) (*types.Currency, error) {
 
 func (d *DB) GetItem(id int) (types.Item, error) {
 	i := types.Item{}
-	err := d.QueryRow("select id, make, model, companyId, companyName from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name)
+	err := d.QueryRow("select id, make, model, companyID, companyName, currencyID, value, usdValue from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name, &i.CurrencyID, &i.Value, &i.USDValue)
 	if err != nil {
 		return i, fmt.Errorf("could not get item %d: %v ", id, err)
 	}
@@ -216,7 +218,14 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 }
 
 func (d *DB) AddItem(i types.Item) (*types.Item, error) {
-	r, err := d.Exec("insert into items(make, model, companyId) values (?,?,?)", i.Make, i.Model, i.Company.ID)
+	c, err := d.getCurrency(i.CurrencyID)
+	if err != nil {
+		return nil, fmt.Errorf("could not get currency for new item %v: %v", i, err)
+	}
+	i.USDValue = int(c.ConversionToUSD * float64(i.Value))
+
+	log.Printf("i,c = %+v %+v\n", i, c)
+	r, err := d.Exec("insert into items(make, model, companyID, currencyID, value, usdValue) values (?,?,?,?,?,?)", i.Make, i.Model, i.Company.ID, i.CurrencyID, i.Value, i.USDValue)
 	if err != nil {
 		return nil, err
 	}
@@ -235,7 +244,7 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyId, currencyID, currencyValue, timestamp) values (?,?,?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix())
+	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp) values (?,?,?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +260,7 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 
 func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	result := []types.NewItem{}
-	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyId, currencyID, currencyValue, timestamp from newItems")
+	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp from newItems")
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +285,7 @@ func (d *DB) DeleteNewItem(id int) error {
 func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 	i := types.NewItem{}
 	var timestamp int64
-	err := d.QueryRow("select id, userID, isPledge, make, model, company, companyId, timestamp from newItems where id = ?", id).Scan(&i.ID,
+	err := d.QueryRow("select id, userID, isPledge, make, model, company, companyID, timestamp from newItems where id = ?", id).Scan(&i.ID,
 		&i.UserID, &i.IsPledge, &i.Make, &i.Model, &i.Company, &i.CompanyID, &timestamp)
 	if err != nil {
 		return nil, err

@@ -23,33 +23,32 @@ var (
 		types.User{ID: "admin", Fullname: "Admin", Email: "admin@admin.com", IsAdmin: true},
 	}
 
-	testCos = []string{"testco1", "testco2", "testco3"}
-
-	companies = []types.Company{
+	testCompanies = []types.Company{
 		types.Company{1, "testco1"},
 		types.Company{2, "testco2"},
+		types.Company{3, "testco3"},
 	}
 
 	testItems = []types.Item{
-		types.Item{ID: 0, Make: "phone", Model: "xyz", Company: companies[0]},
-		types.Item{ID: 0, Make: "phone", Model: "133", Company: companies[0]},
-		types.Item{ID: 0, Make: "tablet", Model: "ab1", Company: companies[1]},
-		types.Item{ID: 0, Make: "tablet", Model: "xy1", Company: companies[1]},
+		types.Item{ID: 0, Make: "phone", Model: "xyz", Company: testCompanies[0], CurrencyID: 1, Value: 100},
+		types.Item{ID: 0, Make: "phone", Model: "133", Company: testCompanies[0], CurrencyID: 1, Value: 100},
+		types.Item{ID: 0, Make: "tablet", Model: "ab1", Company: testCompanies[1], CurrencyID: 1, Value: 100},
+		types.Item{ID: 0, Make: "tablet", Model: "xy1", Company: testCompanies[1], CurrencyID: 1, Value: 100},
 	}
 
-	newItems = []types.NewItem{
-		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100},
-		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co2", CompanyID: 1, CurrencyID: 1, Value: 100},
-		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co3", CompanyID: 1, CurrencyID: 1, Value: 100},
-		types.NewItem{ID: 4, UserID: "test4", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co4", CompanyID: 1, CurrencyID: 1, Value: 100},
-		types.NewItem{ID: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1, CurrencyID: 1, Value: 100},
-		types.NewItem{ID: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1, CurrencyID: 1, Value: 100},
+	testNewItems = []types.NewItem{
+		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone1", Model: "newMod1", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone2", Model: "newMod2", Company: "co2", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone3", Model: "newMod3", Company: "co3", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 4, UserID: "test4", IsPledge: true, Make: "newPhone4", Model: "newMod4", Company: "co4", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 5, UserID: "test5", IsPledge: true, Make: "newPhone5", Model: "newMod5", Company: "co5", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 6, UserID: "test6", IsPledge: true, Make: "newPhone6", Model: "newMod6", Company: "co6", CompanyID: 1, CurrencyID: 1, Value: 100},
 	}
 
-	testCurrencies = []types.Currency {
-		types.Currency{ID:1, Ident: "USD", ConversionToUSD: 1.0 },
-		types.Currency{ID:2, Ident: "GBP", ConversionToUSD: 2 },
-		types.Currency{ID:3, Ident: "EUR", ConversionToUSD: 4 },
+	testCurrencies = []types.Currency{
+		types.Currency{ID: 1, Ident: "USD", ConversionToUSD: 1.0},
+		types.Currency{ID: 2, Ident: "GBP", ConversionToUSD: 2},
+		types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 4},
 	}
 )
 
@@ -61,15 +60,15 @@ func initDB(t *testing.T) *sqldb.DB {
 	}
 	initCompanies(db, t)
 	initUsers(db, t)
+	initCurrencies(db, t)
 	//initNewItems(db,t)
 	initItems(db, t)
-	initCurrencies(db,t)
 	return db
 }
 
 func initCompanies(db *DB, t *testing.T) {
-	for _, c := range testCos {
-		_, err := db.AddCompany(types.Company{Name: c})
+	for _, c := range testCompanies {
+		_, err := db.AddCompany(c)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -90,7 +89,7 @@ func initItems(db *DB, t *testing.T) []int {
 }
 func initNewItems(db *DB, t *testing.T) []types.NewItem {
 	res := []types.NewItem{}
-	for _, c := range newItems {
+	for _, c := range testNewItems {
 		n, err := db.AddNewItem(c)
 		if err != nil {
 			t.Fatal(err)
@@ -119,4 +118,3 @@ func initCurrencies(db *DB, t *testing.T) {
 		}
 	}
 }
-

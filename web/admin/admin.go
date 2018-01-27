@@ -8,7 +8,7 @@ import (
 )
 
 type (
-	NewItemAdminPost struct {
+	newItemPostData struct {
 		ID          int
 		Add         bool
 		Delete      bool
@@ -19,6 +19,8 @@ type (
 		UserCompany string
 		UserMake    string
 		UserModel   string
+		Value       int
+		CurrencyID  int
 	}
 
 	CompanyAPI interface {
@@ -154,7 +156,7 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func processNewItemPost(nip NewItemAdminPost) error {
+func processNewItemPost(nip newItemPostData) error {
 	if nip.Delete {
 		return newItemsAPI.DeleteNewItem(nip.ID)
 	}
@@ -171,13 +173,13 @@ func processNewItemPost(nip NewItemAdminPost) error {
 		} else {
 			company = txn.getCompany(nip.CompanyID)
 		}
-		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel})
+		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel, Value: nip.Value, CurrencyID: nip.CurrencyID})
 	} else {
 		item = txn.getItem(nip.ItemID)
 	}
 
 	if nip.Pledge {
-		txn.addPledge(item.ID, nip.UserID)
+		txn.addPledge(item, nip.UserID)
 	}
 	txn.deleteNewItem(nip.ID)
 	return txn.err

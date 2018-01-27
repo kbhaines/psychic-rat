@@ -43,11 +43,11 @@ func (a *apiTxn) getItem(id int) (i *types.Item) {
 
 }
 
-func (a *apiTxn) addPledge(itemID int, userID string) {
+func (a *apiTxn) addPledge(item *types.Item, userID string) {
 	if a.err != nil {
 		return
 	}
-	_, a.err = pledgeAPI.AddPledge(itemID, userID)
+	_, a.err = pledgeAPI.AddPledge(item.ID, userID)
 }
 
 func (a *apiTxn) deleteNewItem(id int) {

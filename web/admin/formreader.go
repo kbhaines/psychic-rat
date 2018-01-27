@@ -33,12 +33,12 @@ func (f *formReader) next() bool {
 	return f.row < f.numRows
 }
 
-func (f *formReader) getNewItemPost() NewItemAdminPost {
+func (f *formReader) getNewItemPost() newItemPostData {
 	if f.errors() {
 		panic("getNewItemPost called when formReader in error state")
 	}
 
-	i := NewItemAdminPost{
+	i := newItemPostData{
 		ID:          f.getInt("id[]"),
 		UserID:      f.getString("userID[]"),
 		ItemID:      f.getInt("item[]"),
@@ -47,6 +47,8 @@ func (f *formReader) getNewItemPost() NewItemAdminPost {
 		UserMake:    f.getString("usermake[]"),
 		UserModel:   f.getString("usermodel[]"),
 		Pledge:      f.getString("isPledge[]") == "true",
+		Value:       f.getInt("value[]"),
+		CurrencyID:  f.getInt("currencyID[]"),
 	}
 	action := f.getString("action[]")
 	log.Printf("action = %+v\n", action)
