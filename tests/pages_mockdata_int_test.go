@@ -38,18 +38,18 @@ var (
 	}
 
 	newItems = []types.NewItem{
-		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1},
-		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co2", CompanyID: 1},
-		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co3", CompanyID: 1},
-		types.NewItem{ID: 4, UserID: "test4", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co4", CompanyID: 1},
-		types.NewItem{ID: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1},
-		types.NewItem{ID: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1},
+		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co2", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co3", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 4, UserID: "test4", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co4", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 5, UserID: "test5", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co5", CompanyID: 1, CurrencyID: 1, Value: 100},
+		types.NewItem{ID: 6, UserID: "test6", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co6", CompanyID: 1, CurrencyID: 1, Value: 100},
 	}
 
 	testCurrencies = []types.Currency {
 		types.Currency{ID:1, Ident: "USD", ConversionToUSD: 1.0 },
-		types.Currency{ID:2, Ident: "GBP", ConversionToUSD: 1.2 },
-		types.Currency{ID:3, Ident: "EUR", ConversionToUSD: 1.4 },
+		types.Currency{ID:2, Ident: "GBP", ConversionToUSD: 2 },
+		types.Currency{ID:3, Ident: "EUR", ConversionToUSD: 4 },
 	}
 )
 
