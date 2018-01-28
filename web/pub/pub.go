@@ -215,7 +215,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
 		log.Printf("unable to add new item %v: %v", newItem, err)
-		http.Error(w, "", http.StatusBadRequesw)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
