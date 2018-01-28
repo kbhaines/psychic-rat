@@ -41,103 +41,6 @@ type (
 	}
 )
 
-var (
-	newItemPosts = []newItemPost{
-		newItemPost{Company: "newco1", Make: "newmake1", Model: "newmodel1", CurrencyID: "1", Value: "100"},
-		newItemPost{Company: "newco2", Make: "newmake2", Model: "newmodel2", CurrencyID: "1", Value: "100"},
-		newItemPost{Company: "newco3", Make: "newmake3", Model: "newmodel3", CurrencyID: "1", Value: "100"},
-		newItemPost{Company: "newco4", Make: "newmake4", Model: "newmodel4", CurrencyID: "1", Value: "100"},
-	}
-)
-
-func TestHomePage(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-	resp, err := http.Get(testUrl + "/")
-	testPageStatus(resp, err, http.StatusOK, t)
-}
-
-func TestPledgeWithoutLogin(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-	resp, err := http.Get(testUrl + "/pledge")
-	testPageStatus(resp, err, http.StatusForbidden, t)
-}
-
-func TestThankYouWithoutLogin(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-	resp, err := http.Get(testUrl + "/thanks")
-	testPageStatus(resp, err, http.StatusForbidden, t)
-}
-
-func TestSignin(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-	loginUser("test1", t)
-}
-
-func TestPledgeWithLogin(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-	resp, err := client.Get(testUrl + "/pledge")
-	testPageStatus(resp, err, http.StatusOK, t)
-
-	strBody := readResponseBody(resp, t)
-	expected := []string{
-		"user1 full",
-		"<select ",
-		"<input type=\"submit\"",
-	}
-	testStrings(strBody, expected, t)
-}
-
-func TestHappyPathPledge(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-	data := url.Values{"item": {"1"}}
-	resp, err := client.PostForm(testUrl+"/pledge", data)
-	testPageStatus(resp, err, http.StatusOK, t)
-
-	expected := []string{
-		"phone xyz by testco1",
-		"user1 full",
-	}
-	body := readResponseBody(resp, t)
-	testStrings(body, expected, t)
-}
-
-func TestBadNewItems(t *testing.T) {
-	server, db := newServer(t)
-	defer cleanUp(server, db)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	values := []url.Values{
-		url.Values{"company": {""}, "make": {"newmake"}, "model": {"newmodel"}},
-		url.Values{"company": {"newco"}, "make": {""}, "model": {"newmodel"}},
-		url.Values{"company": {""}, "make": {"newmake"}, "model": {""}},
-		url.Values{"make": {"newmake"}, "model": {"bla"}},
-	}
-
-	for _, d := range values {
-		resp, err := client.PostForm(testUrl+"/newitem", d)
-		testPageStatus(resp, err, http.StatusBadRequest, t)
-	}
-	items, err := db.ListNewItems()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if 0 != len(items) {
-		t.Fatalf("expected 0 new items, got %d", len(items))
-	}
-}
-
 func TestBlockAccessToItemListing(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
@@ -361,7 +264,8 @@ func TestDeleteNewItems(t *testing.T) {
 	client = http.Client{Jar: cookie}
 
 	pl := postLine{v: url.Values{}}
-	pl.newPostLine(4).userID("test1").selectToDelete()
+	ni := testNewItems[5]
+	pl.newPostLine(6).userID(ni.UserID).selectToDelete()
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	testPageStatus(resp, err, http.StatusOK, t)

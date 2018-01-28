@@ -32,6 +32,7 @@ func TestGetCompanyById(t *testing.T) {
 func TestListItems(t *testing.T) {
 	db := initDB(t)
 	initCompanies(db, t)
+	initCurrencies(db, t)
 	initItems(db, t)
 	items, err := db.ListItems()
 	if err != nil {
@@ -83,6 +84,7 @@ func TestNewUser(t *testing.T) {
 
 func TestGetItem(t *testing.T) {
 	db := initDB(t)
+	initCurrencies(db, t)
 	ids := initItems(db, t)
 	initCompanies(db, t)
 
