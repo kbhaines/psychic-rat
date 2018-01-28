@@ -68,6 +68,17 @@ func TestHappyPathPledge(t *testing.T) {
 	testStrings(body, expected, t)
 }
 
+func TestNewItem(t *testing.T) {
+	server, db := newServer(t)
+	defer cleanUp(server, db)
+	cookie := loginUser("test1", t)
+	client := http.Client{Jar: cookie}
+
+	values := url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}}
+	resp, err := client.PostForm(testUrl+"/newitem", values)
+	testPageStatus(resp, err, http.StatusOK, t)
+}
+
 func TestBadNewItems(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
@@ -75,10 +86,14 @@ func TestBadNewItems(t *testing.T) {
 	client := http.Client{Jar: cookie}
 
 	values := []url.Values{
-		url.Values{"company": {""}, "make": {"newmake"}, "model": {"newmodel"}},
-		url.Values{"company": {"newco"}, "make": {""}, "model": {"newmodel"}},
-		url.Values{"company": {""}, "make": {"newmake"}, "model": {""}},
-		url.Values{"make": {"newmake"}, "model": {"bla"}},
+		url.Values{"company": {""}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}},
+		url.Values{"company": {"newCo1"}, "make": {""}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}},
+		url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {""}, "currencyID": {"1"}, "value": {"100"}},
+		url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {""}, "value": {"100"}},
+		url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {""}},
+		url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"xxx"}, "value": {"100"}},
+		url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"xxx"}},
+		url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"999"}, "value": {"100"}},
 	}
 
 	for _, d := range values {

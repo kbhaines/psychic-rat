@@ -122,9 +122,9 @@ func TestBadnewItemPost(t *testing.T) {
 
 	post := url.Values{
 		"id[]":       []string{"0"},
-		"action[]":   []string{"blah"}, // row selected
+		"action[]":   []string{"blah"},
 		"isPledge[]": []string{"0"},
-		"userID[]":   []string{"test1"}, // user test1
+		"userID[]":   []string{"test1"},
 	}
 	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
 	testPageStatus(resp, err, http.StatusBadRequest, t)

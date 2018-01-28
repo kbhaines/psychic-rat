@@ -214,8 +214,8 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
 	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
-		log.Printf("unable to add new item %v:", newItem, err)
-		http.Error(w, "", http.StatusInternalServerError)
+		log.Printf("unable to add new item %v: %v", newItem, err)
+		http.Error(w, "", http.StatusBadRequesw)
 		return
 	}
 
