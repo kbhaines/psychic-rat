@@ -3,7 +3,6 @@ package sqldb
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"psychic-rat/types"
 	"time"
@@ -224,7 +223,6 @@ func (d *DB) AddItem(i types.Item) (*types.Item, error) {
 	}
 	i.USDValue = int(c.ConversionToUSD * float64(i.Value))
 
-	log.Printf("i,c = %+v %+v\n", i, c)
 	r, err := d.Exec("insert into items(make, model, companyID, currencyID, value, usdValue) values (?,?,?,?,?,?)", i.Make, i.Model, i.Company.ID, i.CurrencyID, i.Value, i.USDValue)
 	if err != nil {
 		return nil, err
