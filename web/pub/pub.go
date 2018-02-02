@@ -21,7 +21,7 @@ type (
 	}
 
 	PledgeAPI interface {
-		AddPledge(itemId int, userId string) (*types.Pledge, error)
+		AddPledge(itemId int, userId string, usdValue int) (*types.Pledge, error)
 	}
 
 	UserAPI interface {
@@ -146,7 +146,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	userId := user.ID
 
 	log.Printf("pledge item %v from user %v", itemId, userId)
-	pledge, err := pledgeAPI.AddPledge(itemId, userId)
+	pledge, err := pledgeAPI.AddPledge(itemId, userId, item.USDValue)
 	if err != nil {
 		log.Print("unable to pledge : ", err)
 		return

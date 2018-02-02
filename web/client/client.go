@@ -32,7 +32,7 @@ func (w *webClient) AddNewItem(item types.NewItem) (*types.NewItem, error) {
 	return &item, nil
 }
 
-func (w *webClient) AddItem(item types.Item) (*types.Item, error) {
+func (w *webClient) AddItem(item types.Item, currencyID, value int) (*types.Item, error) {
 	v := url.Values{
 		"id[]":          []string{""},
 		"action[]":      []string{"add"},
@@ -43,8 +43,8 @@ func (w *webClient) AddItem(item types.Item) (*types.Item, error) {
 		"usercompany[]": []string{item.Company.Name},
 		"usermake[]":    []string{item.Make},
 		"usermodel[]":   []string{item.Model},
-		"currencyID[]":  []string{strconv.FormatInt(int64(item.CurrencyID), 10)},
-		"value[]":       []string{strconv.FormatInt(int64(item.Value), 10)},
+		"currencyID[]":  []string{strconv.FormatInt(int64(currencyID), 10)},
+		"value[]":       []string{strconv.FormatInt(int64(value), 10)},
 	}
 
 	resp, err := w.client.PostForm(w.url+"/admin/newitems", v)

@@ -1,6 +1,8 @@
 package admin
 
-import "psychic-rat/types"
+import (
+	"psychic-rat/types"
+)
 
 // apiTxn wraps the error handling of multiple transactions with the API; the
 // user just checks the 'err' field at the end of the transaction block.
@@ -33,6 +35,14 @@ func (a *apiTxn) addItem(item types.Item) (i *types.Item) {
 	return i
 }
 
+func (a *apiTxn) currencyConversion(id int, value int) (v int) {
+	if a.err != nil {
+		return 0
+	}
+	v, a.err = itemsAPI.CurrencyConversion(id, value)
+	return v
+}
+
 func (a *apiTxn) getItem(id int) (i *types.Item) {
 	if a.err != nil {
 		return i
@@ -43,11 +53,11 @@ func (a *apiTxn) getItem(id int) (i *types.Item) {
 
 }
 
-func (a *apiTxn) addPledge(item *types.Item, userID string) {
+func (a *apiTxn) addPledge(item *types.Item, userID string, usdValue int) {
 	if a.err != nil {
 		return
 	}
-	_, a.err = pledgeAPI.AddPledge(item.ID, userID)
+	_, a.err = pledgeAPI.AddPledge(item.ID, userID, usdValue)
 }
 
 func (a *apiTxn) deleteNewItem(id int) {

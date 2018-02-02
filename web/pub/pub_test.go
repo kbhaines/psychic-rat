@@ -18,10 +18,10 @@ var (
 	}
 
 	mockItemList = []types.Item{
-		types.Item{ID: 123, Make: "phone", Model: "x124", Company: mockCompanies[0]},
-		types.Item{ID: 124, Make: "phone", Model: "x125", Company: mockCompanies[1]},
-		types.Item{ID: 125, Make: "phone", Model: "x126", Company: mockCompanies[1]},
-		types.Item{ID: 126, Make: "phone", Model: "x127", Company: mockCompanies[2]},
+		types.Item{ID: 123, Make: "phone", Model: "x124", Company: mockCompanies[0], USDValue: 100},
+		types.Item{ID: 124, Make: "phone", Model: "x125", Company: mockCompanies[1], USDValue: 100},
+		types.Item{ID: 125, Make: "phone", Model: "x126", Company: mockCompanies[1], USDValue: 100},
+		types.Item{ID: 126, Make: "phone", Model: "x127", Company: mockCompanies[2], USDValue: 100},
 	}
 
 	protectedPages = []http.HandlerFunc{
@@ -34,6 +34,7 @@ type mockItemAPI struct{}
 type mockPledgeAPI struct {
 	userID string
 	itemID int
+	value  int
 	t      *testing.T
 }
 
@@ -107,7 +108,7 @@ func TestPledgeAuthFailure(t *testing.T) {
 func TestPledgePost(t *testing.T) {
 	values := url.Values{"item": {"1"}}
 	itemsAPI = &mockItemAPI{}
-	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, t: t}
+	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, value: 100, t: t}
 	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}}
 	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
@@ -166,10 +167,10 @@ func (m *mockItemAPI) ListItems() ([]types.Item, error)          { return mockIt
 func (m *mockItemAPI) GetItem(id int) (types.Item, error)        { return mockItemList[id], nil }
 func (m *mockItemAPI) ListCurrencies() ([]types.Currency, error) { return nil, nil }
 
-func (p *mockPledgeAPI) AddPledge(itemID int, userID string) (*types.Pledge, error) {
+func (p *mockPledgeAPI) AddPledge(itemID int, userID string, value int) (*types.Pledge, error) {
 	p.t.Helper()
-	if p.userID != userID || p.itemID != itemID {
-		err := fmt.Errorf("expected AddPledge to be called with userID:%s itemID:%d, got %s %d", p.userID, p.itemID, userID, itemID)
+	if p.userID != userID || p.itemID != itemID || p.value != value {
+		err := fmt.Errorf("expected AddPledge to be called with userID:%s itemID:%d value:%d, got %s %d %d", p.userID, p.itemID, p.value, userID, itemID, value)
 		p.t.Fatal(err)
 		return nil, err
 	}

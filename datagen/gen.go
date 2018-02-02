@@ -82,7 +82,7 @@ func generateCompany(c int) types.Company {
 
 func generateItem(i, maxCompanyId int) types.Item {
 	company := types.Company{ID: (i % maxCompanyId) + 1}
-	return types.Item{Make: spf("make%03d", i), Model: spf("model%03d", i), Company: company, Value: 100, CurrencyID: 1}
+	return types.Item{Make: spf("make%03d", i), Model: spf("model%03d", i), Company: company, USDValue: 100}
 }
 
 func generateNewItem(i, maxCompanyId int) types.NewItem {

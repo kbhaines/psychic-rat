@@ -10,13 +10,12 @@ type Company struct {
 }
 
 type Item struct {
-	ID         int    `json:"id"`
-	Make       string `json:"make"`
-	Model      string `json:"model"`
-	Company    Company
-	CurrencyID int
-	Value      int
-	USDValue   int
+	ID        int    `json:"id"`
+	Make      string `json:"make"`
+	Model     string `json:"model"`
+	Company   Company
+	USDValue  int
+	NewItemID int
 }
 
 type Pledge struct {
@@ -24,6 +23,7 @@ type Pledge struct {
 	UserID    string
 	Item      Item      `json:"item"`
 	Timestamp time.Time `json:"timestamp"`
+	USDValue  int
 }
 
 type PledgeRequest struct {

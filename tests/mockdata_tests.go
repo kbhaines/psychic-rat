@@ -30,10 +30,10 @@ var (
 	}
 
 	testItems = []types.Item{
-		types.Item{ID: 0, Make: "phone", Model: "xyz", Company: testCompanies[0], CurrencyID: 1, Value: 100},
-		types.Item{ID: 0, Make: "phone", Model: "133", Company: testCompanies[0], CurrencyID: 1, Value: 100},
-		types.Item{ID: 0, Make: "tablet", Model: "ab1", Company: testCompanies[1], CurrencyID: 1, Value: 100},
-		types.Item{ID: 0, Make: "tablet", Model: "xy1", Company: testCompanies[1], CurrencyID: 1, Value: 100},
+		types.Item{ID: 0, Make: "phone", Model: "xyz", Company: testCompanies[0], USDValue: 100},
+		types.Item{ID: 0, Make: "phone", Model: "133", Company: testCompanies[0], USDValue: 100},
+		types.Item{ID: 0, Make: "tablet", Model: "ab1", Company: testCompanies[1], USDValue: 100},
+		types.Item{ID: 0, Make: "tablet", Model: "xy1", Company: testCompanies[1], USDValue: 100},
 	}
 
 	testNewItems = []types.NewItem{

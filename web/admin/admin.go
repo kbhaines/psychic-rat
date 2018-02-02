@@ -33,6 +33,7 @@ type (
 		ListItems() ([]types.Item, error)
 		AddItem(types.Item) (*types.Item, error)
 		GetItem(id int) (types.Item, error)
+		CurrencyConversion(id int, value int) (int, error)
 	}
 
 	NewItemAPI interface {
@@ -40,7 +41,7 @@ type (
 		DeleteNewItem(int) error
 	}
 	PledgeAPI interface {
-		AddPledge(itemId int, userId string) (*types.Pledge, error)
+		AddPledge(itemId int, userId string, usdValue int) (*types.Pledge, error)
 	}
 
 	Renderer interface {
@@ -166,6 +167,7 @@ func processNewItemPost(nip newItemPostData) error {
 
 	txn := apiTxn{nil}
 	var item *types.Item
+	var value int
 	if nip.ItemID == 0 {
 		var company *types.Company
 		if nip.CompanyID == 0 {
@@ -173,13 +175,14 @@ func processNewItemPost(nip newItemPostData) error {
 		} else {
 			company = txn.getCompany(nip.CompanyID)
 		}
-		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel, Value: nip.Value, CurrencyID: nip.CurrencyID})
+		value = txn.currencyConversion(nip.CurrencyID, nip.Value)
+		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel, USDValue: value, NewItemID: nip.ID})
 	} else {
 		item = txn.getItem(nip.ItemID)
 	}
 
 	if nip.Pledge {
-		txn.addPledge(item, nip.UserID)
+		txn.addPledge(item, nip.UserID, value)
 	}
 	txn.deleteNewItem(nip.ID)
 	return txn.err

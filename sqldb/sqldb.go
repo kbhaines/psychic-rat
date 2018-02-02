@@ -53,7 +53,7 @@ func setupDB(db *sql.DB) (*DB, error) {
 	}
 
 	insertUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
-	insertPledge, err := db.Prepare("insert into pledges(itemID, userID, timestamp) values (?,?,?)")
+	insertPledge, err := db.Prepare("insert into pledges(itemID, userID, usdValue, timestamp) values (?,?,?,?)")
 	if err != nil {
 		return nil, err
 	}
@@ -69,9 +69,8 @@ func createSchema(db *sql.DB) error {
 	  make string, 
 	  model string, 
 	  companyID integer,
-	  currencyID integer,
-	  value integer,
-      usdValue integer );
+      usdValue integer,
+  	  newItemID integer);
 	
 	create view itemsCompany as select i.*, c.name 'companyName' from items i, companies c where i.companyID = c.id;
 
@@ -101,6 +100,7 @@ func createSchema(db *sql.DB) error {
 	create table pledges (id integer primary key,
 	  userID integer,
 	  itemID integer,
+	  usdValue integer,
 	  timestamp integer);
 
 	create view userPledges as select p.id pledgeID, p.userID, p.timestamp, 
@@ -153,13 +153,13 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 
 func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
-	rows, err := d.Query("select id, make, model, companyID, companyName, currencyID, value, usdValue from itemsCompany order by companyName, make, model")
+	rows, err := d.Query("select id, make, model, companyID, companyName, usdValue from itemsCompany order by companyName, make, model")
 	if err != nil {
 		return ir, err
 	}
 	for rows.Next() {
 		item := types.Item{}
-		err = rows.Scan(&item.ID, &item.Make, &item.Model, &item.Company.ID, &item.Company.Name, &item.CurrencyID, &item.Value, &item.USDValue)
+		err = rows.Scan(&item.ID, &item.Make, &item.Model, &item.Company.ID, &item.Company.Name, &item.USDValue)
 		if err != nil {
 			return ir, err
 		}
@@ -209,7 +209,7 @@ func (d *DB) getCurrency(id int) (*types.Currency, error) {
 
 func (d *DB) GetItem(id int) (types.Item, error) {
 	i := types.Item{}
-	err := d.QueryRow("select id, make, model, companyID, companyName, currencyID, value, usdValue from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name, &i.CurrencyID, &i.Value, &i.USDValue)
+	err := d.QueryRow("select id, make, model, companyID, companyName, usdValue from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name, &i.USDValue)
 	if err != nil {
 		return i, fmt.Errorf("could not get item %d: %v ", id, err)
 	}
@@ -217,13 +217,7 @@ func (d *DB) GetItem(id int) (types.Item, error) {
 }
 
 func (d *DB) AddItem(i types.Item) (*types.Item, error) {
-	c, err := d.getCurrency(i.CurrencyID)
-	if err != nil {
-		return nil, fmt.Errorf("could not get currency for new item %v: %v", i, err)
-	}
-	i.USDValue = int(c.ConversionToUSD * float64(i.Value))
-
-	r, err := d.Exec("insert into items(make, model, companyID, currencyID, value, usdValue) values (?,?,?,?,?,?)", i.Make, i.Model, i.Company.ID, i.CurrencyID, i.Value, i.USDValue)
+	r, err := d.Exec("insert into items(make, model, companyID, usdValue, newItemID) values (?,?,?,?,?)", i.Make, i.Model, i.Company.ID, i.USDValue, i.NewItemID)
 	if err != nil {
 		return nil, err
 	}
@@ -309,9 +303,9 @@ func (d *DB) AddUser(u types.User) error {
 	return nil
 }
 
-func (d *DB) AddPledge(itemID int, userID string) (*types.Pledge, error) {
+func (d *DB) AddPledge(itemID int, userID string, usdValue int) (*types.Pledge, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.insertPledge.Exec(itemID, userID, timestamp.Unix())
+	r, err := d.insertPledge.Exec(itemID, userID, usdValue, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -319,7 +313,7 @@ func (d *DB) AddPledge(itemID int, userID string) (*types.Pledge, error) {
 	if err != nil {
 		return nil, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemID, userID, err)
 	}
-	return &types.Pledge{PledgeID: int(lastID), UserID: userID, Timestamp: timestamp}, nil
+	return &types.Pledge{PledgeID: int(lastID), UserID: userID, USDValue: usdValue, Timestamp: timestamp}, nil
 }
 
 func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
@@ -339,4 +333,12 @@ func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
 		result = append(result, p)
 	}
 	return result, nil
+}
+
+func (d *DB) CurrencyConversion(id int, value int) (int, error) {
+	c, err := d.getCurrency(id)
+	if err != nil {
+		return 0, fmt.Errorf("could not get currency for new item %v: %v", id, err)
+	}
+	return int(c.ConversionToUSD * float64(value)), nil
 }
