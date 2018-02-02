@@ -24,6 +24,7 @@ type (
 		UserMake    string
 		UserModel   string
 		UserValue   string
+		CurrencyID  string
 	}
 
 	// postLine allows us to build up an array-based POST request
@@ -79,6 +80,7 @@ func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 		"usermodel[]":   (*newItemHtml).userModel,
 		"uservalue[]":   (*newItemHtml).userValue,
 		"action[]":      (*newItemHtml).nowt,
+		"currencyID[]":  (*newItemHtml).currencyID,
 	}
 
 	rows := doc.Find(".items-table .item-entry")
@@ -106,6 +108,7 @@ func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 			UserMake:    expectedNewItems[i].Make,
 			UserModel:   expectedNewItems[i].Model,
 			UserValue:   "100",
+			CurrencyID:  strconv.Itoa(expectedNewItems[i].CurrencyID),
 		}
 		if !reflect.DeepEqual(expectedNewItem, actualNewItem) {
 			t.Errorf("expected html form to have %v, got %v", expectedNewItem, actualNewItem)
@@ -289,6 +292,7 @@ func (n *newItemHtml) userCompany(w string) { n.UserCompany = w }
 func (n *newItemHtml) userMake(w string)    { n.UserMake = w }
 func (n *newItemHtml) userModel(w string)   { n.UserModel = w }
 func (n *newItemHtml) userValue(w string)   { n.UserValue = w }
+func (n *newItemHtml) currencyID(w string)  { n.CurrencyID = w }
 func (n *newItemHtml) nowt(w string)        {}
 
 func spfi(i int) string { return fmt.Sprintf("%d", i) }
@@ -304,8 +308,8 @@ func (p *postLine) newPostLine(itemID int) *postLine {
 	p.v.Add("usercompany[]", "")
 	p.v.Add("usermake[]", "")
 	p.v.Add("usermodel[]", "")
+	p.v.Add("uservalue[]", "0")
 	p.v.Add("currencyID[]", "0")
-	p.v.Add("value[]", "0")
 	return p
 }
 
@@ -318,5 +322,5 @@ func (p *postLine) existingCompany(c int) *postLine { p.v["company[]"][p.row] = 
 func (p *postLine) userCompany(c string) *postLine  { p.v["usercompany[]"][p.row] = c; return p }
 func (p *postLine) userMake(m string) *postLine     { p.v["usermake[]"][p.row] = m; return p }
 func (p *postLine) userModel(m string) *postLine    { p.v["usermodel[]"][p.row] = m; return p }
-func (p *postLine) value(v int) *postLine           { p.v["value[]"][p.row] = spfi(v); return p }
+func (p *postLine) value(v int) *postLine           { p.v["uservalue[]"][p.row] = spfi(v); return p }
 func (p *postLine) currency(c int) *postLine        { p.v["currencyID[]"][p.row] = spfi(c); return p }

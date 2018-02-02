@@ -47,7 +47,7 @@ func (f *formReader) getNewItemPost() newItemPostData {
 		UserMake:    f.getString("usermake[]"),
 		UserModel:   f.getString("usermodel[]"),
 		Pledge:      f.getString("isPledge[]") == "true",
-		Value:       f.getInt("value[]"),
+		Value:       f.getInt("uservalue[]"),
 		CurrencyID:  f.getInt("currencyID[]"),
 	}
 	action := f.getString("action[]")

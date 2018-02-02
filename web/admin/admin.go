@@ -39,7 +39,9 @@ type (
 	NewItemAPI interface {
 		ListNewItems() ([]types.NewItem, error)
 		DeleteNewItem(int) error
+		MarkNewItemUsed(int) error
 	}
+
 	PledgeAPI interface {
 		AddPledge(itemId int, userId string, usdValue int) (*types.Pledge, error)
 	}
@@ -184,6 +186,6 @@ func processNewItemPost(nip newItemPostData) error {
 	if nip.Pledge {
 		txn.addPledge(item, nip.UserID, value)
 	}
-	txn.deleteNewItem(nip.ID)
+	txn.markUsed(nip.ID)
 	return txn.err
 }

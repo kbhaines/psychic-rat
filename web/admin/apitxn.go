@@ -60,9 +60,9 @@ func (a *apiTxn) addPledge(item *types.Item, userID string, usdValue int) {
 	_, a.err = pledgeAPI.AddPledge(item.ID, userID, usdValue)
 }
 
-func (a *apiTxn) deleteNewItem(id int) {
+func (a *apiTxn) markUsed(id int) {
 	if a.err != nil {
 		return
 	}
-	a.err = newItemsAPI.DeleteNewItem(id)
+	a.err = newItemsAPI.MarkNewItemUsed(id)
 }

@@ -88,7 +88,8 @@ func createSchema(db *sql.DB) error {
 	  companyID integer,
 	  currencyId integer,
 	  currencyValue integer,
-	  timestamp integer);
+	  timestamp integer,
+ 	  used boolean );
 
 	create table users (id string primary key,
 	  fullName string,
@@ -236,7 +237,7 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp) values (?,?,?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix())
+	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp, used) values (?,?,?,?,?,?,?,?,?,0)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}
@@ -252,7 +253,7 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 
 func (d *DB) ListNewItems() ([]types.NewItem, error) {
 	result := []types.NewItem{}
-	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp from newItems")
+	rows, err := d.Query("select id, userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp from newItems where not used")
 	if err != nil {
 		return nil, err
 	}
@@ -271,6 +272,11 @@ func (d *DB) ListNewItems() ([]types.NewItem, error) {
 
 func (d *DB) DeleteNewItem(id int) error {
 	_, err := d.Exec("delete from newItems where id=?", id)
+	return err
+}
+
+func (d *DB) MarkNewItemUsed(id int) error {
+	_, err := d.Exec("update newItems set used = 1 where id=?", id)
 	return err
 }
 
