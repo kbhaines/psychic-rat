@@ -112,14 +112,13 @@ func TestPledgePost(t *testing.T) {
 	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}}
 	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
-	req := &http.Request{Method: "POST", PostForm: values}
+	req := &http.Request{Method: "POST", PostForm: values, URL: &url.URL{Path: "/pledge"}}
 	writer := httptest.NewRecorder()
 	PledgePageHandler(writer, req)
-	if writer.Result().StatusCode != http.StatusOK {
-		t.Fatalf("expected OK, got %s", writer.Result().Status)
+	if writer.Result().StatusCode != http.StatusSeeOther {
+		t.Fatalf("expected 303, got %s", writer.Result().Status)
 	}
 	pledgeAPI.(*mockPledgeAPI).checkUsed()
-	renderer.(*mockRenderer).checkUsed()
 }
 
 func TestNewItemPledgePost(t *testing.T) {

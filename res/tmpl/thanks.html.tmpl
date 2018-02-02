@@ -1,12 +1,23 @@
 {{ template "header.html.tmpl" . }}
-<h1>Thanks</h1>
-<p>My first paragraph.</p>
-<p>Hello {{ .Username }}</p>
-<p>Thanks for pledging {{ .PledgeId }}</p>
+  <div id="page">
+    <div class="container">
+      <div class="row">
+        <div class="3u">
+          <section id="sidebard2">
+              {{ template "home-sidebar-wc.html.tmpl" . }}
+          </section>
+        </div>
+        <div class="9u skel-cell-important">
+          <section id="content" >
+            <header>
+                <h2>Thank you...</h2>
+            </header>
+            <p>Your pledge to boycott has been gratefully received. Thank you for adding your voice to this campaign!</p>
+            <p>We would be even more grateful if you could spare a few more moments to spread the word to your friend, family and social media contacts.</p>
+          </section>
+        </div>
+      </div>
 
-<ul>
-<li> <a href="/signin">Sign In</a></li>
-<li> <a href="/logout">Log out</a></li>
-<li> <a href="/pledge">Pledge Support</a></li>
-</ul>
+    </div>  
+  </div>
 {{ template "footer.html.tmpl" . }}

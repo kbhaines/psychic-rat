@@ -182,10 +182,9 @@ func processNewItemPost(nip newItemPostData) error {
 	} else {
 		item = txn.getItem(nip.ItemID)
 	}
-
+	txn.markUsed(nip.ID)
 	if nip.Pledge {
 		txn.addPledge(item, nip.UserID, value)
 	}
-	txn.markUsed(nip.ID)
 	return txn.err
 }

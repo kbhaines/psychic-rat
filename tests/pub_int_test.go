@@ -59,13 +59,9 @@ func TestHappyPathPledge(t *testing.T) {
 	data := url.Values{"item": {"1"}}
 	resp, err := client.PostForm(testUrl+"/pledge", data)
 	testPageStatus(resp, err, http.StatusOK, t)
-
-	expected := []string{
-		"phone xyz by testco1",
-		"user1 full",
+	if actual := resp.Request.URL.String(); actual != testUrl+"/thanks" {
+		t.Fatalf("expected to land at /thanks, got %s", actual)
 	}
-	body := readResponseBody(resp, t)
-	testStrings(body, expected, t)
 }
 
 func TestNewItem(t *testing.T) {

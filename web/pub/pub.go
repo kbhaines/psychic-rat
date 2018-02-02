@@ -153,11 +153,12 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("pledge %v created", pledge.PledgeID)
 
-	vars := &pageVariables{
-		User:  *user,
-		Items: []types.Item{item},
-	}
-	renderer.Render(w, "pledge-post.html.tmpl", vars)
+	//	vars := &pageVariables{
+	//		User:  *user,
+	//		Items: []types.Item{item},
+	//	}
+	http.Redirect(w, r, "/thanks", http.StatusSeeOther)
+	//renderer.Render(w, "pledge-post.html.tmpl", vars)
 }
 
 func ThanksPageHandler(w http.ResponseWriter, r *http.Request) {
