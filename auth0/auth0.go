@@ -1,6 +1,7 @@
 package auth0
 
 import (
+	"log"
 	"net/http"
 	"psychic-rat/sess"
 	"psychic-rat/types"
@@ -47,7 +48,7 @@ func (a *auth0Handler) GetLoggedInUser(r *http.Request) (*types.User, error) {
 	s := sess.NewSessionStore(r, nil)
 	user, err := s.Get()
 	if err != nil {
-		return nil, err
+		log.Printf("GetLoggedInUser: error getting session: %v", err)
 	}
 	return user, nil
 }

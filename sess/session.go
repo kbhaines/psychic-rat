@@ -1,22 +1,17 @@
 package sess
 
 import (
+	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"psychic-rat/types"
+	"strings"
 
 	"github.com/gorilla/sessions"
 )
-
-func init() {
-	gob.Register(types.User{})
-}
-
-func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
-	return &SessionStore{r: r, w: w, store: sessions.NewCookieStore([]byte("something-very-secret"))}
-}
 
 type (
 	SessionStore struct {
@@ -26,10 +21,24 @@ type (
 	}
 )
 
+const sessionVar = "auth"
+
+var cookieKeys [][]byte
+
+func init() {
+	gob.Register(types.User{})
+	cookieKeys = getKeys()
+}
+
+func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
+	return &SessionStore{r: r, w: w, store: sessions.NewCookieStore(cookieKeys...)}
+}
+
 func (s *SessionStore) Get() (*types.User, error) {
-	session, err := s.store.Get(s.r, "auth-session")
+	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		return nil, fmt.Errorf("get: cannot retrieve from store: %v", err)
+		log.Printf("Get: error retrieving, trying re-write: %v", err)
+		return nil, nil
 	}
 	userFromSession, found := session.Values["userRecord"]
 	if !found {
@@ -37,16 +46,17 @@ func (s *SessionStore) Get() (*types.User, error) {
 	}
 	userRecord, ok := userFromSession.(types.User)
 	if !ok {
-		return nil, fmt.Errorf("get: conversion error: %v", err)
+		return nil, fmt.Errorf("Get: conversion error: %v", err)
 	}
 	log.Printf("loaded user %v from session", userRecord)
 	return &userRecord, nil
 }
 
 func (s *SessionStore) Save(user *types.User) error {
-	session, err := s.store.Get(s.r, "auth-session")
+	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		return fmt.Errorf("save: cannot retrieve from store: %v", err)
+		log.Printf("save: cannot retrieve from store, rewriting: %v", err)
+		s.store.Save(s.r, s.w, session)
 	}
 	if user != nil {
 		session.Values["userRecord"] = *user
@@ -64,3 +74,18 @@ func (s *SessionStore) Save(user *types.User) error {
 
 func (s *SessionStore) Request() *http.Request      { return s.r }
 func (s *SessionStore) Writer() http.ResponseWriter { return s.w }
+
+func getKeys() [][]byte {
+	keys := os.Getenv("COOKIE_KEYS")
+	if keys == "" {
+		log.Printf("Warning: using default cookie keys")
+		keys = "defaultnotsafe"
+	}
+	results := make([][]byte, 0, len(keys)*2)
+	for _, key := range strings.Split(keys, ",") {
+		keySha := sha256.Sum256([]byte(key))
+		log.Printf("key,keySha = %+v %+v\n", key, keySha)
+		results = append(results, []byte(key), keySha[:])
+	}
+	return results
+}
