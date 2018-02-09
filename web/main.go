@@ -2,6 +2,7 @@ package web
 
 import (
 	"context"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"psychic-rat/auth0"
@@ -50,23 +51,36 @@ func Handler() http.Handler {
 	return hmux
 }
 
-func logRequest(f http.HandlerFunc) http.HandlerFunc {
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (s *statusRecorder) WriteHeader(c int) {
+	s.status = c
+	s.ResponseWriter.WriteHeader(c)
+}
+
+func logRequest(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, _ := sess.NewSessionStore(r).Get()
 		if user == nil {
 			user = &types.User{ID: "<none>"}
 		}
-		log.Logf(r, "uid:%v %s %s", user.ID, r.Method, r.RequestURI)
-		f(w, r)
+		request := fmt.Sprintf("%s %s %s", r.Method, r.RequestURI, user.ID)
+		log.Logf(r, request)
+		scw := &statusRecorder{w, 200}
+		next(scw, r)
+		log.Logf(r, "summary %s %d", request, scw.status)
 	}
 }
 
-func addContextValues(f http.HandlerFunc) http.HandlerFunc {
+func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestID := rand.Int63()
 		ctx := context.WithValue(r.Context(), "rid", requestID)
 		r = r.WithContext(ctx)
-		f(w, r)
+		next(w, r)
 	}
 }
 

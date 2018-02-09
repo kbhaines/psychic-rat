@@ -48,7 +48,6 @@ func (s *SessionStore) Get() (*types.User, error) {
 	if !ok {
 		return nil, fmt.Errorf("Get: conversion error: %v", err)
 	}
-	log.Logf(s.r, "loaded user %v from session", userRecord)
 	return &userRecord, nil
 }
 

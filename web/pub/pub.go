@@ -1,8 +1,9 @@
 package pub
 
 import (
-	"log"
+	syslog "log"
 	"net/http"
+	"psychic-rat/log"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
 	"strconv"
@@ -94,7 +95,7 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := authHandler.GetLoggedInUser(r)
 		if user == nil || err != nil {
-			log.Printf("user (%v) not logged in, or error occurred: %v", user, err)
+			log.Logf(r, "user (%v) not logged in, or error occurred: %v", user, err)
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
@@ -105,13 +106,13 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 	report, err := itemsAPI.ListItems()
 	if err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	currencies, err := itemsAPI.ListCurrencies()
 	if err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -122,14 +123,14 @@ func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 
 func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
 	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -137,7 +138,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	item, err := itemsAPI.GetItem(itemId)
 	if err != nil {
-		log.Printf("error looking up item %v : %v", itemId, err)
+		log.Logf(r, "error looking up item %v : %v", itemId, err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -145,13 +146,13 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	user, _ := authHandler.GetLoggedInUser(r)
 	userId := user.ID
 
-	log.Printf("pledge item %v from user %v", itemId, userId)
+	log.Logf(r, "pledge item %v from user %v", itemId, userId)
 	pledge, err := pledgeAPI.AddPledge(itemId, userId, item.USDValue)
 	if err != nil {
-		log.Print("unable to pledge : ", err)
+		log.Logf(r, "unable to pledge : ", err)
 		return
 	}
-	log.Printf("pledge %v created", pledge.PledgeID)
+	log.Logf(r, "pledge %v created", pledge.PledgeID)
 
 	//	vars := &pageVariables{
 	//		User:  *user,
@@ -180,7 +181,7 @@ func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 
 func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -201,13 +202,13 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	valueInt, err := strconv.ParseInt(r.FormValue("value"), 10, 32)
 	if err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	currencyIDInt, err := strconv.ParseInt(r.FormValue("currencyID"), 10, 32)
 	if err != nil {
-		log.Print(err)
+		log.Logf(r, "%v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -215,7 +216,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
 	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
-		log.Printf("unable to add new item %v: %v", newItem, err)
+		log.Logf(r, "unable to add new item %v: %v", newItem, err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -232,7 +233,7 @@ func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 	user, err := authHandler.GetLoggedInUser(r)
 	if err != nil {
 		// todo - return error?
-		log.Fatal(err)
+		syslog.Fatal(err)
 	}
 	if user != nil {
 		pv.User = *user
