@@ -6,14 +6,10 @@ import (
 	"log"
 )
 
-const schemaVersion = 8
-
-var updateFuncs = map[int]func(*sql.DB) error{
-	6: update6,
-	8: update8,
-}
+const schemaVersion = 1
 
 func createSchema(db *sql.DB) error {
+	log.Print("creating initial schema")
 	stmt := `
 	create table companies (id integer primary key, name string);
 
@@ -60,7 +56,6 @@ func createSchema(db *sql.DB) error {
 		i.id itemID, i.Make, i.Model, c.id companyID, c.name 
 		from pledges p, items i, companies c 
 		where p.itemID = i.id and i.companyID = c.id;
-
 	`
 	_, err := db.Exec(stmt)
 	if err != nil {
@@ -71,18 +66,13 @@ func createSchema(db *sql.DB) error {
 }
 
 func schemaUpdates(db *sql.DB) {
-	version := getVersion(db)
-	for v := version + 1; v <= schemaVersion; v++ {
-		updateFunc, ok := updateFuncs[v]
-		if ok {
-			err := updateFunc(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-			setVersion(db, v)
-		}
+	vers := getVersion(db)
+	if vers < 1 {
+		createSchema(db)
 	}
-	return
+	if vers < 2 {
+		updateV2(db)
+	}
 }
 
 func getVersion(db *sql.DB) int {
@@ -102,12 +92,8 @@ func setVersion(db *sql.DB, v int) {
 	}
 }
 
-func update6(db *sql.DB) error {
-	log.Print("updating schema to version 6")
-	return nil
-}
-
-func update8(db *sql.DB) error {
-	log.Print("updating schema to version 8")
-	return nil
+func updateV2(db *sql.DB) {
+	log.Print("updating schema to version 2")
+	setVersion(db, 2)
+	return
 }

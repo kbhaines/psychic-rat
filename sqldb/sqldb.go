@@ -24,10 +24,6 @@ func NewDB(name string) (*DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = createSchema(db)
-	if err != nil {
-		return nil, err
-	}
 	return setupDB(db)
 }
 
