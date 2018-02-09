@@ -4,9 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
-	"log"
+	syslog "log"
 	"net/http"
 	"os"
+	"psychic-rat/log"
 	"psychic-rat/types"
 	"strings"
 
@@ -36,7 +37,7 @@ func NewSessionStore(r *http.Request) *SessionStore {
 func (s *SessionStore) Get() (*types.User, error) {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Printf("Get: error retrieving: %v", err)
+		log.Logf(s.r, "Get: error retrieving: %v", err)
 		return nil, nil
 	}
 	userFromSession, found := session.Values["userRecord"]
@@ -47,14 +48,14 @@ func (s *SessionStore) Get() (*types.User, error) {
 	if !ok {
 		return nil, fmt.Errorf("Get: conversion error: %v", err)
 	}
-	log.Printf("loaded user %v from session", userRecord)
+	log.Logf(s.r, "loaded user %v from session", userRecord)
 	return &userRecord, nil
 }
 
 func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Printf("save: cannot retrieve from store, rewriting: %v", err)
+		log.Logf(s.r, "save: cannot retrieve from store, rewriting: %v", err)
 		s.store.Save(s.r, w, session)
 	}
 	if user != nil {
@@ -66,7 +67,7 @@ func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 	if err := session.Save(s.r, w); err != nil {
 		return err
 	}
-	log.Printf("saved user %v in session", user)
+	log.Logf(s.r, "saved user %v in session", user)
 	return nil
 }
 
@@ -75,13 +76,13 @@ func (s *SessionStore) Request() *http.Request { return s.r }
 func getKeys() [][]byte {
 	keys := os.Getenv("COOKIE_KEYS")
 	if keys == "" {
-		log.Printf("Warning: using default cookie keys")
+		syslog.Printf("Warning: using default cookie keys")
 		keys = "defaultnotsafe"
 	}
 	results := make([][]byte, 0, len(keys)*2)
 	for _, key := range strings.Split(keys, ",") {
 		keySha := sha256.Sum256([]byte(key))
-		log.Printf("key,keySha = %+v %+v\n", key, keySha)
+		syslog.Printf("key,keySha = %+v %+v\n", key, keySha)
 		results = append(results, []byte(key), keySha[:])
 	}
 	return results
