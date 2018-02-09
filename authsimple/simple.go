@@ -25,17 +25,17 @@ func NewAuthSimple(u UserAPI, r Renderer) *simpleAuthHandler {
 	return &simpleAuthHandler{userAPI: u, renderer: r}
 }
 
-func (s *simpleAuthHandler) SignIn(sess *sess.SessionStore) {
-	if err := s.authUser(sess); err != nil {
+func (s *simpleAuthHandler) SignIn(sess *sess.SessionStore, w http.ResponseWriter) {
+	if err := s.authUser(sess, w); err != nil {
 		log.Print(err)
-		http.Error(sess.Writer(), "authentication failed", http.StatusForbidden)
+		http.Error(w, "authentication failed", http.StatusForbidden)
 		return
 	}
 }
 
 func (s *simpleAuthHandler) Handler(w http.ResponseWriter, r *http.Request) {
-	session := sess.NewSessionStore(r, w)
-	s.SignIn(session)
+	session := sess.NewSessionStore(r)
+	s.SignIn(session, w)
 	_, err := s.GetLoggedInUser(r)
 	if err != nil {
 		log.Print(err)
@@ -46,8 +46,7 @@ func (s *simpleAuthHandler) Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (_ *simpleAuthHandler) GetLoggedInUser(r *http.Request) (*types.User, error) {
-	// TODO: nil is a smell. StoreReader/Writer interfaces.
-	s := sess.NewSessionStore(r, nil)
+	s := sess.NewSessionStore(r)
 	user, err := s.Get()
 	if err != nil {
 		log.Printf("GetLoggedInUser: error getting session: %v", err)
@@ -55,7 +54,7 @@ func (_ *simpleAuthHandler) GetLoggedInUser(r *http.Request) (*types.User, error
 	return user, nil
 }
 
-func (s *simpleAuthHandler) authUser(session *sess.SessionStore) error {
+func (s *simpleAuthHandler) authUser(session *sess.SessionStore, w http.ResponseWriter) error {
 	if err := session.Request().ParseForm(); err != nil {
 		return err
 	}
@@ -69,11 +68,11 @@ func (s *simpleAuthHandler) authUser(session *sess.SessionStore) error {
 	if err != nil {
 		return fmt.Errorf("can't get user by id %v : %v", userId, err)
 	}
-	return session.Save(user)
+	return session.Save(user, w)
 }
 
 func (s *simpleAuthHandler) LogOut(w http.ResponseWriter, r *http.Request) error {
-	err := sess.NewSessionStore(r, w).Save(nil)
+	err := sess.NewSessionStore(r).Save(nil, w)
 	if err != nil {
 		return err
 	}

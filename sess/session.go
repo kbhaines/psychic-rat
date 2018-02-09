@@ -16,7 +16,6 @@ import (
 type (
 	SessionStore struct {
 		r     *http.Request
-		w     http.ResponseWriter
 		store sessions.Store
 	}
 )
@@ -30,14 +29,14 @@ func init() {
 	cookieKeys = getKeys()
 }
 
-func NewSessionStore(r *http.Request, w http.ResponseWriter) *SessionStore {
-	return &SessionStore{r: r, w: w, store: sessions.NewCookieStore(cookieKeys...)}
+func NewSessionStore(r *http.Request) *SessionStore {
+	return &SessionStore{r: r, store: sessions.NewCookieStore(cookieKeys...)}
 }
 
 func (s *SessionStore) Get() (*types.User, error) {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Printf("Get: error retrieving, trying re-write: %v", err)
+		log.Printf("Get: error retrieving: %v", err)
 		return nil, nil
 	}
 	userFromSession, found := session.Values["userRecord"]
@@ -52,11 +51,11 @@ func (s *SessionStore) Get() (*types.User, error) {
 	return &userRecord, nil
 }
 
-func (s *SessionStore) Save(user *types.User) error {
+func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
 		log.Printf("save: cannot retrieve from store, rewriting: %v", err)
-		s.store.Save(s.r, s.w, session)
+		s.store.Save(s.r, w, session)
 	}
 	if user != nil {
 		session.Values["userRecord"] = *user
@@ -64,16 +63,14 @@ func (s *SessionStore) Save(user *types.User) error {
 		delete(session.Values, "userRecord")
 	}
 
-	if err := session.Save(s.r, s.w); err != nil {
-		http.Error(s.w, err.Error(), http.StatusInternalServerError)
+	if err := session.Save(s.r, w); err != nil {
 		return err
 	}
 	log.Printf("saved user %v in session", user)
 	return nil
 }
 
-func (s *SessionStore) Request() *http.Request      { return s.r }
-func (s *SessionStore) Writer() http.ResponseWriter { return s.w }
+func (s *SessionStore) Request() *http.Request { return s.r }
 
 func getKeys() [][]byte {
 	keys := os.Getenv("COOKIE_KEYS")

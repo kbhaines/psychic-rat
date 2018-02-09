@@ -44,8 +44,7 @@ func (a *auth0Handler) Handler(writer http.ResponseWriter, request *http.Request
 }
 
 func (a *auth0Handler) GetLoggedInUser(r *http.Request) (*types.User, error) {
-	// TODO: nil is a smell. StoreReader/Writer interfaces.
-	s := sess.NewSessionStore(r, nil)
+	s := sess.NewSessionStore(r)
 	user, err := s.Get()
 	if err != nil {
 		log.Printf("GetLoggedInUser: error getting session: %v", err)
@@ -54,7 +53,7 @@ func (a *auth0Handler) GetLoggedInUser(r *http.Request) (*types.User, error) {
 }
 
 func (a *auth0Handler) LogOut(w http.ResponseWriter, r *http.Request) error {
-	err := sess.NewSessionStore(r, w).Save(nil)
+	err := sess.NewSessionStore(r).Save(nil, w)
 	if err != nil {
 		return err
 	}
