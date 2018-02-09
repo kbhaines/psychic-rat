@@ -59,7 +59,12 @@ func Handler() http.Handler {
 func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestID := rand.Int63()
+		user, _ := sess.NewSessionStore(r).Get()
+		if user == nil {
+			user = &types.User{ID: "<none>"}
+		}
 		ctx := context.WithValue(r.Context(), "rid", requestID)
+		ctx = context.WithValue(ctx, "uid", user.ID)
 		r = r.WithContext(ctx)
 		next(w, r)
 	}
@@ -67,11 +72,7 @@ func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 
 func logRequest(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, _ := sess.NewSessionStore(r).Get()
-		if user == nil {
-			user = &types.User{ID: "<none>"}
-		}
-		request := fmt.Sprintf("request: %s %s %s", r.Method, r.RequestURI, user.ID)
+		request := fmt.Sprintf("request: %s %s", r.Method, r.RequestURI)
 		log.Logf(r, request)
 		scw := &statusRecorder{w, 200}
 		next(scw, r)

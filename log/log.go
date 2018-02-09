@@ -8,6 +8,7 @@ import (
 
 func Logf(r *http.Request, s string, args ...interface{}) {
 	rid := r.Context().Value("rid")
+	uid := r.Context().Value("uid")
 	userLog := fmt.Sprintf(s, args...)
-	log.Printf("%d %s", rid, userLog)
+	log.Printf("%d %s %s", rid, uid, userLog)
 }
