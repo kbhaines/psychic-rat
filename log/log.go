@@ -9,5 +9,5 @@ import (
 func Logf(r *http.Request, s string, args ...interface{}) {
 	rid := r.Context().Value("rid")
 	userLog := fmt.Sprintf(s, args...)
-	log.Printf("rid:%d %s", rid, userLog)
+	log.Printf("%d %s", rid, userLog)
 }

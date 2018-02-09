@@ -25,6 +25,11 @@ const (
 	Callback      = "/callback"
 )
 
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
 var (
 	uriHandlers = []dispatch.URIHandler{
 		{HomePage, pub.HomePageHandler},
@@ -51,30 +56,6 @@ func Handler() http.Handler {
 	return hmux
 }
 
-type statusRecorder struct {
-	http.ResponseWriter
-	status int
-}
-
-func (s *statusRecorder) WriteHeader(c int) {
-	s.status = c
-	s.ResponseWriter.WriteHeader(c)
-}
-
-func logRequest(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		user, _ := sess.NewSessionStore(r).Get()
-		if user == nil {
-			user = &types.User{ID: "<none>"}
-		}
-		request := fmt.Sprintf("%s %s %s", r.Method, r.RequestURI, user.ID)
-		log.Logf(r, request)
-		scw := &statusRecorder{w, 200}
-		next(scw, r)
-		log.Logf(r, "summary %s %d", request, scw.status)
-	}
-}
-
 func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestID := rand.Int63()
@@ -84,8 +65,27 @@ func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func logRequest(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user, _ := sess.NewSessionStore(r).Get()
+		if user == nil {
+			user = &types.User{ID: "<none>"}
+		}
+		request := fmt.Sprintf("request: %s %s %s", r.Method, r.RequestURI, user.ID)
+		log.Logf(r, request)
+		scw := &statusRecorder{w, 200}
+		next(scw, r)
+		log.Logf(r, "response: %d", scw.status)
+	}
+}
+
 func handlerForDirs(mux *http.ServeMux, dir ...string) {
 	for _, d := range dir {
 		mux.Handle("/"+d+"/", http.StripPrefix("/"+d, http.FileServer(http.Dir("res/"+d+"/"))))
 	}
+}
+
+func (s *statusRecorder) WriteHeader(c int) {
+	s.status = c
+	s.ResponseWriter.WriteHeader(c)
 }

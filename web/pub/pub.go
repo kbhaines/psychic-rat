@@ -66,6 +66,11 @@ func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler,
 }
 
 func HomePageHandler(w http.ResponseWriter, r *http.Request) {
+	if r.RequestURI != "/" && r.RequestURI != "index.html" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	selector := dispatch.MethodSelector{
 		"GET": func(w http.ResponseWriter, r *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(r)

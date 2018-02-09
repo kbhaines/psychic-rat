@@ -21,17 +21,19 @@ var (
 		enableAuth0    bool
 		sqldb          bool
 		cacheTemplates bool
+		listenOn       string
 	}
 )
 
 func main() {
+	flag.StringVar(&flags.listenOn, "listen", "localhost:8080", "interface:port to listen on")
 	flag.BoolVar(&flags.enableAuth0, "auth0", false, "enable auth0 function")
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
 	flag.Parse()
 
 	initModules()
-	err := http.ListenAndServe(":8080", context.ClearHandler(web.Handler()))
+	err := http.ListenAndServe(flags.listenOn, context.ClearHandler(web.Handler()))
 	if err != nil {
 		log.Fatalf("web server aborted: %v", err)
 	}
