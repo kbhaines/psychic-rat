@@ -11,10 +11,10 @@ import (
 func TestSaveAndGet(t *testing.T) {
 	r := http.Request{}
 	w := httptest.NewRecorder()
-	sess := NewSessionStore(&r, w)
+	sess := NewSessionStore(&r)
 	user := &types.User{ID: "test1", Email: "me@test1.com"}
 
-	saveUser(user, sess, t)
+	saveUser(user, sess, w, t)
 	gotUser := getUser(sess, t)
 
 	if !reflect.DeepEqual(*user, *gotUser) {
@@ -23,9 +23,9 @@ func TestSaveAndGet(t *testing.T) {
 
 }
 
-func saveUser(user *types.User, sess *SessionStore, t *testing.T) {
+func saveUser(user *types.User, sess *SessionStore, w http.ResponseWriter, t *testing.T) {
 	t.Helper()
-	if err := sess.Save(user); err != nil {
+	if err := sess.Save(user, w); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -42,14 +42,14 @@ func getUser(sess *SessionStore, t *testing.T) *types.User {
 func TestSaveAndClear(t *testing.T) {
 	r := http.Request{}
 	w := httptest.NewRecorder()
-	sess := NewSessionStore(&r, w)
+	sess := NewSessionStore(&r)
 	user := &types.User{ID: "test1", Email: "me@test1.com"}
 
-	if err := sess.Save(user); err != nil {
+	if err := sess.Save(user, w); err != nil {
 		t.Fatal(err)
 	}
 
-	sess.Save(nil)
+	sess.Save(nil, w)
 	gotUser := getUser(sess, t)
 	if gotUser != nil {
 		t.Fatalf("expected nil user, got %v", *gotUser)
