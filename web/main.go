@@ -72,7 +72,7 @@ func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 
 func logRequest(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		request := fmt.Sprintf("request: %s %s", r.Method, r.RequestURI)
+		request := fmt.Sprintf("source: %s request: %s %s", r.RemoteAddr, r.Method, r.RequestURI)
 		log.Logf(r, request)
 		scw := &statusRecorder{w, 200}
 		next(scw, r)
