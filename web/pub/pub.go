@@ -65,6 +65,20 @@ func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler,
 	renderer = rendr
 }
 
+type loggingRenderer struct {
+	Renderer
+	r *http.Request
+}
+
+func render(r *http.Request, w http.ResponseWriter, template string, vars interface{}) {
+	err := renderer.Render(w, template, vars)
+	if err != nil {
+		log.Errorf(r, "could not render template %s: %v", template, err)
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+	return
+}
+
 func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	if r.RequestURI != "/" && r.RequestURI != "index.html" {
 		w.WriteHeader(http.StatusNotFound)
@@ -74,7 +88,7 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET": func(w http.ResponseWriter, r *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(r)
-			renderer.Render(w, "home.html.tmpl", vars)
+			render(r, w, "home.html.tmpl", vars)
 		},
 	}
 	dispatch.ExecHandlerForMethod(selector, w, r)
@@ -100,7 +114,7 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := authHandler.GetLoggedInUser(r)
 		if user == nil || err != nil {
-			log.Logf(r, "user (%v) not logged in, or error occurred: %v", user, err)
+			log.Errorf(r, "user (%v) not logged in, or error occurred: %v", user, err)
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
@@ -109,33 +123,33 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 }
 
 func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
-	report, err := itemsAPI.ListItems()
+	items, err := itemsAPI.ListItems()
 	if err != nil {
-		log.Logf(r, "%v", err)
+		log.Errorf(r, "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	currencies, err := itemsAPI.ListCurrencies()
 	if err != nil {
-		log.Logf(r, "%v", err)
+		log.Errorf(r, "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	vars := &pageVariables{Items: report, Currencies: currencies}
+	vars := &pageVariables{Items: items, Currencies: currencies}
 	vars = vars.withSessionVars(r)
-	renderer.Render(w, "pledge.html.tmpl", vars)
+	render(r, w, "pledge.html.tmpl", vars)
 }
 
 func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		log.Logf(r, "%v", err)
-		http.Error(w, "", http.StatusInternalServerError)
+		log.Errorf(r, "could not parse pledge form: %v", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
 	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
-		log.Logf(r, "%v", err)
+		log.Errorf(r, "could not parse itemID: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -143,7 +157,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	item, err := itemsAPI.GetItem(itemId)
 	if err != nil {
-		log.Logf(r, "error looking up item %v : %v", itemId, err)
+		log.Errorf(r, "could not get item %v: %v", itemId, err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -154,24 +168,20 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	log.Logf(r, "pledge item %v from user %v", itemId, userId)
 	pledge, err := pledgeAPI.AddPledge(itemId, userId, item.USDValue)
 	if err != nil {
-		log.Logf(r, "unable to pledge : ", err)
+		log.Errorf(r, "unable to pledge: ", err)
+		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	log.Logf(r, "pledge %v created", pledge.PledgeID)
 
-	//	vars := &pageVariables{
-	//		User:  *user,
-	//		Items: []types.Item{item},
-	//	}
 	http.Redirect(w, r, "/thanks", http.StatusSeeOther)
-	//renderer.Render(w, "pledge-post.html.tmpl", vars)
 }
 
 func ThanksPageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET": userLoginRequired(func(w http.ResponseWriter, r *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(r)
-			renderer.Render(w, "thanks.html.tmpl", vars)
+			render(r, w, "thanks.html.tmpl", vars)
 		}),
 	}
 	dispatch.ExecHandlerForMethod(selector, w, r)
@@ -186,12 +196,11 @@ func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 
 func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		log.Logf(r, "%v", err)
-		http.Error(w, "", http.StatusInternalServerError)
+		log.Errorf(r, "could not parse new item form: %v", err)
+		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
-	// TODO ignoring a couple of errors
 	user, _ := authHandler.GetLoggedInUser(r)
 	userId := user.ID
 
@@ -202,18 +211,19 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	value := r.FormValue("value")
 
 	if company == "" || model == "" || make == "" || currencyID == "" || value == "" {
+		log.Errorf(r, "new item request missing data: %v", r.Form)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	valueInt, err := strconv.ParseInt(r.FormValue("value"), 10, 32)
 	if err != nil {
-		log.Logf(r, "%v", err)
+		log.Errorf(r, "could not parse value of new item: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	currencyIDInt, err := strconv.ParseInt(r.FormValue("currencyID"), 10, 32)
 	if err != nil {
-		log.Logf(r, "%v", err)
+		log.Errorf(r, "could not parse value of currencyID: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -221,8 +231,8 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
 	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
-		log.Logf(r, "unable to add new item %v: %v", newItem, err)
-		http.Error(w, "", http.StatusBadRequest)
+		log.Errorf(r, "could not add new item %v: %v", newItem, err)
+		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 
@@ -231,7 +241,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		User:  *user,
 		Items: []types.Item{item},
 	}
-	renderer.Render(w, "pledge-post-new-item.html.tmpl", vars)
+	render(r, w, "pledge-post-new-item.html.tmpl", vars)
 }
 
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {

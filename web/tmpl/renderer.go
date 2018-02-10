@@ -1,7 +1,6 @@
 package tmpl
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"strings"
@@ -26,7 +25,7 @@ func (r *renderer) Render(w http.ResponseWriter, templateName string, variables 
 		r.template = template.Must(template.New(templateName).ParseGlob(r.path + "/*.tmpl"))
 	}
 	if err := r.template.Execute(w, variables); err != nil {
-		panic(fmt.Sprintf("template error: %v", err))
+		return err
 	}
 	return nil
 }
