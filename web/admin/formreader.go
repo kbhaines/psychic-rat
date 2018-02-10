@@ -2,7 +2,6 @@ package admin
 
 import (
 	"fmt"
-	"log"
 	"net/url"
 	"strconv"
 )
@@ -51,7 +50,6 @@ func (f *formReader) getNewItemPost() newItemPostData {
 		CurrencyID:  f.getInt("currencyID[]"),
 	}
 	action := f.getString("action[]")
-	log.Printf("action = %+v\n", action)
 	switch action {
 	case "add":
 		i.Add = true

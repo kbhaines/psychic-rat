@@ -65,20 +65,6 @@ func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler,
 	renderer = rendr
 }
 
-type loggingRenderer struct {
-	Renderer
-	r *http.Request
-}
-
-func render(r *http.Request, w http.ResponseWriter, template string, vars interface{}) {
-	err := renderer.Render(w, template, vars)
-	if err != nil {
-		log.Errorf(r, "could not render template %s: %v", template, err)
-		http.Error(w, "", http.StatusInternalServerError)
-	}
-	return
-}
-
 func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	if r.RequestURI != "/" && r.RequestURI != "index.html" {
 		w.WriteHeader(http.StatusNotFound)
@@ -254,4 +240,13 @@ func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 		pv.User = *user
 	}
 	return pv
+}
+
+func render(r *http.Request, w http.ResponseWriter, template string, vars interface{}) {
+	err := renderer.Render(w, template, vars)
+	if err != nil {
+		log.Errorf(r, "could not render template %s: %v", template, err)
+		http.Error(w, "", http.StatusInternalServerError)
+	}
+	return
 }

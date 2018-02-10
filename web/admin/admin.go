@@ -1,8 +1,8 @@
 package admin
 
 import (
-	"log"
 	"net/http"
+	"psychic-rat/log"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
 )
@@ -91,7 +91,7 @@ func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
 func adminLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !isUserAdmin(r) {
-			log.Print("user not admin")
+			log.Errorf(r, "user is not admin")
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
@@ -99,10 +99,10 @@ func adminLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func isUserAdmin(request *http.Request) bool {
-	user, err := authHandler.GetLoggedInUser(request)
+func isUserAdmin(r *http.Request) bool {
+	user, err := authHandler.GetLoggedInUser(r)
 	if err != nil {
-		log.Print(err)
+		log.Errorf(r, "could not retrieve user: %v", err)
 		return false
 	}
 	return user != nil && user.IsAdmin
@@ -111,19 +111,19 @@ func isUserAdmin(request *http.Request) bool {
 func listNewItems(w http.ResponseWriter, r *http.Request) {
 	newItems, err := newItemsAPI.ListNewItems()
 	if err != nil {
-		log.Printf("unable to retrieve new items: %v", err)
+		log.Errorf(r, "could not retrieve new items: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	items, err := itemsAPI.ListItems()
 	if err != nil {
-		log.Printf("unable to retrieve items: %v", err)
+		log.Errorf(r, "could not retrieve items: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	companies, err := companyAPI.ListCompanies()
 	if err != nil {
-		log.Printf("unable to retrieve companies: %v", err)
+		log.Errorf(r, "could not retrieve companies: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -135,7 +135,7 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Printf("unable to parse form: %v", err)
+		log.Errorf(r, "could not parse form: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -145,25 +145,26 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 		if reader.errors() {
 			break
 		}
-		if err := processNewItemPost(nip); err != nil {
-			log.Printf("unable to complete transactions for new item %d:  %v", nip.ID, err)
+		if err := processNewItemPost(r, nip); err != nil {
+			log.Errorf(r, "could not complete transactions for new item %d:  %v", nip.ID, err)
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
-
 	}
 	if reader.errors() {
-		log.Printf("errors while parsing form line %d: %v", reader.row, reader.err)
+		log.Errorf(r, "errors while parsing form line %d: %v", reader.row, reader.err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 }
 
-func processNewItemPost(nip newItemPostData) error {
+func processNewItemPost(r *http.Request, nip newItemPostData) error {
 	if nip.Delete {
+		log.Logf(r, "deleting new item %v", nip)
 		return newItemsAPI.DeleteNewItem(nip.ID)
 	}
 	if !nip.Add {
+		log.Logf(r, "ignoring new item %v", nip)
 		return nil
 	}
 
@@ -171,15 +172,20 @@ func processNewItemPost(nip newItemPostData) error {
 	var item *types.Item
 	var value int
 	if nip.ItemID == 0 {
+		log.Logf(r, "creating new item from %v", nip)
 		var company *types.Company
 		if nip.CompanyID == 0 {
+			log.Logf(r, "creating new company from %v", nip.UserCompany)
 			company = txn.addCompany(types.Company{Name: nip.UserCompany})
 		} else {
+			log.Logf(r, "using existing company %v", nip.CompanyID)
 			company = txn.getCompany(nip.CompanyID)
 		}
 		value = txn.currencyConversion(nip.CurrencyID, nip.Value)
 		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel, USDValue: value, NewItemID: nip.ID})
+		log.Logf(r, "item added: %v", item)
 	} else {
+		log.Logf(r, "using existing item %d", nip.ItemID)
 		item = txn.getItem(nip.ItemID)
 	}
 	txn.markUsed(nip.ID)
