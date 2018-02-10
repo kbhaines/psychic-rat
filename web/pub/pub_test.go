@@ -75,7 +75,7 @@ func TestHomePageTemplate(t *testing.T) {
 	expectedVars := pageVariables{}
 	renderer = getRenderMock(t, "home.html.tmpl", expectedVars)
 	req := &http.Request{Method: "GET"}
-	HomePageHandler(nil, req)
+	HomePageHandler(httptest.NewRecorder(), req)
 }
 
 func TestProtectedPages(t *testing.T) {
