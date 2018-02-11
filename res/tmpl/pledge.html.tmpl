@@ -14,6 +14,7 @@
                     <p>Select the item you're boycotting from the list below</p>
                     <label class="wrapper">
                     <form action="/pledge" method="post">
+                    <input type="hidden" name="csrf" value="{{ .CSRFToken }}">
                     <div class="custom-select">
                     <select name="item" required>
                         {{ range .Items }}

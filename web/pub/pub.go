@@ -32,6 +32,8 @@ type (
 	AuthHandler interface {
 		Handler(http.ResponseWriter, *http.Request)
 		GetLoggedInUser(*http.Request) (*types.User, error)
+		GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
+		VerifyUserCSRF(*http.Request, string) error
 		LogOut(http.ResponseWriter, *http.Request) error
 	}
 
@@ -46,6 +48,7 @@ type (
 		NewItems   []types.NewItem
 		Companies  []types.Company
 		Currencies []types.Currency
+		CSRFToken  string
 	}
 )
 
@@ -121,7 +124,14 @@ func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	vars := &pageVariables{Items: items, Currencies: currencies}
+	token, err := authHandler.GetUserCSRF(w, r)
+	if err != nil {
+		log.Errorf(r, "unable to get CSRF for user: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+
+	vars := &pageVariables{Items: items, Currencies: currencies, CSRFToken: token}
 	vars = vars.withSessionVars(r)
 	render(r, w, "pledge.html.tmpl", vars)
 }
@@ -130,6 +140,13 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Errorf(r, "could not parse pledge form: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	err := authHandler.VerifyUserCSRF(r, r.FormValue("csrf"))
+	if err != nil {
+		log.Errorf(r, "CSRF verification failed: %v", err)
+		http.Error(w, "", http.StatusForbidden)
 		return
 	}
 
@@ -242,7 +259,7 @@ func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 	return pv
 }
 
-func render(r *http.Request, w http.ResponseWriter, template string, vars interface{}) {
+func render(r *http.Request, w http.ResponseWriter, template string, vars *pageVariables) {
 	err := renderer.Render(w, template, vars)
 	if err != nil {
 		log.Errorf(r, "could not render template %s: %v", template, err)

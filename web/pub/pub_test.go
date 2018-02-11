@@ -57,7 +57,7 @@ func TestPledgeListItems(t *testing.T) {
 	itemsAPI = &mockItemAPI{}
 	authHandler = &mockAuthHandler{user: &types.User{}}
 
-	expectedVars := pageVariables{Items: mockItemList}
+	expectedVars := pageVariables{Items: mockItemList, CSRFToken: "1234"}
 	renderer = getRenderMock(t, "pledge.html.tmpl", expectedVars)
 	req := &http.Request{Method: "GET"}
 	PledgePageHandler(nil, req)
@@ -105,11 +105,26 @@ func TestPledgeAuthFailure(t *testing.T) {
 	}
 }
 
-func TestPledgePost(t *testing.T) {
+func TestPledgeCSRF(t *testing.T) {
 	values := url.Values{"item": {"1"}}
 	itemsAPI = &mockItemAPI{}
 	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, value: 100, t: t}
-	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}}
+	expectedVars := pageVariables{}
+	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
+	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
+	req := &http.Request{Method: "POST", PostForm: values, URL: &url.URL{Path: "/pledge"}}
+	writer := httptest.NewRecorder()
+	PledgePageHandler(writer, req)
+	if writer.Result().StatusCode != http.StatusForbidden {
+		t.Fatalf("expected 403, got %s", writer.Result().Status)
+	}
+}
+
+func TestPledgePost(t *testing.T) {
+	values := url.Values{"item": {"1"}, "csrf": {"1234"}}
+	itemsAPI = &mockItemAPI{}
+	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, value: 100, t: t}
+	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}, CSRFToken: "1234"}
 	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
 	req := &http.Request{Method: "POST", PostForm: values, URL: &url.URL{Path: "/pledge"}}
@@ -149,6 +164,7 @@ func TestNewItemPledgePost(t *testing.T) {
 		Items: []types.Item{
 			types.Item{Make: newItem.make, Model: newItem.model, Company: types.Company{Name: newItem.company}},
 		},
+		CSRFToken: "1234",
 	}
 	renderer = getRenderMock(t, "pledge-post-new-item.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
@@ -187,6 +203,17 @@ func (p *mockPledgeAPI) checkUsed() {
 func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request)         {}
 func (a *mockAuthHandler) GetLoggedInUser(*http.Request) (*types.User, error) { return a.user, nil }
 func (a *mockAuthHandler) LogOut(http.ResponseWriter, *http.Request) error    { return nil }
+
+func (a *mockAuthHandler) VerifyUserCSRF(r *http.Request, token string) error {
+	if token != "1234" {
+		return fmt.Errorf("csrf check failed")
+	}
+	return nil
+}
+
+func (a *mockAuthHandler) GetUserCSRF(http.ResponseWriter, *http.Request) (string, error) {
+	return "1234", nil
+}
 
 func (r *mockRenderer) Render(w http.ResponseWriter, templateName string, vars interface{}) error {
 	t := r.t

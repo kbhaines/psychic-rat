@@ -54,6 +54,14 @@ func (_ *simpleAuthHandler) GetLoggedInUser(r *http.Request) (*types.User, error
 	return user, nil
 }
 
+func (s *simpleAuthHandler) GetUserCSRF(w http.ResponseWriter, r *http.Request) (string, error) {
+	return sess.NewSessionStore(r).SetCSRF(w)
+}
+
+func (s *simpleAuthHandler) VerifyUserCSRF(r *http.Request, token string) error {
+	return sess.NewSessionStore(r).VerifyCSRF(token)
+}
+
 func (s *simpleAuthHandler) authUser(session *sess.SessionStore, w http.ResponseWriter) error {
 	if err := session.Request().ParseForm(); err != nil {
 		return err

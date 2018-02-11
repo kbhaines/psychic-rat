@@ -5,10 +5,12 @@ import (
 	"encoding/gob"
 	"fmt"
 	syslog "log"
+	"math/rand"
 	"net/http"
 	"os"
 	"psychic-rat/log"
 	"psychic-rat/types"
+	"strconv"
 	"strings"
 
 	"github.com/gorilla/sessions"
@@ -21,7 +23,11 @@ type (
 	}
 )
 
-const sessionVar = "auth"
+const (
+	sessionVar = "auth"
+	userVar    = "userRecord"
+	csrfVar    = "csrf"
+)
 
 var cookieKeys [][]byte
 
@@ -40,7 +46,7 @@ func (s *SessionStore) Get() (*types.User, error) {
 		log.Logf(s.r, "Get: error retrieving: %v", err)
 		return nil, nil
 	}
-	userFromSession, found := session.Values["userRecord"]
+	userFromSession, found := session.Values[userVar]
 	if !found {
 		return nil, nil
 	}
@@ -58,9 +64,9 @@ func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 		s.store.Save(s.r, w, session)
 	}
 	if user != nil {
-		session.Values["userRecord"] = *user
+		session.Values[userVar] = *user
 	} else {
-		delete(session.Values, "userRecord")
+		delete(session.Values, userVar)
 	}
 
 	if err := session.Save(s.r, w); err != nil {
@@ -70,18 +76,52 @@ func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 	return nil
 }
 
+func (s *SessionStore) SetCSRF(w http.ResponseWriter) (string, error) {
+	session, err := s.store.Get(s.r, sessionVar)
+	if err != nil {
+		log.Logf(s.r, "SetCSRF: cannot retrieve from store, rewriting: %v", err)
+		s.store.Save(s.r, w, session)
+	}
+	token := strconv.FormatInt(rand.Int63(), 36)
+	session.Values[csrfVar] = token
+	if err := session.Save(s.r, w); err != nil {
+		return "", fmt.Errorf("SetCSRF: could not set csrf: %v", err)
+	}
+	log.Logf(s.r, "saved csrf in session")
+	return token, nil
+}
+
+func (s *SessionStore) VerifyCSRF(token string) error {
+	session, err := s.store.Get(s.r, sessionVar)
+	if err != nil {
+		log.Logf(s.r, "VerifyCSRF: cannot retrieve from store: %v", err)
+		return err
+	}
+	csrfFromSession, found := session.Values[csrfVar]
+	if !found {
+		return fmt.Errorf("no csrf token in session")
+	}
+	csrf, ok := csrfFromSession.(string)
+	if !ok {
+		return fmt.Errorf("VerifyCSRF: conversion error: %v", err)
+	}
+	if csrf != token {
+		return fmt.Errorf("token mismatch, expected %s got %s", token, csrf)
+	}
+	return nil
+}
+
 func (s *SessionStore) Request() *http.Request { return s.r }
 
 func getKeys() [][]byte {
 	keys := os.Getenv("COOKIE_KEYS")
 	if keys == "" {
-		syslog.Printf("Warning: using default cookie keys")
+		syslog.Printf("WARNING: using default cookie keys")
 		keys = "defaultnotsafe"
 	}
 	results := make([][]byte, 0, len(keys)*2)
 	for _, key := range strings.Split(keys, ",") {
 		keySha := sha256.Sum256([]byte(key))
-		syslog.Printf("key,keySha = %+v %+v\n", key, keySha)
 		results = append(results, []byte(key), keySha[:])
 	}
 	return results

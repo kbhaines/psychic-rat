@@ -55,3 +55,31 @@ func TestSaveAndClear(t *testing.T) {
 		t.Fatalf("expected nil user, got %v", *gotUser)
 	}
 }
+
+func TestCSRFSave(t *testing.T) {
+	r := http.Request{}
+	w := httptest.NewRecorder()
+	sess := NewSessionStore(&r)
+	token, err := sess.SetCSRF(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sess.VerifyCSRF(token)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCSRFFail(t *testing.T) {
+	r := http.Request{}
+	w := httptest.NewRecorder()
+	sess := NewSessionStore(&r)
+	token, err := sess.SetCSRF(w)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = sess.VerifyCSRF(token + "bad")
+	if err == nil {
+		t.Fatal(err)
+	}
+}

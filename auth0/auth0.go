@@ -60,3 +60,11 @@ func (a *auth0Handler) LogOut(w http.ResponseWriter, r *http.Request) error {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return nil
 }
+
+func (a *auth0Handler) GetUserCSRF(w http.ResponseWriter, r *http.Request) (string, error) {
+	return sess.NewSessionStore(r).SetCSRF(w)
+}
+
+func (a *auth0Handler) VerifyUserCSRF(r *http.Request, token string) error {
+	return sess.NewSessionStore(r).VerifyCSRF(token)
+}
