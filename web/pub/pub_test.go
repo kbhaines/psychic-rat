@@ -105,33 +105,11 @@ func TestPledgeAuthFailure(t *testing.T) {
 	}
 }
 
-func TestPledgeCSRF(t *testing.T) {
-	values := url.Values{"item": {"1"}}
-	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
-	req := &http.Request{Method: "POST", PostForm: values, URL: &url.URL{Path: "/pledge"}}
-	writer := httptest.NewRecorder()
-	PledgePageHandler(writer, req)
-	if writer.Result().StatusCode != http.StatusForbidden {
-		t.Fatalf("expected 403, got %s", writer.Result().Status)
-	}
-}
-
-func TestNewItemPledgeCSRF(t *testing.T) {
-	values := url.Values{"item": {"1"}}
-	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
-	req := &http.Request{Method: "POST", PostForm: values}
-	writer := httptest.NewRecorder()
-	NewItemHandler(writer, req)
-	if writer.Result().StatusCode != http.StatusForbidden {
-		t.Fatalf("expected 403, got %s", writer.Result().Status)
-	}
-}
-
 func TestPledgePost(t *testing.T) {
-	values := url.Values{"item": {"1"}, "csrf": {"1234"}}
+	values := url.Values{"item": {"1"}}
 	itemsAPI = &mockItemAPI{}
 	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, value: 100, t: t}
-	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}, CSRFToken: "1234"}
+	expectedVars := pageVariables{User: types.User{ID: "test1"}, Items: []types.Item{mockItemList[1]}}
 	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
 	req := &http.Request{Method: "POST", PostForm: values, URL: &url.URL{Path: "/pledge"}}
@@ -171,7 +149,6 @@ func TestNewItemPledgePost(t *testing.T) {
 		Items: []types.Item{
 			types.Item{Make: newItem.make, Model: newItem.model, Company: types.Company{Name: newItem.company}},
 		},
-		CSRFToken: "1234",
 	}
 	renderer = getRenderMock(t, "pledge-post-new-item.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}

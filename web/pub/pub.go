@@ -143,13 +143,6 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := authHandler.VerifyUserCSRF(r, r.FormValue("csrf"))
-	if err != nil {
-		log.Errorf(r, "CSRF verification failed: %v", err)
-		http.Error(w, "", http.StatusForbidden)
-		return
-	}
-
 	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
 		log.Errorf(r, "could not parse itemID: %v", err)

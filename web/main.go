@@ -51,7 +51,7 @@ func Handler() http.Handler {
 	hmux := http.NewServeMux()
 	handlerForDirs(hmux, "css", "js", "images")
 	for _, h := range uriHandlers {
-		hmux.HandleFunc(h.URI, addContextValues(logRequest(h.Handler)))
+		hmux.HandleFunc(h.URI, addContextValues(logRequest(csrfProtect(h.Handler))))
 	}
 	return hmux
 }
@@ -77,6 +77,29 @@ func logRequest(next http.HandlerFunc) http.HandlerFunc {
 		scw := &statusRecorder{w, 200}
 		next(scw, r)
 		log.Logf(r, "response: %d", scw.status)
+	}
+}
+
+func csrfProtect(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			next(w, r)
+			return
+		}
+		err := r.ParseForm()
+		if err != nil {
+			log.Errorf(r, "csrfProtect: failed to parse form: %v", err)
+			http.Error(w, "", http.StatusBadRequest)
+			return
+		}
+		err = sess.NewSessionStore(r).VerifyCSRF(r.FormValue("csrf"))
+		if err != nil {
+			log.Errorf(r, "csrfProtect: CSRF failed validation: %v", err)
+			http.Error(w, "", http.StatusForbidden)
+			return
+		}
+		log.Logf(r, "csrf check ok")
+		next(w, r)
 	}
 }
 
