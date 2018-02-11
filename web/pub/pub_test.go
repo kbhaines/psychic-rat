@@ -107,14 +107,21 @@ func TestPledgeAuthFailure(t *testing.T) {
 
 func TestPledgeCSRF(t *testing.T) {
 	values := url.Values{"item": {"1"}}
-	itemsAPI = &mockItemAPI{}
-	pledgeAPI = &mockPledgeAPI{userID: "test1", itemID: 1, value: 100, t: t}
-	expectedVars := pageVariables{}
-	renderer = getRenderMock(t, "pledge-post.html.tmpl", expectedVars)
 	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
 	req := &http.Request{Method: "POST", PostForm: values, URL: &url.URL{Path: "/pledge"}}
 	writer := httptest.NewRecorder()
 	PledgePageHandler(writer, req)
+	if writer.Result().StatusCode != http.StatusForbidden {
+		t.Fatalf("expected 403, got %s", writer.Result().Status)
+	}
+}
+
+func TestNewItemPledgeCSRF(t *testing.T) {
+	values := url.Values{"item": {"1"}}
+	authHandler = &mockAuthHandler{user: &types.User{ID: "test1"}}
+	req := &http.Request{Method: "POST", PostForm: values}
+	writer := httptest.NewRecorder()
+	NewItemHandler(writer, req)
 	if writer.Result().StatusCode != http.StatusForbidden {
 		t.Fatalf("expected 403, got %s", writer.Result().Status)
 	}
