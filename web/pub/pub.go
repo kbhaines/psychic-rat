@@ -101,7 +101,11 @@ func PledgePageHandler(w http.ResponseWriter, r *http.Request) {
 func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := authHandler.GetLoggedInUser(r)
-		if user == nil || err != nil {
+		if user == nil {
+			http.Redirect(w, r, "/signin", http.StatusSeeOther)
+			return
+		}
+		if err != nil {
 			log.Errorf(r.Context(), "user (%v) not logged in, or error occurred: %v", user, err)
 			http.Error(w, "", http.StatusForbidden)
 			return
