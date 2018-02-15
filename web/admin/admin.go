@@ -91,7 +91,7 @@ func AdminItemHandler(w http.ResponseWriter, r *http.Request) {
 func adminLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if !isUserAdmin(r) {
-			log.Errorf(r, "user is not admin")
+			log.Errorf(r.Context(), "user is not admin")
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
@@ -102,7 +102,7 @@ func adminLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 func isUserAdmin(r *http.Request) bool {
 	user, err := authHandler.GetLoggedInUser(r)
 	if err != nil {
-		log.Errorf(r, "could not retrieve user: %v", err)
+		log.Errorf(r.Context(), "could not retrieve user: %v", err)
 		return false
 	}
 	return user != nil && user.IsAdmin
@@ -111,19 +111,19 @@ func isUserAdmin(r *http.Request) bool {
 func listNewItems(w http.ResponseWriter, r *http.Request) {
 	newItems, err := newItemsAPI.ListNewItems()
 	if err != nil {
-		log.Errorf(r, "could not retrieve new items: %v", err)
+		log.Errorf(r.Context(), "could not retrieve new items: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	items, err := itemsAPI.ListItems()
 	if err != nil {
-		log.Errorf(r, "could not retrieve items: %v", err)
+		log.Errorf(r.Context(), "could not retrieve items: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	companies, err := companyAPI.ListCompanies()
 	if err != nil {
-		log.Errorf(r, "could not retrieve companies: %v", err)
+		log.Errorf(r.Context(), "could not retrieve companies: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -135,7 +135,7 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 func approveNewItems(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
 	if err != nil {
-		log.Errorf(r, "could not parse form: %v", err)
+		log.Errorf(r.Context(), "could not parse form: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -146,13 +146,13 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 		if err := processNewItemPost(r, nip); err != nil {
-			log.Errorf(r, "could not complete transactions for new item %d:  %v", nip.ID, err)
+			log.Errorf(r.Context(), "could not complete transactions for new item %d:  %v", nip.ID, err)
 			http.Error(w, "", http.StatusInternalServerError)
 			return
 		}
 	}
 	if reader.errors() {
-		log.Errorf(r, "errors while parsing form line %d: %v", reader.row, reader.err)
+		log.Errorf(r.Context(), "errors while parsing form line %d: %v", reader.row, reader.err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -160,11 +160,11 @@ func approveNewItems(w http.ResponseWriter, r *http.Request) {
 
 func processNewItemPost(r *http.Request, nip newItemPostData) error {
 	if nip.Delete {
-		log.Logf(r, "deleting new item %v", nip)
+		log.Logf(r.Context(), "deleting new item %v", nip)
 		return newItemsAPI.DeleteNewItem(nip.ID)
 	}
 	if !nip.Add {
-		log.Logf(r, "ignoring new item %v", nip)
+		log.Logf(r.Context(), "ignoring new item %v", nip)
 		return nil
 	}
 
@@ -172,20 +172,20 @@ func processNewItemPost(r *http.Request, nip newItemPostData) error {
 	var item *types.Item
 	var value int
 	if nip.ItemID == 0 {
-		log.Logf(r, "creating new item from %v", nip)
+		log.Logf(r.Context(), "creating new item from %v", nip)
 		var company *types.Company
 		if nip.CompanyID == 0 {
-			log.Logf(r, "creating new company from %v", nip.UserCompany)
+			log.Logf(r.Context(), "creating new company from %v", nip.UserCompany)
 			company = txn.addCompany(types.Company{Name: nip.UserCompany})
 		} else {
-			log.Logf(r, "using existing company %v", nip.CompanyID)
+			log.Logf(r.Context(), "using existing company %v", nip.CompanyID)
 			company = txn.getCompany(nip.CompanyID)
 		}
 		value = txn.currencyConversion(nip.CurrencyID, nip.Value)
 		item = txn.addItem(types.Item{Company: *company, Make: nip.UserMake, Model: nip.UserModel, USDValue: value, NewItemID: nip.ID})
-		log.Logf(r, "item added: %v", item)
+		log.Logf(r.Context(), "item added: %v", item)
 	} else {
-		log.Logf(r, "using existing item %d", nip.ItemID)
+		log.Logf(r.Context(), "using existing item %d", nip.ItemID)
 		item = txn.getItem(nip.ItemID)
 	}
 	txn.markUsed(nip.ID)

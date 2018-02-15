@@ -43,7 +43,7 @@ func NewSessionStore(r *http.Request) *SessionStore {
 func (s *SessionStore) Get() (*types.User, error) {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Logf(s.r, "Get: error retrieving: %v", err)
+		log.Logf(s.r.Context(), "Get: error retrieving: %v", err)
 		return nil, nil
 	}
 	userFromSession, found := session.Values[userVar]
@@ -60,7 +60,7 @@ func (s *SessionStore) Get() (*types.User, error) {
 func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Logf(s.r, "save: cannot retrieve from store, rewriting: %v", err)
+		log.Logf(s.r.Context(), "save: cannot retrieve from store, rewriting: %v", err)
 		s.store.Save(s.r, w, session)
 	}
 	if user != nil {
@@ -72,14 +72,14 @@ func (s *SessionStore) Save(user *types.User, w http.ResponseWriter) error {
 	if err := session.Save(s.r, w); err != nil {
 		return err
 	}
-	log.Logf(s.r, "saved user %v in session", user)
+	log.Logf(s.r.Context(), "saved user %v in session", user)
 	return nil
 }
 
 func (s *SessionStore) SetCSRF(w http.ResponseWriter) (string, error) {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Logf(s.r, "SetCSRF: cannot retrieve from store, rewriting: %v", err)
+		log.Logf(s.r.Context(), "SetCSRF: cannot retrieve from store, rewriting: %v", err)
 		s.store.Save(s.r, w, session)
 	}
 	token := strconv.FormatInt(rand.Int63(), 36)
@@ -87,14 +87,14 @@ func (s *SessionStore) SetCSRF(w http.ResponseWriter) (string, error) {
 	if err := session.Save(s.r, w); err != nil {
 		return "", fmt.Errorf("SetCSRF: could not set csrf: %v", err)
 	}
-	log.Logf(s.r, "saved csrf in session")
+	log.Logf(s.r.Context(), "saved csrf in session")
 	return token, nil
 }
 
 func (s *SessionStore) VerifyCSRF(token string) error {
 	session, err := s.store.Get(s.r, sessionVar)
 	if err != nil {
-		log.Logf(s.r, "VerifyCSRF: cannot retrieve from store: %v", err)
+		log.Logf(s.r.Context(), "VerifyCSRF: cannot retrieve from store: %v", err)
 		return err
 	}
 	csrfFromSession, found := session.Values[csrfVar]

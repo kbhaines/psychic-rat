@@ -33,7 +33,6 @@ type (
 		Handler(http.ResponseWriter, *http.Request)
 		GetLoggedInUser(*http.Request) (*types.User, error)
 		GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
-		VerifyUserCSRF(*http.Request, string) error
 		LogOut(http.ResponseWriter, *http.Request) error
 	}
 
@@ -103,7 +102,7 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		user, err := authHandler.GetLoggedInUser(r)
 		if user == nil || err != nil {
-			log.Errorf(r, "user (%v) not logged in, or error occurred: %v", user, err)
+			log.Errorf(r.Context(), "user (%v) not logged in, or error occurred: %v", user, err)
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
@@ -114,19 +113,19 @@ func userLoginRequired(h http.HandlerFunc) http.HandlerFunc {
 func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 	items, err := itemsAPI.ListItems()
 	if err != nil {
-		log.Errorf(r, "%v", err)
+		log.Errorf(r.Context(), "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	currencies, err := itemsAPI.ListCurrencies()
 	if err != nil {
-		log.Errorf(r, "%v", err)
+		log.Errorf(r.Context(), "%v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
 	token, err := authHandler.GetUserCSRF(w, r)
 	if err != nil {
-		log.Errorf(r, "unable to get CSRF for user: %v", err)
+		log.Errorf(r.Context(), "unable to get CSRF for user: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
@@ -138,14 +137,14 @@ func pledgeGetHandler(w http.ResponseWriter, r *http.Request) {
 
 func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		log.Errorf(r, "could not parse pledge form: %v", err)
+		log.Errorf(r.Context(), "could not parse pledge form: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 
 	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
-		log.Errorf(r, "could not parse itemID: %v", err)
+		log.Errorf(r.Context(), "could not parse itemID: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -153,7 +152,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	item, err := itemsAPI.GetItem(itemId)
 	if err != nil {
-		log.Errorf(r, "could not get item %v: %v", itemId, err)
+		log.Errorf(r.Context(), "could not get item %v: %v", itemId, err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -161,14 +160,14 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	user, _ := authHandler.GetLoggedInUser(r)
 	userId := user.ID
 
-	log.Logf(r, "pledge item %v from user %v", itemId, userId)
+	log.Logf(r.Context(), "pledge item %v from user %v", itemId, userId)
 	pledge, err := pledgeAPI.AddPledge(itemId, userId, item.USDValue)
 	if err != nil {
-		log.Errorf(r, "unable to pledge: ", err)
+		log.Errorf(r.Context(), "unable to pledge: ", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}
-	log.Logf(r, "pledge %v created", pledge.PledgeID)
+	log.Logf(r.Context(), "pledge %v created", pledge.PledgeID)
 
 	http.Redirect(w, r, "/thanks", http.StatusSeeOther)
 }
@@ -192,7 +191,7 @@ func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 
 func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
-		log.Errorf(r, "could not parse new item form: %v", err)
+		log.Errorf(r.Context(), "could not parse new item form: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -207,19 +206,19 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	value := r.FormValue("value")
 
 	if company == "" || model == "" || make == "" || currencyID == "" || value == "" {
-		log.Errorf(r, "new item request missing data: %v", r.Form)
+		log.Errorf(r.Context(), "new item request missing data: %v", r.Form)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	valueInt, err := strconv.ParseInt(r.FormValue("value"), 10, 32)
 	if err != nil {
-		log.Errorf(r, "could not parse value of new item: %v", err)
+		log.Errorf(r.Context(), "could not parse value of new item: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
 	currencyIDInt, err := strconv.ParseInt(r.FormValue("currencyID"), 10, 32)
 	if err != nil {
-		log.Errorf(r, "could not parse value of currencyID: %v", err)
+		log.Errorf(r.Context(), "could not parse value of currencyID: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -227,7 +226,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
 	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
-		log.Errorf(r, "could not add new item %v: %v", newItem, err)
+		log.Errorf(r.Context(), "could not add new item %v: %v", newItem, err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}
@@ -255,7 +254,7 @@ func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 func render(r *http.Request, w http.ResponseWriter, template string, vars *pageVariables) {
 	err := renderer.Render(w, template, vars)
 	if err != nil {
-		log.Errorf(r, "could not render template %s: %v", template, err)
+		log.Errorf(r.Context(), "could not render template %s: %v", template, err)
 		http.Error(w, "", http.StatusInternalServerError)
 	}
 	return

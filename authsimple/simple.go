@@ -1,9 +1,10 @@
 package authsimple
 
 import (
+	"context"
 	"fmt"
-	"log"
 	"net/http"
+	"psychic-rat/log"
 	"psychic-rat/sess"
 	"psychic-rat/types"
 )
@@ -27,7 +28,7 @@ func NewAuthSimple(u UserAPI, r Renderer) *simpleAuthHandler {
 
 func (s *simpleAuthHandler) SignIn(sess *sess.SessionStore, w http.ResponseWriter) {
 	if err := s.authUser(sess, w); err != nil {
-		log.Print(err)
+		log.Logf(context.Background(), "%v", err)
 		http.Error(w, "authentication failed", http.StatusForbidden)
 		return
 	}
@@ -38,7 +39,7 @@ func (s *simpleAuthHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	s.SignIn(session, w)
 	_, err := s.GetLoggedInUser(r)
 	if err != nil {
-		log.Print(err)
+		log.Logf(context.Background(), "%v", err)
 		http.Error(w, "authentication failed", http.StatusForbidden)
 		return
 	}
@@ -49,17 +50,13 @@ func (_ *simpleAuthHandler) GetLoggedInUser(r *http.Request) (*types.User, error
 	s := sess.NewSessionStore(r)
 	user, err := s.Get()
 	if err != nil {
-		log.Printf("GetLoggedInUser: error getting session: %v", err)
+		log.Logf(context.Background(), "GetLoggedInUser: error getting session: %v", err)
 	}
 	return user, nil
 }
 
 func (s *simpleAuthHandler) GetUserCSRF(w http.ResponseWriter, r *http.Request) (string, error) {
 	return sess.NewSessionStore(r).SetCSRF(w)
-}
-
-func (s *simpleAuthHandler) VerifyUserCSRF(r *http.Request, token string) error {
-	return sess.NewSessionStore(r).VerifyCSRF(token)
 }
 
 func (s *simpleAuthHandler) authUser(session *sess.SessionStore, w http.ResponseWriter) error {

@@ -73,10 +73,10 @@ func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 func logRequest(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		request := fmt.Sprintf("request: %s %s source: %s", r.Method, r.RequestURI, r.RemoteAddr)
-		log.Logf(r, request)
+		log.Logf(r.Context(), request)
 		scw := &statusRecorder{w, 200}
 		next(scw, r)
-		log.Logf(r, "response: %d", scw.status)
+		log.Logf(r.Context(), "response: %d", scw.status)
 	}
 }
 
@@ -88,17 +88,17 @@ func csrfProtect(next http.HandlerFunc) http.HandlerFunc {
 		}
 		err := r.ParseForm()
 		if err != nil {
-			log.Errorf(r, "csrfProtect: failed to parse form: %v", err)
+			log.Errorf(r.Context(), "csrfProtect: failed to parse form: %v", err)
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
 		err = sess.NewSessionStore(r).VerifyCSRF(r.FormValue("csrf"))
 		if err != nil {
-			log.Errorf(r, "csrfProtect: CSRF failed validation: %v", err)
+			log.Errorf(r.Context(), "csrfProtect: CSRF failed validation: %v", err)
 			http.Error(w, "", http.StatusForbidden)
 			return
 		}
-		log.Logf(r, "csrf check ok")
+		log.Logf(r.Context(), "csrf check ok")
 		next(w, r)
 	}
 }
