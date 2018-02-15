@@ -12,6 +12,7 @@ import (
 	"psychic-rat/types"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/sessions"
 )
@@ -34,6 +35,7 @@ var cookieKeys [][]byte
 func init() {
 	gob.Register(types.User{})
 	cookieKeys = getKeys()
+	rand.Seed(time.Now().UTC().UnixNano())
 }
 
 func NewSessionStore(r *http.Request) *SessionStore {
