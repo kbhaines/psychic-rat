@@ -7,6 +7,7 @@ import (
 	"os"
 	"psychic-rat/auth0"
 	"psychic-rat/authsimple"
+	"psychic-rat/sess"
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
@@ -22,6 +23,7 @@ var (
 		sqldb          bool
 		cacheTemplates bool
 		listenOn       string
+		mockCSRF       bool
 	}
 )
 
@@ -30,6 +32,7 @@ func main() {
 	flag.BoolVar(&flags.enableAuth0, "auth0", false, "enable auth0 function")
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
+	flag.BoolVar(&flags.mockCSRF, "mockcsrf", false, "mock CSRF token")
 	flag.Parse()
 
 	initModules()
@@ -45,6 +48,7 @@ func initModules() {
 		panic("unable to init db: " + err.Error())
 	}
 
+	sess.Init(flags.mockCSRF)
 	auth0.Init(db)
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	var authHandler pub.AuthHandler

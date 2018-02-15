@@ -30,12 +30,19 @@ const (
 	csrfVar    = "csrf"
 )
 
-var cookieKeys [][]byte
+var (
+	cookieKeys    [][]byte
+	csrfGenerator = func() string { return strconv.FormatInt(rand.Int63(), 36) }
+)
 
 func init() {
 	gob.Register(types.User{})
 	cookieKeys = getKeys()
 	rand.Seed(time.Now().UTC().UnixNano())
+}
+
+func Init(useMockCSRF bool) {
+	csrfGenerator = func() string { return "mockcsrf" }
 }
 
 func NewSessionStore(r *http.Request) *SessionStore {
@@ -84,7 +91,7 @@ func (s *SessionStore) SetCSRF(w http.ResponseWriter) (string, error) {
 		log.Logf(s.r.Context(), "SetCSRF: cannot retrieve from store, rewriting: %v", err)
 		s.store.Save(s.r, w, session)
 	}
-	token := strconv.FormatInt(rand.Int63(), 36)
+	token := csrfGenerator()
 	session.Values[csrfVar] = token
 	if err := session.Save(s.r, w); err != nil {
 		return "", fmt.Errorf("SetCSRF: could not set csrf: %v", err)
