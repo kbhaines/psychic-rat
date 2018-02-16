@@ -82,13 +82,17 @@ func TestProtectedPages(t *testing.T) {
 	renderer = getRenderMock(t, "", pageVariables{})
 	itemsAPI = &mockItemAPI{}
 	authHandler = &mockAuthHandler{}
-	req := &http.Request{Method: "GET"}
+	req := &http.Request{Method: "GET", URL: &url.URL{Path: "/test"}}
 	for _, page := range protectedPages {
 		writer := httptest.NewRecorder()
 		page(writer, req)
 		result := writer.Result()
-		if result.StatusCode != http.StatusForbidden {
+		if result.StatusCode != http.StatusSeeOther {
 			t.Errorf("testing %v, got %v, but wanted %v", page, result.StatusCode, http.StatusForbidden)
+		}
+		loc, _ := result.Location()
+		if loc.Path != "/signin" {
+			t.Errorf("testing %v, expected redirect to /signin, got %s", page, loc.Path)
 		}
 	}
 }
@@ -96,10 +100,10 @@ func TestProtectedPages(t *testing.T) {
 func TestPledgeAuthFailure(t *testing.T) {
 	for _, method := range []string{"GET", "POST"} {
 		writer := httptest.NewRecorder()
-		req := &http.Request{Method: method}
+		req := &http.Request{Method: method, URL: &url.URL{Path: "/pledge"}}
 		PledgePageHandler(writer, req)
 		result := writer.Result()
-		if result.StatusCode != http.StatusForbidden {
+		if result.StatusCode != http.StatusSeeOther {
 			t.Errorf("testing %v, got %v, but wanted %v", method, result.StatusCode, http.StatusForbidden)
 		}
 	}

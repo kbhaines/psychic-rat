@@ -52,6 +52,7 @@ type (
 
 	AuthHandler interface {
 		GetLoggedInUser(*http.Request) (*types.User, error)
+		GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
 	}
 
 	pageVariables struct {
@@ -59,6 +60,7 @@ type (
 		NewItems  []types.NewItem
 		Companies []types.Company
 		User      types.User
+		CSRFToken string
 	}
 )
 
@@ -128,7 +130,13 @@ func listNewItems(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	vars := &pageVariables{Items: items, NewItems: newItems, Companies: companies}
+	token, err := authHandler.GetUserCSRF(w, r)
+	if err != nil {
+		log.Errorf(r.Context(), "unable to get CSRF for user: %v", err)
+		http.Error(w, "", http.StatusInternalServerError)
+		return
+	}
+	vars := &pageVariables{Items: items, NewItems: newItems, Companies: companies, CSRFToken: token}
 	renderer.Render(w, "admin-new-items.html.tmpl", vars)
 }
 

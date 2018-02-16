@@ -20,6 +20,8 @@
 {{ end -}}
 
 <form action="/admin/newitems" method="post">
+<input type="hidden" name="csrf" value="{{ .CSRFToken }}">
+
 <table class="items-table">
     <tr>
         <td>Action</td>

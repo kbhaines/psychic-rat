@@ -124,10 +124,11 @@ func TestBadnewItemPost(t *testing.T) {
 	client := http.Client{Jar: cookie}
 
 	post := url.Values{
-		"id[]":       []string{"0"},
-		"action[]":   []string{"blah"},
-		"isPledge[]": []string{"0"},
-		"userID[]":   []string{"test1"},
+		"id[]":       {"0"},
+		"action[]":   {"blah"},
+		"isPledge[]": {"0"},
+		"userID[]":   {"test1"},
+		"csrf":       {getCSRFToken(client, testUrl+"/admin/newitems", t)},
 	}
 	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
@@ -158,6 +159,7 @@ func TestNewItemAdminPost(t *testing.T) {
 			isPledge().
 			selectToAdd()
 
+		pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
 		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
@@ -215,6 +217,8 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 
 	pl := postLine{v: url.Values{}}
 	pl.newPostLine(6).userID(testNewItems[5].UserID).existingItem(1).selectToAdd()
+
+	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	newItems, err := db.ListItems()
@@ -245,6 +249,7 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	ni := testNewItems[5]
 
 	pl.newPostLine(6).userID(ni.UserID).existingCompany(1).currency(ni.CurrencyID).value(ni.Value).selectToAdd()
+	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	newCompanies, err := db.ListCompanies()
@@ -269,6 +274,7 @@ func TestDeleteNewItems(t *testing.T) {
 	pl := postLine{v: url.Values{}}
 	ni := testNewItems[5]
 	pl.newPostLine(6).userID(ni.UserID).selectToDelete()
+	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
 	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	testPageStatus(resp, err, http.StatusOK, t)
@@ -281,6 +287,7 @@ func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
 	cookie := loginUser("admin", t)
 	client := http.Client{Jar: cookie}
 	v := url.Values{"action[]": []string{"abc"}, "id[]": []string{"abc"}}
+	v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
 	resp, err := client.PostForm(testUrl+"/admin/newitems", v)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }

@@ -87,8 +87,8 @@ func TestNewItem(t *testing.T) {
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 
-	csrf := getCSRFToken(client, testUrl+"/newitem", t)
-	values := url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}, "csrf": {csrf}}
+	values := url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}}
+	values.Add("csrf", getCSRFToken(client, testUrl+"/pledge", t))
 	resp, err := client.PostForm(testUrl+"/newitem", values)
 	testPageStatus(resp, err, http.StatusOK, t)
 }
@@ -111,7 +111,7 @@ func TestBadNewItems(t *testing.T) {
 	}
 
 	for _, d := range values {
-		d.Add("csrf", getCSRFToken(client, testUrl+"/newitem", t))
+		d.Add("csrf", getCSRFToken(client, testUrl+"/pledge", t))
 		resp, err := client.PostForm(testUrl+"/newitem", d)
 		testPageStatus(resp, err, http.StatusBadRequest, t)
 	}
