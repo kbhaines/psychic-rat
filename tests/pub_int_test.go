@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/url"
 	"testing"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 func TestHomePage(t *testing.T) {
@@ -56,12 +58,27 @@ func TestHappyPathPledge(t *testing.T) {
 	defer cleanUp(server, db)
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
-	data := url.Values{"item": {"1"}}
+	csrf := getCSRFToken(client, testUrl+"/pledge", t)
+	data := url.Values{"item": {"1"}, "csrf": {csrf}}
 	resp, err := client.PostForm(testUrl+"/pledge", data)
 	testPageStatus(resp, err, http.StatusOK, t)
 	if actual := resp.Request.URL.String(); actual != testUrl+"/thanks" {
 		t.Fatalf("expected to land at /thanks, got %s", actual)
 	}
+}
+
+func getCSRFToken(client http.Client, url string, t *testing.T) string {
+	t.Helper()
+	resp, err := client.Get(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromResponse(resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := doc.Find("input[name=csrf]").AttrOr("value", "")
+	return token
 }
 
 func TestNewItem(t *testing.T) {
@@ -70,7 +87,8 @@ func TestNewItem(t *testing.T) {
 	cookie := loginUser("test1", t)
 	client := http.Client{Jar: cookie}
 
-	values := url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}}
+	csrf := getCSRFToken(client, testUrl+"/newitem", t)
+	values := url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}, "csrf": {csrf}}
 	resp, err := client.PostForm(testUrl+"/newitem", values)
 	testPageStatus(resp, err, http.StatusOK, t)
 }
@@ -93,6 +111,7 @@ func TestBadNewItems(t *testing.T) {
 	}
 
 	for _, d := range values {
+		d.Add("csrf", getCSRFToken(client, testUrl+"/newitem", t))
 		resp, err := client.PostForm(testUrl+"/newitem", d)
 		testPageStatus(resp, err, http.StatusBadRequest, t)
 	}

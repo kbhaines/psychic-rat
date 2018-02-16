@@ -32,6 +32,7 @@
                     so there may be a delay of up to 24 hours.</p>
 
                     <form action="/newitem" method="post">
+                    <input type="hidden" name="csrf" value="{{ .CSRFToken }}">
                         <table>
                             <tr><td>Manufacturer/Company</td><td><input name="company"></td></tr>
                             <tr><td>Make</td><td><input name="make"></td></tr>
