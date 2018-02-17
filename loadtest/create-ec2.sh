@@ -20,13 +20,13 @@ container_id=`$SSH docker run -d --name pr -e COOKIE_KEYS=loadtest -v /home/ubun
 echo $host with instance ID $iid is ready for load test
 echo container on host is $container_id
 
-sed "s/target/$host/" targets.tmpl > targets
+sed "s/target:/$host:/" targets.tmpl > targets
 echo Starting load test
 ./loadtest.sh 5s
 
 echo Done. Retrieving logs and db files
 
-$SSH docker logs pr > dockerlogs
+$SSH docker logs pr &> dockerlogs
 $SSH docker exec pr sqlite3 pr.dat .dump \| gzip  | gunzip -c > dbdump
 
 aws ec2 terminate-instances --instance-ids $iid
