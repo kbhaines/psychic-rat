@@ -42,7 +42,9 @@ func init() {
 }
 
 func Init(useMockCSRF bool) {
-	csrfGenerator = func() string { return "mockcsrf" }
+	if useMockCSRF {
+		csrfGenerator = func() string { return "mockcsrf" }
+	}
 }
 
 func NewSessionStore(r *http.Request) *SessionStore {
