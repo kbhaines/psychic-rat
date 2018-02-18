@@ -1,14 +1,15 @@
 #!/bin/sh
 
 
-if [ $# -ne 3 ];then
-    echo "Usage: $0 <keyfile> <aws-keyname> <instance-type>"
+if [ $# -ne 4 ];then
+    echo "Usage: $0 <keyfile> <aws-keyname> <instance-type> <duration>"
     exit
 fi
 
 KEYFILE=$1
 AWSKEY=$2
 TYPE=$3
+DURATION=$4
 
 set -x
 iid=`aws ec2 run-instances --image-id ami-1b791862 --security-group-ids sg-88a76cf2 --instance-type $TYPE --key-name $AWSKEY --query "Instances[0].InstanceId"`
@@ -31,7 +32,7 @@ echo $host with instance ID $iid is ready for load test
 echo container on host is $container_id
 
 echo Starting load test
-./loadtest.sh $host:8080 5s
+./loadtest.sh $host:8080 $DURATION
 
 echo Done. Retrieving logs and db files
 
