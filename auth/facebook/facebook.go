@@ -42,7 +42,7 @@ func (a *handler) Handler(writer http.ResponseWriter, request *http.Request) {
 		AuthURL string
 		User    types.User
 	}{
-		AuthURL: fmt.Sprintf("%s?client_id=%s&redirect_uri=%s&state=%s", authURL, a.clientID, a.callbackURL, state),
+		AuthURL: fmt.Sprintf("%s?client_id=%s&redirect_uri=%s&state=%s&scope=email,public_profile", authURL, a.clientID, a.callbackURL, state),
 	}
 	a.renderer.Render(writer, "signin-facebook.html.tmpl", vars)
 }
