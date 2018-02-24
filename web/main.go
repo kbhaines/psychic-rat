@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
+	"psychic-rat/auth/facebook"
 	"psychic-rat/auth0"
 	"psychic-rat/log"
 	"psychic-rat/sess"
@@ -40,6 +41,7 @@ var (
 		{ThanksPage, pub.ThanksPageHandler},
 		{Callback, auth0.CallbackHandler},
 		{AdminNewItems, admin.AdminItemHandler},
+		{"/auth/facebook", facebook.CallbackHandler},
 	}
 
 	flags struct {

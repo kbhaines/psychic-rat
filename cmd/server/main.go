@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"psychic-rat/auth/facebook"
 	"psychic-rat/auth0"
 	"psychic-rat/authsimple"
 	"psychic-rat/sess"
@@ -50,10 +51,11 @@ func initModules() {
 
 	sess.Init(flags.mockCSRF)
 	auth0.Init(db)
+	facebook.Init(db)
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	var authHandler pub.AuthHandler
 	if flags.enableAuth0 {
-		authHandler = auth0.NewAuth0Handler(renderer, os.Getenv("AUTH0_DOMAIN"), os.Getenv("AUTH0_CALLBACK_URL"), os.Getenv("AUTH0_CLIENT_ID"))
+		authHandler = facebook.NewHandler(renderer, "http://localhost:8080/auth/facebook", os.Getenv("FACEBOOK_CLIENT_ID"))
 	} else {
 		authHandler = authsimple.NewAuthSimple(db, renderer)
 	}
