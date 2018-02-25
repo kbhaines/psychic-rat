@@ -68,7 +68,6 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "twitter token error", http.StatusInternalServerError)
 		return
 	}
-	log.Logf(r.Context(), "session: %+v", sess.Values)
 	token, tokenOK := sess.Values["token"].(*oauth.RequestToken)
 	if !tokenOK {
 		log.Errorf(r.Context(), "unable to get token (%s)", token)
@@ -78,9 +77,9 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 
 	values := r.URL.Query()
 	verificationCode := values.Get("oauth_verifier")
-	tokenKey := values.Get("oauth_token")
+	//tokenKey := values.Get("oauth_token")
 
-	log.Logf(r.Context(), "token: %s, tokenKey: %s", token.Token, tokenKey)
+	//log.Logf(r.Context(), "token: %s, tokenKey: %s", token.Token, tokenKey)
 
 	c := newConsumer()
 	accessToken, err := c.AuthorizeToken(token, verificationCode)
@@ -98,6 +97,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	*/
 
+	// todo: Get is deprecated
 	response, err := c.Get(
 		endpointProfile,
 		map[string]string{"include_entities": "false", "skip_status": "true", "include_email": "true"},
