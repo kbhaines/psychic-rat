@@ -110,23 +110,25 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	bits, err := ioutil.ReadAll(response.Body)
 	fmt.Fprintf(w, "The newest item in your home timeline is: "+string(bits))
 
-	/*
+	response, err = c.Get(
+		endpointProfile,
+		map[string]string{"include_entities": "false", "skip_status": "true", "include_email": "true"},
+		accessToken)
+	if err != nil {
+		log.Errorf(r.Context(), "profile error: %v", err)
+		http.Error(w, "token process error", http.StatusInternalServerError)
+		return
+	}
+	defer response.Body.Close()
 
-		response, err := conf.Get(
-			endpointProfile,
-			map[string]string{"include_entities": "false", "skip_status": "true", "include_email": "true"},
-			sess.AccessToken)
-		if err != nil {
-			return user, err
-		}
-		defer response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		log.Errorf(r.Context(), "profile error: %v", err)
+		http.Error(w, "token process error", http.StatusInternalServerError)
+		return
+	}
+	user, err := userFromReader(response.Body)
+	log.Logf(r.Context(), "user: %v", user)
 
-		if response.StatusCode != http.StatusOK {
-			return user, fmt.Errorf("%s responded with a %d trying to fetch user information", p.providerName, response.StatusCode)
-		}
-		user, err := userFromReader(response.Body)
-
-	*/
 	return
 }
 
