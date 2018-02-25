@@ -3,9 +3,7 @@ package twitter
 import (
 	"encoding/gob"
 	"encoding/json"
-	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"psychic-rat/log"
@@ -92,25 +90,15 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	client, err := c.MakeHttpClient(accessToken)
+	/*client, err := c.MakeHttpClient(accessToken)
 	if err != nil {
 		log.Errorf(r.Context(), "unable to make client: %v", err)
 		http.Error(w, "token process error", http.StatusInternalServerError)
 		return
 	}
+	*/
 
-	response, err := client.Get("https://api.twitter.com/1.1/statuses/home_timeline.json?count=1")
-	if err != nil {
-		log.Errorf(r.Context(), "cant get stream", err)
-		http.Error(w, "token process error", http.StatusInternalServerError)
-		return
-	}
-	defer response.Body.Close()
-
-	bits, err := ioutil.ReadAll(response.Body)
-	fmt.Fprintf(w, "The newest item in your home timeline is: "+string(bits))
-
-	response, err = c.Get(
+	response, err := c.Get(
 		endpointProfile,
 		map[string]string{"include_entities": "false", "skip_status": "true", "include_email": "true"},
 		accessToken)
@@ -128,7 +116,6 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	user, err := userFromReader(response.Body)
 	log.Logf(r.Context(), "user: %v", user)
-
 	return
 }
 
