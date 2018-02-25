@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/http"
 	"psychic-rat/auth/facebook"
+	"psychic-rat/auth/twitter"
 	"psychic-rat/auth0"
 	"psychic-rat/log"
 	"psychic-rat/sess"
@@ -42,6 +43,8 @@ var (
 		{Callback, auth0.CallbackHandler},
 		{AdminNewItems, admin.AdminItemHandler},
 		{"/auth/facebook", facebook.CallbackHandler},
+		{"/auth/twitter", twitter.BeginAuth},
+		{"/auth/twitter/callback", twitter.CallbackHandler},
 	}
 
 	flags struct {
