@@ -57,7 +57,7 @@ func initModules() {
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	var authHandler pub.AuthHandler
 	if flags.enableAuth0 {
-		authHandler = facebook.NewHandler(renderer, "http://localhost:8080/auth/facebook", os.Getenv("FACEBOOK_CLIENT_ID"))
+		authHandler = auth0.NewAuth0Handler(renderer, "me", "http://localhost:8080/auth/facebook", os.Getenv("FACEBOOK_CLIENT_ID"))
 	} else {
 		authHandler = authsimple.NewAuthSimple(db, renderer)
 	}
