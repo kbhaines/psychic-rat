@@ -83,7 +83,13 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func SignInPageHandler(w http.ResponseWriter, r *http.Request) {
-	dispatch.ExecHandlerForMethod(dispatch.MethodSelector{"GET": authHandler.Handler}, w, r)
+	selector := dispatch.MethodSelector{
+		"GET": func(w http.ResponseWriter, r *http.Request) {
+			vars := (&pageVariables{}).withSessionVars(r)
+			render(r, w, "signin.html.tmpl", vars)
+		},
+	}
+	dispatch.ExecHandlerForMethod(selector, w, r)
 }
 
 func SignOutPageHandler(w http.ResponseWriter, r *http.Request) {

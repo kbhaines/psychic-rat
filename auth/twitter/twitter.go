@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"psychic-rat/log"
+	"psychic-rat/sess"
 	"psychic-rat/types"
 
 	"github.com/gorilla/sessions"
@@ -22,17 +23,29 @@ const (
 	tokenCookie     = "oauth-twitter"
 )
 
-type handler struct {
-	callbackURL  string
-	clientID     string
-	clientSecret string
-}
+type (
+	handler struct {
+		callbackURL  string
+		clientID     string
+		clientSecret string
+	}
+
+	UserAPI interface {
+		GetUser(id string) (*types.User, error)
+		AddUser(types.User) error
+	}
+)
 
 var (
+	userAPI      UserAPI
 	clientID     = os.Getenv("TWITTER_CLIENT_ID")
 	clientSecret = os.Getenv("TWITTER_CLIENT_SECRET")
 	cookieStore  = sessions.NewCookieStore([]byte(os.Getenv("COOKIE_KEYS")))
 )
+
+func Init(a UserAPI) {
+	userAPI = a
+}
 
 func init() {
 	gob.Register(&oauth.RequestToken{})
@@ -62,13 +75,13 @@ func BeginAuth(w http.ResponseWriter, r *http.Request) {
 }
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
-	sess, err := cookieStore.Get(r, tokenCookie)
+	sessv, err := cookieStore.Get(r, tokenCookie)
 	if err != nil {
 		log.Errorf(r.Context(), "unable to get twitter cookie from user session: %v", err)
 		http.Error(w, "twitter token error", http.StatusInternalServerError)
 		return
 	}
-	token, tokenOK := sess.Values["token"].(*oauth.RequestToken)
+	token, tokenOK := sessv.Values["token"].(*oauth.RequestToken)
 	if !tokenOK {
 		log.Errorf(r.Context(), "unable to get token (%s)", token)
 		http.Error(w, "token process error", http.StatusInternalServerError)
@@ -114,8 +127,20 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "token process error", http.StatusInternalServerError)
 		return
 	}
-	user, err := userFromReader(response.Body)
-	log.Logf(r.Context(), "user: %v", user)
+	userProfile, err := userFromReader(response.Body)
+	log.Logf(r.Context(), "user: %v", userProfile)
+
+	userRecord, err := addUserIfNotExists(userProfile)
+	if err != nil {
+		log.Errorf(r.Context(), "unable to create a user %v :%v", userRecord, err)
+		return
+	}
+	err = sess.NewSessionStore(r).Save(userRecord, w)
+	if err != nil {
+		log.Errorf(r.Context(), "unable to save user into session: %v", err)
+		return
+	}
+	http.Redirect(w, r, "/", http.StatusSeeOther)
 	return
 }
 
@@ -150,4 +175,12 @@ func userFromReader(reader io.Reader) (*types.User, error) {
 	user.Country = u.Location
 
 	return user, err
+}
+
+func addUserIfNotExists(u *types.User) (*types.User, error) {
+	existing, err := userAPI.GetUser(u.ID)
+	if err != nil {
+		return u, userAPI.AddUser(*u)
+	}
+	return existing, nil
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"psychic-rat/sess"
 	"psychic-rat/types"
 )
@@ -17,7 +18,6 @@ const (
 type (
 	handler struct {
 		renderer    Renderer
-		domain      string
 		callbackURL string
 		clientID    string
 	}
@@ -35,7 +35,18 @@ func NewHandler(rendr Renderer, callback string, clientID string) *handler {
 	}
 }
 
-var state = "12345"
+var (
+	state        = "12345"
+	clientID     = os.Getenv("FACEBOOK_CLIENT_ID")
+	clientSecret = os.Getenv("FACEBOOK_CLIENT_SECRET")
+	callbackURL  = "http://localhost:8080/auth/facebook/callback"
+)
+
+func BeginAuth(w http.ResponseWriter, r *http.Request) {
+	url := fmt.Sprintf("%s?client_id=%s&redirect_uri=%s&state=%s&scope=email,public_profile", authURL, clientID, callbackURL, state)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	return
+}
 
 func (a *handler) Handler(writer http.ResponseWriter, request *http.Request) {
 	vars := struct {

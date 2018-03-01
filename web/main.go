@@ -42,7 +42,8 @@ var (
 		{ThanksPage, pub.ThanksPageHandler},
 		{Callback, auth0.CallbackHandler},
 		{AdminNewItems, admin.AdminItemHandler},
-		{"/auth/facebook", facebook.CallbackHandler},
+		{"/auth/facebook", facebook.BeginAuth},
+		{"/auth/facebook/callback", facebook.CallbackHandler},
 		{"/auth/twitter", twitter.BeginAuth},
 		{"/auth/twitter/callback", twitter.CallbackHandler},
 	}

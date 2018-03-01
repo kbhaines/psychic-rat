@@ -1,9 +1,36 @@
 {{ template "header.html.tmpl" . }}
 
-{{ if eq .User.ID "" }}
-<h1>Sign in</h1>
-{{ else }}
-    <h1> Already signed in as {{ .User.Fullname }} </h1>
-{{ end }}
+<div id="page">
+  <div class="container">
+    <div class="row">
+      <div class="3u">
+        <section id="sidebard2">
+            {{ template "home-sidebar-wc.html.tmpl" . }}
+        </section>
+      </div>
+      <div class="9u skel-cell-important">
+        <section id="content" >
+            <header> 
+                <h2>Before you sign in...</h2> 
+            </header>
+            <p>We use <a href="http://www.auth0.com">Auth0</a> as an external provider to identify you on this site. When you click 'I Agree' below, you will be taken to Auth0 to verify your identity using Facebook, Twitter or Google+. You will then be returned to this site.</p>
+           
+            <p>We don't support signing up directly to this site at the moment. </p>
 
+            <ul style="padding-left:10px">
+                <li><span class="fa fa-dot-circle-o" style="padding-right:10px"></span>We use your details to track what pledges you make.</li><br>
+                <li><span class="fa fa-dot-circle-o" style="padding-right:10px"></span>We cannot use your details to access any aspects of your social media accounts.</li><br>
+                <li><span class="fa fa-dot-circle-o" style="padding-right:10px"></span>We may show your first name, country and pledge on our totaliser feed.</li><br>
+                <li><span class="fa fa-dot-circle-o" style="padding-right:10px"></span>We use a cookie to identify you once you have signed in. The cookie will expire after 30 days, after which you will need to sign-in again.</li><br>
+                <li><span class="fa fa-dot-circle-o" style="padding-right:10px"></span>We won't give your details to third parties. </li><br>
+                <li><span class="fa fa-dot-circle-o" style="padding-right:10px"></span>We won't contact you using your details.</li><br>
+            </ul>
+            <button class="button" onclick="location.href='/auth/facebook'">Facebook</button>
+            <button class="button" onclick="location.href='/auth/twitter'">Twitter</button>
+        </section>
+      </div>
+    </div>
+
+  </div>  
+</div>
 {{ template "footer.html.tmpl" . }}

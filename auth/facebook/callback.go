@@ -29,7 +29,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     os.Getenv("FACEBOOK_CLIENT_ID"),
 		ClientSecret: os.Getenv("FACEBOOK_CLIENT_SECRET"),
-		RedirectURL:  "http://localhost:8080/auth/facebook",
+		RedirectURL:  "http://localhost:8080/auth/facebook/callback",
 		Scopes:       []string{"openid", "profile", "user_metadata", "email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  authURL,
