@@ -2,100 +2,76 @@ package facebook
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
-	"psychic-rat/log"
-	"psychic-rat/sess"
 	"psychic-rat/types"
 
+	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
-)
-
-type UserAPI interface {
-	GetUser(id string) (*types.User, error)
-	AddUser(types.User) error
-}
-
-var (
-	userAPI UserAPI
 )
 
 const (
 	authURL         string = "https://www.facebook.com/dialog/oauth"
 	tokenURL        string = "https://graph.facebook.com/oauth/access_token"
 	endpointProfile string = "https://graph.facebook.com/me?fields=email,first_name,last_name,link,about,id,name,picture,location"
+	facebookCookie  string = "fb"
 )
 
 var (
 	state        = "12345"
 	clientID     = os.Getenv("FACEBOOK_CLIENT_ID")
 	clientSecret = os.Getenv("FACEBOOK_CLIENT_SECRET")
-	callbackURL  = "http://localhost:8080/auth/facebook/callback"
+	cookieStore  = sessions.NewCookieStore([]byte(os.Getenv("COOKIE_KEYS")))
+)
 
-	oauthConf = oauth2.Config{
+type Facebook struct {
+	callbackURL string
+}
+
+func New(callbackURL string) *Facebook { return &Facebook{callbackURL} }
+
+func (f *Facebook) BeginAuth(w http.ResponseWriter, r *http.Request) (string, error) {
+	url := getOauthConf(f.callbackURL).AuthCodeURL(state)
+	return url, nil
+}
+
+func getOauthConf(cb string) *oauth2.Config {
+	return &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
-		RedirectURL:  callbackURL,
+		RedirectURL:  cb,
 		Scopes:       []string{"public_profile", "email"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  authURL,
 			TokenURL: tokenURL,
 		},
 	}
-)
-
-func Init(a UserAPI) {
-	userAPI = a
 }
 
-func BeginAuth(w http.ResponseWriter, r *http.Request) {
-	url := oauthConf.AuthCodeURL(state)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	return
-}
+func (f *Facebook) Callback(w http.ResponseWriter, r *http.Request) (*types.User, error) {
+	conf := getOauthConf(f.callbackURL)
 
-func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
-
-	token, err := oauthConf.Exchange(oauth2.NoContext, code)
-	log.Logf(r.Context(), "token = %+v\n", token)
+	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
-		log.Logf(r.Context(), "token exchange failed: %+v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("token exchange failed: %+v\n", err)
 	}
 
-	client := oauthConf.Client(oauth2.NoContext, token)
+	client := conf.Client(oauth2.NoContext, token)
 	resp, err := client.Get(endpointProfile)
 	if err != nil {
-		log.Errorf(r.Context(), "get profile failed: %+v\n", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("get profile failed: %v", err)
 	}
 
 	userProfile, err := userFromReader(resp.Body)
 	defer resp.Body.Close()
+	if err != nil {
+		return nil, fmt.Errorf("unable to get user from profile: %v", userProfile, err)
+	}
 
-	userRecord, err := addUserIfNotExists(userProfile)
-	if err != nil {
-		log.Errorf(r.Context(), "unable to create a user %v :%v", userRecord, err)
-		return
-	}
-	err = sess.NewSessionStore(r).Save(userRecord, w)
-	if err != nil {
-		log.Errorf(r.Context(), "unable to save user into session: %v", err)
-		return
-	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-}
-
-func addUserIfNotExists(u *types.User) (*types.User, error) {
-	existing, err := userAPI.GetUser(u.ID)
-	if err != nil {
-		return u, userAPI.AddUser(*u)
-	}
-	return existing, nil
+	return userProfile, nil
 }
 
 func userFromReader(reader io.Reader) (*types.User, error) {

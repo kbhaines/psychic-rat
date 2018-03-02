@@ -3,11 +3,11 @@ package twitter
 import (
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"psychic-rat/log"
-	"psychic-rat/sess"
 	"psychic-rat/types"
 
 	"github.com/gorilla/sessions"
@@ -30,62 +30,59 @@ type (
 		clientSecret string
 	}
 
-	UserAPI interface {
-		GetUser(id string) (*types.User, error)
-		AddUser(types.User) error
+	Twitter struct {
+		callbackURL string
 	}
 )
 
 var (
-	userAPI      UserAPI
 	clientID     = os.Getenv("TWITTER_CLIENT_ID")
 	clientSecret = os.Getenv("TWITTER_CLIENT_SECRET")
 	cookieStore  = sessions.NewCookieStore([]byte(os.Getenv("COOKIE_KEYS")))
 )
 
-func Init(a UserAPI) {
-	userAPI = a
-}
-
 func init() {
 	gob.Register(&oauth.RequestToken{})
 }
 
-func BeginAuth(w http.ResponseWriter, r *http.Request) {
+func New(callbackURL string) *Twitter { return &Twitter{callbackURL} }
+
+func (t *Twitter) BeginAuth(w http.ResponseWriter, r *http.Request) (string, error) {
 	consumer := newConsumer()
-	requestToken, url, err := consumer.GetRequestTokenAndUrl("http://localhost:8080/auth/twitter/callback")
+	requestToken, url, err := consumer.GetRequestTokenAndUrl(t.callbackURL)
 	if err != nil {
-		log.Errorf(r.Context(), "unable to get token from twitter: %v", err)
-		http.Error(w, "twitter token error", http.StatusInternalServerError)
-		return
+		return "", fmt.Errorf("unable to get token from twitter: %v", err)
 	}
 
 	session, err := cookieStore.Get(r, tokenCookie)
 	session.Values["token"] = *requestToken
 	err = session.Save(r, w)
 	if err != nil {
-		log.Errorf(r.Context(), "unable to save session: %v", err)
-		http.Error(w, "twitter token error", http.StatusInternalServerError)
-		return
+		return "", fmt.Errorf("unable to save session: %v", err)
 	}
-
 	log.Logf(r.Context(), "stored token: %v", requestToken)
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
-	return
+	return url, nil
 }
 
-func CallbackHandler(w http.ResponseWriter, r *http.Request) {
+func newConsumer() *oauth.Consumer {
+	return oauth.NewConsumer(
+		clientID,
+		clientSecret,
+		oauth.ServiceProvider{
+			RequestTokenUrl:   requestURL,
+			AuthorizeTokenUrl: authorizeURL,
+			AccessTokenUrl:    tokenURL,
+		})
+}
+
+func (_ *Twitter) Callback(w http.ResponseWriter, r *http.Request) (*types.User, error) {
 	sessv, err := cookieStore.Get(r, tokenCookie)
 	if err != nil {
-		log.Errorf(r.Context(), "unable to get twitter cookie from user session: %v", err)
-		http.Error(w, "twitter token error", http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("unable to get twitter cookie from user session: %v", err)
 	}
 	token, tokenOK := sessv.Values["token"].(*oauth.RequestToken)
 	if !tokenOK {
-		log.Errorf(r.Context(), "unable to get token (%s)", token)
-		http.Error(w, "token process error", http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("unable to get token (%s)", token)
 	}
 
 	values := r.URL.Query()
@@ -97,9 +94,7 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	c := newConsumer()
 	accessToken, err := c.AuthorizeToken(token, verificationCode)
 	if err != nil {
-		log.Errorf(r.Context(), "unable to authorize token: %v", err)
-		http.Error(w, "token process error", http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("unable to authorize token: %v", err)
 	}
 
 	/*client, err := c.MakeHttpClient(accessToken)
@@ -116,43 +111,18 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		map[string]string{"include_entities": "false", "skip_status": "true", "include_email": "true"},
 		accessToken)
 	if err != nil {
-		log.Errorf(r.Context(), "profile error: %v", err)
-		http.Error(w, "token process error", http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("profile error: %v", err)
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		log.Errorf(r.Context(), "profile error: %v", err)
-		http.Error(w, "token process error", http.StatusInternalServerError)
-		return
+		return nil, fmt.Errorf("profile error: %v", err)
 	}
 	userProfile, err := userFromReader(response.Body)
-	log.Logf(r.Context(), "user: %v", userProfile)
-
-	userRecord, err := addUserIfNotExists(userProfile)
 	if err != nil {
-		log.Errorf(r.Context(), "unable to create a user %v :%v", userRecord, err)
-		return
+		return nil, fmt.Errorf("unable to create a user %v :%v", userProfile, err)
 	}
-	err = sess.NewSessionStore(r).Save(userRecord, w)
-	if err != nil {
-		log.Errorf(r.Context(), "unable to save user into session: %v", err)
-		return
-	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
-	return
-}
-
-func newConsumer() *oauth.Consumer {
-	return oauth.NewConsumer(
-		clientID,
-		clientSecret,
-		oauth.ServiceProvider{
-			RequestTokenUrl:   requestURL,
-			AuthorizeTokenUrl: authorizeURL,
-			AccessTokenUrl:    tokenURL,
-		})
+	return userProfile, nil
 }
 
 func userFromReader(reader io.Reader) (*types.User, error) {
@@ -175,12 +145,4 @@ func userFromReader(reader io.Reader) (*types.User, error) {
 	user.Country = u.Location
 
 	return user, err
-}
-
-func addUserIfNotExists(u *types.User) (*types.User, error) {
-	existing, err := userAPI.GetUser(u.ID)
-	if err != nil {
-		return u, userAPI.AddUser(*u)
-	}
-	return existing, nil
 }

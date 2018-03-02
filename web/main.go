@@ -5,9 +5,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/http"
-	"psychic-rat/auth/facebook"
-	"psychic-rat/auth/twitter"
-	"psychic-rat/auth0"
+	"psychic-rat/auth"
 	"psychic-rat/log"
 	"psychic-rat/sess"
 	"psychic-rat/types"
@@ -25,6 +23,7 @@ const (
 	NewItem       = "/newitem"
 	AdminNewItems = "/admin/newitems"
 	Callback      = "/callback"
+	AuthInit      = "/auth"
 )
 
 type statusRecorder struct {
@@ -40,12 +39,9 @@ var (
 		{PledgePage, pub.PledgePageHandler},
 		{NewItem, pub.NewItemHandler},
 		{ThanksPage, pub.ThanksPageHandler},
-		{Callback, auth0.CallbackHandler},
 		{AdminNewItems, admin.AdminItemHandler},
-		{"/auth/facebook", facebook.BeginAuth},
-		{"/auth/facebook/callback", facebook.CallbackHandler},
-		{"/auth/twitter", twitter.BeginAuth},
-		{"/auth/twitter/callback", twitter.CallbackHandler},
+		{AuthInit, auth.AuthInit},
+		{Callback, auth.CallbackHandler},
 	}
 
 	flags struct {
