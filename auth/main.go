@@ -3,6 +3,7 @@ package auth
 import (
 	"net/http"
 	"psychic-rat/auth/facebook"
+	"psychic-rat/auth/gplus"
 	"psychic-rat/auth/twitter"
 	"psychic-rat/log"
 	"psychic-rat/sess"
@@ -29,9 +30,11 @@ var (
 func Init(u UserAPI, callbackURL string) {
 	userAPI = u
 
+	//TODO: inject this dependency
 	authProviders = map[string]AuthHandler{
 		"facebook": facebook.New(callbackURL + "?p=facebook"),
 		"twitter":  twitter.New(callbackURL + "?p=twitter"),
+		"gplus":    gplus.New(callbackURL + "?p=gplus"),
 	}
 }
 
