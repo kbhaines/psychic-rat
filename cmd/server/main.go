@@ -57,7 +57,11 @@ func initModules() {
 	} else {
 		authHandler = authsimple.NewAuthSimple(db, renderer)
 	}
-	auth.Init(db)
+	serverURL := os.Getenv("SERVER_URL")
+	if serverURL == "" {
+		serverURL = "http://localhost:8080/"
+	}
+	auth.Init(db, serverURL+"callback")
 	//TODO: take authHandler out...
 	pub.Init(db, db, db, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)

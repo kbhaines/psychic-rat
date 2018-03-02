@@ -22,22 +22,22 @@ type (
 )
 
 var (
-	authHandlers = map[string]AuthHandler{
+	authProviders map[string]AuthHandler
+	userAPI       UserAPI
+)
+
+func Init(u UserAPI, callbackURL string) {
+	userAPI = u
+
+	authProviders = map[string]AuthHandler{
 		"facebook": facebook.New(callbackURL + "?p=facebook"),
 		"twitter":  twitter.New(callbackURL + "?p=twitter"),
 	}
-
-	callbackURL = "http://localhost:8080/callback"
-	userAPI     UserAPI
-)
-
-func Init(u UserAPI) {
-	userAPI = u
 }
 
 func AuthInit(w http.ResponseWriter, r *http.Request) {
 	provider := r.URL.Query().Get("p")
-	handler, ok := authHandlers[provider]
+	handler, ok := authProviders[provider]
 	if !ok {
 		log.Errorf(r.Context(), "provider %s not found", provider)
 		http.Error(w, "invalid request", http.StatusBadRequest)
@@ -54,7 +54,7 @@ func AuthInit(w http.ResponseWriter, r *http.Request) {
 
 func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 	provider := r.URL.Query().Get("p")
-	handler, ok := authHandlers[provider]
+	handler, ok := authProviders[provider]
 	if !ok {
 		log.Errorf(r.Context(), "callback provider %s not found", provider)
 		http.Error(w, "invalid request", http.StatusBadRequest)
