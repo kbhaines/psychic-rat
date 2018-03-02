@@ -29,8 +29,7 @@ type (
 		GetUser(userId string) (*types.User, error)
 	}
 
-	AuthHandler interface {
-		Handler(http.ResponseWriter, *http.Request)
+	UserHandler interface {
 		GetLoggedInUser(*http.Request) (*types.User, error)
 		GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
 		LogOut(http.ResponseWriter, *http.Request) error
@@ -56,10 +55,10 @@ var (
 	newItemsAPI NewItemAPI
 	pledgeAPI   PledgeAPI
 	renderer    Renderer
-	authHandler AuthHandler
+	authHandler UserHandler
 )
 
-func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler, rendr Renderer) {
+func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth UserHandler, rendr Renderer) {
 	itemsAPI = item
 	newItemsAPI = newItems
 	pledgeAPI = pledge

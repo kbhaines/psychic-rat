@@ -50,7 +50,7 @@ type (
 		Render(w http.ResponseWriter, templateName string, variables interface{}) error
 	}
 
-	AuthHandler interface {
+	UserHandler interface {
 		GetLoggedInUser(*http.Request) (*types.User, error)
 		GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
 	}
@@ -70,10 +70,10 @@ var (
 	newItemsAPI NewItemAPI
 	pledgeAPI   PledgeAPI
 	renderer    Renderer
-	authHandler AuthHandler
+	authHandler UserHandler
 )
 
-func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth AuthHandler, rendr Renderer) {
+func Init(co CompanyAPI, item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth UserHandler, rendr Renderer) {
 	companyAPI = co
 	itemsAPI = item
 	newItemsAPI = newItems
