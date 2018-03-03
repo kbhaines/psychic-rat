@@ -6,8 +6,13 @@ import (
 	"net/http"
 	"os"
 	"psychic-rat/auth"
+	"psychic-rat/auth/basic"
+	"psychic-rat/auth/facebook"
+	"psychic-rat/auth/gplus"
+	"psychic-rat/auth/twitter"
 	"psychic-rat/sess"
 	"psychic-rat/sqldb"
+	"psychic-rat/types"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
 	"psychic-rat/web/pub"
@@ -21,15 +26,22 @@ var (
 		sqldb          bool
 		cacheTemplates bool
 		listenOn       string
-		mockCSRF       bool
+		basicAuth      bool
 	}
 )
+
+type UserHandler interface {
+	GetLoggedInUser(*http.Request) (*types.User, error)
+	GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
+	LogOut(http.ResponseWriter, *http.Request) error
+	VerifyUserCSRF(*http.Request, string) error
+}
 
 func main() {
 	flag.StringVar(&flags.listenOn, "listen", "localhost:8080", "interface:port to listen on")
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
-	flag.BoolVar(&flags.mockCSRF, "mockcsrf", false, "mock CSRF token")
+	flag.BoolVar(&flags.basicAuth, "basicauth", false, "enable basic auth mode for testing")
 	flag.Parse()
 
 	initModules()
@@ -45,14 +57,35 @@ func initModules() {
 		panic("unable to init db: " + err.Error())
 	}
 
-	sess.Init(flags.mockCSRF)
+	sess.Init(flags.basicAuth)
 	serverURL := os.Getenv("SERVER_URL")
 	if serverURL == "" {
 		serverURL = "http://localhost:8080/"
+		log.Printf("WARNING: serving from %s", serverURL)
 	}
-	auth.Init(db, serverURL+"callback")
 
-	userHandler := auth.NewUserHandler()
+	callbackURL := serverURL + "callback"
+	var (
+		userHandler   UserHandler
+		authProviders map[string]auth.AuthHandler
+	)
+
+	if !flags.basicAuth {
+		authProviders = map[string]auth.AuthHandler{
+			"facebook": facebook.New(callbackURL + "?p=facebook"),
+			"twitter":  twitter.New(callbackURL + "?p=twitter"),
+			"gplus":    gplus.New(callbackURL + "?p=gplus"),
+		}
+		userHandler = auth.NewUserHandler()
+	} else {
+		authProviders = map[string]auth.AuthHandler{
+			"basic": basic.New(callbackURL + "?p=basic"),
+		}
+		userHandler = basic.NewUserHandler()
+	}
+
+	auth.Init(db, authProviders)
+	web.Init(userHandler)
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	pub.Init(db, db, db, userHandler, renderer)
 	admin.Init(db, db, db, db, userHandler, renderer)

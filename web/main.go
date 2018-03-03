@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"psychic-rat/auth"
 	"psychic-rat/log"
-	"psychic-rat/sess"
 	"psychic-rat/types"
 	"psychic-rat/web/admin"
 	"psychic-rat/web/dispatch"
@@ -26,10 +25,17 @@ const (
 	AuthInit      = "/auth"
 )
 
-type statusRecorder struct {
-	http.ResponseWriter
-	status int
-}
+type (
+	statusRecorder struct {
+		http.ResponseWriter
+		status int
+	}
+
+	UserHandler interface {
+		GetLoggedInUser(*http.Request) (*types.User, error)
+		VerifyUserCSRF(*http.Request, string) error
+	}
+)
 
 var (
 	uriHandlers = []dispatch.URIHandler{
@@ -44,10 +50,16 @@ var (
 		{Callback, auth.CallbackHandler},
 	}
 
+	userHandler UserHandler
+
 	flags struct {
 		enableAuth0, sqldb bool
 	}
 )
+
+func Init(u UserHandler) {
+	userHandler = u
+}
 
 func Handler() http.Handler {
 	hmux := http.NewServeMux()
@@ -61,7 +73,7 @@ func Handler() http.Handler {
 func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestID := rand.Int63()
-		user, _ := sess.NewSessionStore(r).Get()
+		user, _ := userHandler.GetLoggedInUser(r)
 		if user == nil {
 			user = &types.User{ID: "<none>"}
 		}
@@ -94,7 +106,7 @@ func csrfProtect(next http.HandlerFunc) http.HandlerFunc {
 			http.Error(w, "", http.StatusBadRequest)
 			return
 		}
-		err = sess.NewSessionStore(r).VerifyCSRF(r.FormValue("csrf"))
+		err = userHandler.VerifyUserCSRF(r, r.FormValue("csrf"))
 		if err != nil {
 			log.Errorf(r.Context(), "csrfProtect: CSRF failed validation: %v", err)
 			http.Error(w, "", http.StatusForbidden)
