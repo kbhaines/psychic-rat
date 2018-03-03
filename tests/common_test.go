@@ -6,7 +6,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
-	"psychic-rat/authsimple"
+	"psychic-rat/auth/basic"
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
 	"psychic-rat/web/admin"
@@ -23,7 +23,8 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	testUrl = server.URL
 	db := initDB(t)
 	renderer := tmpl.NewRenderer("../res/tmpl", false)
-	authHandler := authsimple.NewAuthSimple(db, renderer)
+	authHandler := basic.NewUserHandler()
+	web.Init(authHandler)
 	pub.Init(db, db, db, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
 	return server, db
@@ -46,7 +47,7 @@ func cleanUp(server *httptest.Server, db *sqldb.DB) {
 
 func loginUser(user string, t *testing.T) http.CookieJar {
 	t.Helper()
-	req, err := http.NewRequest("GET", testUrl+"/signin?u="+user, nil)
+	req, err := http.NewRequest("GET", testUrl+"/callback?u="+user, nil)
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusSeeOther) {
 		t.Fatalf("unable to signin, error was %v, response %v", err, resp)

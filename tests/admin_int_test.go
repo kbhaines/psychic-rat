@@ -8,6 +8,7 @@ import (
 	"psychic-rat/types"
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -45,11 +46,25 @@ type (
 func TestBlockAccessToItemListing(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	resp, err := client.Get(testUrl + "/admin/newitems")
+	resp, err := execAuthdRequest("test1", http.MethodGet, testUrl+"/admin/newitems", nil)
 	testPageStatus(resp, err, http.StatusForbidden, t)
+}
+
+func execAuthdRequest(username, method, url string, postValues url.Values) (*http.Response, error) {
+	var req *http.Request
+	var err error
+	if postValues == nil {
+		req, err = http.NewRequest(method, url, nil)
+	} else {
+		req, err = http.NewRequest(method, url, strings.NewReader(postValues.Encode()))
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	}
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(username, "")
+	client := http.Client{}
+	return client.Do(req)
 }
 
 func TestListNewItems(t *testing.T) {
@@ -61,9 +76,7 @@ func TestListNewItems(t *testing.T) {
 
 func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 	t.Helper()
-	cookie := loginUser("admin", t)
-	client := http.Client{Jar: cookie}
-	resp, err := client.Get(testUrl + "/admin/newitems")
+	resp, err := execAuthdRequest("admin", http.MethodGet, testUrl+"/admin/newitems", nil)
 	testPageStatus(resp, err, http.StatusOK, t)
 
 	doc, err := goquery.NewDocumentFromResponse(resp)
@@ -120,17 +133,14 @@ func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 func TestBadnewItemPost(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	cookie := loginUser("admin", t)
-	client := http.Client{Jar: cookie}
-
 	post := url.Values{
 		"id[]":       {"0"},
 		"action[]":   {"blah"},
 		"isPledge[]": {"0"},
 		"userID[]":   {"test1"},
-		"csrf":       {getCSRFToken(client, testUrl+"/admin/newitems", t)},
+		"csrf":       {getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t)},
 	}
-	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
+	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", post)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }
 
@@ -138,12 +148,6 @@ func TestNewItemAdminPost(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
 	initNewItems(db, t)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	cookie = loginUser("admin", t)
-	client = http.Client{Jar: cookie}
-
 	// Going backwards so we don't have to adjust the index for each row
 	// and can just use the coincident index values from the DB. Bit lazy....
 	for i := len(testNewItems) - 1; i > 0; i-- {
@@ -159,8 +163,8 @@ func TestNewItemAdminPost(t *testing.T) {
 			isPledge().
 			selectToAdd()
 
-		pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
-		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+		pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
+		resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
 		item := findAddedNewItem(ni, db, t)
@@ -204,12 +208,6 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	server, db := newServer(t)
 	initNewItems(db, t)
 	defer cleanUp(server, db)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	cookie = loginUser("admin", t)
-	client = http.Client{Jar: cookie}
-
 	currentItems, err := db.ListItems()
 	if err != nil {
 		t.Fatal(err)
@@ -218,8 +216,8 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	pl := postLine{v: url.Values{}}
 	pl.newPostLine(6).userID(testNewItems[5].UserID).existingItem(1).selectToAdd()
 
-	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
-	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+	pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
+	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
 
 	newItems, err := db.ListItems()
 	if len(currentItems) != len(newItems) {
@@ -234,12 +232,6 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	server, db := newServer(t)
 	initNewItems(db, t)
 	defer cleanUp(server, db)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	cookie = loginUser("admin", t)
-	client = http.Client{Jar: cookie}
-
 	currentCompanies, err := db.ListCompanies()
 	if err != nil {
 		t.Fatal(err)
@@ -249,8 +241,8 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	ni := testNewItems[5]
 
 	pl.newPostLine(6).userID(ni.UserID).existingCompany(1).currency(ni.CurrencyID).value(ni.Value).selectToAdd()
-	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
-	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+	pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
+	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
 
 	newCompanies, err := db.ListCompanies()
 	if len(currentCompanies) != len(newCompanies) {
@@ -265,17 +257,11 @@ func TestDeleteNewItems(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
 	initNewItems(db, t)
-	cookie := loginUser("test1", t)
-	client := http.Client{Jar: cookie}
-
-	cookie = loginUser("admin", t)
-	client = http.Client{Jar: cookie}
-
 	pl := postLine{v: url.Values{}}
 	ni := testNewItems[5]
 	pl.newPostLine(6).userID(ni.UserID).selectToDelete()
-	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
-	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
+	pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
+	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
 
 	testPageStatus(resp, err, http.StatusOK, t)
 	testNewItemsPage(testNewItems[:len(testNewItems)-1], t)
@@ -284,11 +270,9 @@ func TestDeleteNewItems(t *testing.T) {
 func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	cookie := loginUser("admin", t)
-	client := http.Client{Jar: cookie}
 	v := url.Values{"action[]": []string{"abc"}, "id[]": []string{"abc"}}
-	v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
-	resp, err := client.PostForm(testUrl+"/admin/newitems", v)
+	v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
+	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", v)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }
 
