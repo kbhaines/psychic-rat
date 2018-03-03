@@ -8,7 +8,6 @@ import (
 	"psychic-rat/types"
 	"reflect"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/PuerkitoBio/goquery"
@@ -48,23 +47,6 @@ func TestBlockAccessToItemListing(t *testing.T) {
 	defer cleanUp(server, db)
 	resp, err := execAuthdRequest("test1", http.MethodGet, testUrl+"/admin/newitems", nil)
 	testPageStatus(resp, err, http.StatusForbidden, t)
-}
-
-func execAuthdRequest(username, method, url string, postValues url.Values) (*http.Response, error) {
-	var req *http.Request
-	var err error
-	if postValues == nil {
-		req, err = http.NewRequest(method, url, nil)
-	} else {
-		req, err = http.NewRequest(method, url, strings.NewReader(postValues.Encode()))
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	}
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(username, "")
-	client := http.Client{}
-	return client.Do(req)
 }
 
 func TestListNewItems(t *testing.T) {

@@ -14,6 +14,8 @@ import (
 	"psychic-rat/web/tmpl"
 	"strings"
 	"testing"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 var testUrl string
@@ -78,4 +80,35 @@ func testStrings(body string, expectedStrings []string, t *testing.T) {
 	if t.Failed() {
 		t.Errorf("body was %s", body)
 	}
+}
+
+func getCSRFToken(client http.Client, url string, t *testing.T) string {
+	t.Helper()
+	resp, err := client.Get(url)
+	if err != nil {
+		t.Fatal(err)
+	}
+	doc, err := goquery.NewDocumentFromResponse(resp)
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := doc.Find("input[name=csrf]").AttrOr("value", "")
+	return token
+}
+
+func execAuthdRequest(username, method, url string, postValues url.Values) (*http.Response, error) {
+	var req *http.Request
+	var err error
+	if postValues == nil {
+		req, err = http.NewRequest(method, url, nil)
+	} else {
+		req, err = http.NewRequest(method, url, strings.NewReader(postValues.Encode()))
+		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	}
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(username, "")
+	client := http.Client{}
+	return client.Do(req)
 }

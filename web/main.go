@@ -73,8 +73,8 @@ func Handler() http.Handler {
 func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		requestID := rand.Int63()
-		user, _ := userHandler.GetLoggedInUser(r)
-		if user == nil {
+		user, err := userHandler.GetLoggedInUser(r)
+		if user == nil || err != nil {
 			user = &types.User{ID: "<none>"}
 		}
 		ctx := context.WithValue(r.Context(), "rid", requestID)

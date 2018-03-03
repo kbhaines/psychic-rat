@@ -1,7 +1,6 @@
 package pub
 
 import (
-	syslog "log"
 	"net/http"
 	"psychic-rat/log"
 	"psychic-rat/types"
@@ -251,8 +250,9 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 func (pv *pageVariables) withSessionVars(r *http.Request) *pageVariables {
 	user, err := authHandler.GetLoggedInUser(r)
 	if err != nil {
-		// todo - return error?
-		syslog.Fatal(err)
+		log.Errorf(r.Context(), "error retrieving user: %v", err)
+		pv.User = types.User{}
+		return pv
 	}
 	if user != nil {
 		pv.User = *user
