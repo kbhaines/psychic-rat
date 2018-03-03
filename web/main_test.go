@@ -1,18 +1,37 @@
 package web
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"psychic-rat/sess"
+	"psychic-rat/types"
 	"testing"
 )
+
+type mockUserHandler struct {
+	csrfResult   bool
+	tokenChecked string
+}
+
+func (m *mockUserHandler) GetLoggedInUser(*http.Request) (*types.User, error) {
+	panic("not implemented")
+}
+
+func (m *mockUserHandler) VerifyUserCSRF(r *http.Request, token string) error {
+	m.tokenChecked = token
+	if m.csrfResult {
+		return nil
+	}
+	return fmt.Errorf("CSRF failed")
+}
 
 func TestCSRFBlock(t *testing.T) {
 	values := url.Values{"item": {"1"}}
 	req := &http.Request{Method: "POST", PostForm: values}
 	writer := httptest.NewRecorder()
 	called := false
+	Init(&mockUserHandler{csrfResult: false})
 	csrfFunc := csrfProtect(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 	})
@@ -28,11 +47,10 @@ func TestCSRFBlock(t *testing.T) {
 func TestCSRFPass(t *testing.T) {
 	writer := httptest.NewRecorder()
 	req := &http.Request{Method: "POST"}
-	token, err := sess.NewSessionStore(req).SetCSRF(writer)
-	if err != nil {
-		t.Fatal(err)
-	}
+	token := "1234"
 	req.PostForm = url.Values{"item": {"1"}, "csrf": {token}}
+	mock := &mockUserHandler{csrfResult: true}
+	Init(mock)
 	called := false
 	csrfFunc := csrfProtect(func(w http.ResponseWriter, r *http.Request) {
 		called = true
@@ -40,6 +58,9 @@ func TestCSRFPass(t *testing.T) {
 	csrfFunc(writer, req)
 	if !called {
 		t.Fatalf("handler not called")
+	}
+	if mock.tokenChecked != token {
+		t.Fatalf("expected token = %s in call to VerifyUserCSRF, got %s", token, mock.tokenChecked)
 	}
 }
 
