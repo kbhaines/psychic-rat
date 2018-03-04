@@ -19,16 +19,18 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-var testUrl string
+const callback = "/callback?p=basic"
+
+var testURL string
 
 func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	server := httptest.NewServer(web.Handler())
-	testUrl = server.URL
+	testURL = server.URL
 	db := initDB(t)
 	renderer := tmpl.NewRenderer("../res/tmpl", false)
 	authHandler := auth.NewUserHandler()
 	authProviders := map[string]auth.AuthHandler{
-		"basic": basic.New(testUrl + "callback?p=basic"),
+		"basic": basic.New(testURL + callback),
 	}
 	auth.Init(db, authProviders)
 	web.Init(authHandler)
@@ -54,14 +56,14 @@ func cleanUp(server *httptest.Server, db *sqldb.DB) {
 
 func getAuthdClient(user string, t *testing.T) *http.Client {
 	t.Helper()
-	req, err := http.NewRequest("GET", testUrl+"/callback?p=basic", nil)
+	req, err := http.NewRequest("GET", testURL+callback, nil)
 	req.SetBasicAuth(user, "")
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusSeeOther) {
 		t.Fatalf("unable to signin, error was %v, response %v", err, resp)
 	}
 	jar, _ := cookiejar.New(nil)
-	url, _ := url.Parse(testUrl)
+	url, _ := url.Parse(testURL)
 	jar.SetCookies(url, resp.Cookies())
 	return &http.Client{Jar: jar}
 }
@@ -100,21 +102,4 @@ func getCSRFToken(client *http.Client, url string, t *testing.T) string {
 	}
 	token := doc.Find("input[name=csrf]").AttrOr("value", "")
 	return token
-}
-
-func xxexecAuthdRequest(username, method, url string, postValues url.Values) (*http.Response, error) {
-	var req *http.Request
-	var err error
-	if postValues == nil {
-		req, err = http.NewRequest(method, url, nil)
-	} else {
-		req, err = http.NewRequest(method, url, strings.NewReader(postValues.Encode()))
-		req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	}
-	if err != nil {
-		return nil, err
-	}
-	req.SetBasicAuth(username, "")
-	client := http.Client{}
-	return client.Do(req)
 }

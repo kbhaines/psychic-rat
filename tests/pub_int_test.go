@@ -9,14 +9,14 @@ import (
 func TestHomePage(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	resp, err := http.Get(testUrl + "/")
+	resp, err := http.Get(testURL + "/")
 	testPageStatus(resp, err, http.StatusOK, t)
 }
 
 func TestPledgeWithoutLogin(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	resp, err := http.Get(testUrl + "/pledge")
+	resp, err := http.Get(testURL + "/pledge")
 	testPageStatus(resp, err, http.StatusOK, t)
 	if resp.Request.URL.RequestURI() != "/signin" {
 		t.Fatal("expected redirect to /signin")
@@ -26,7 +26,7 @@ func TestPledgeWithoutLogin(t *testing.T) {
 func TestThankYouWithoutLogin(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	resp, err := http.Get(testUrl + "/thanks")
+	resp, err := http.Get(testURL + "/thanks")
 	testPageStatus(resp, err, http.StatusOK, t)
 	if resp.Request.URL.RequestURI() != "/signin" {
 		t.Fatal("expected redirect to /signin")
@@ -37,7 +37,7 @@ func TestPledgeWithLogin(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
 
-	resp, err := getAuthdClient("user1", t).Get(testUrl + "/pledge")
+	resp, err := getAuthdClient("user1", t).Get(testURL + "/pledge")
 	testPageStatus(resp, err, http.StatusOK, t)
 
 	strBody := readResponseBody(resp, t)
@@ -53,11 +53,11 @@ func TestHappyPathPledge(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
 	client := getAuthdClient("admin", t)
-	csrf := getCSRFToken(client, testUrl+"/pledge", t)
+	csrf := getCSRFToken(client, testURL+"/pledge", t)
 	data := url.Values{"item": {"1"}, "csrf": {csrf}}
-	resp, err := client.PostForm(testUrl+"/pledge", data)
+	resp, err := client.PostForm(testURL+"/pledge", data)
 	testPageStatus(resp, err, http.StatusOK, t)
-	if actual := resp.Request.URL.String(); actual != testUrl+"/thanks" {
+	if actual := resp.Request.URL.String(); actual != testURL+"/thanks" {
 		t.Fatalf("expected to land at /thanks, got %s", actual)
 	}
 }
@@ -67,8 +67,8 @@ func TestNewItem(t *testing.T) {
 	defer cleanUp(server, db)
 	values := url.Values{"company": {"newCo1"}, "make": {"newmake"}, "model": {"newmodel"}, "currencyID": {"1"}, "value": {"100"}}
 	client := getAuthdClient("admin", t)
-	values.Add("csrf", getCSRFToken(client, testUrl+"/pledge", t))
-	resp, err := client.PostForm(testUrl+"/newitem", values)
+	values.Add("csrf", getCSRFToken(client, testURL+"/pledge", t))
+	resp, err := client.PostForm(testURL+"/newitem", values)
 	testPageStatus(resp, err, http.StatusOK, t)
 }
 
@@ -89,8 +89,8 @@ func TestBadNewItems(t *testing.T) {
 
 	client := getAuthdClient("admin", t)
 	for _, d := range values {
-		d.Add("csrf", getCSRFToken(client, testUrl+"/pledge", t))
-		resp, err := client.PostForm(testUrl+"/newitem", d)
+		d.Add("csrf", getCSRFToken(client, testURL+"/pledge", t))
+		resp, err := client.PostForm(testURL+"/newitem", d)
 		testPageStatus(resp, err, http.StatusBadRequest, t)
 	}
 	items, err := db.ListNewItems()
