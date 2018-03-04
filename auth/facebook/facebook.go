@@ -20,19 +20,32 @@ const (
 )
 
 var (
-	state        = "12345"
 	clientID     = os.Getenv("FACEBOOK_CLIENT_ID")
 	clientSecret = os.Getenv("FACEBOOK_CLIENT_SECRET")
 	cookieStore  = sessions.NewCookieStore([]byte(os.Getenv("COOKIE_KEYS")))
 )
 
-type Facebook struct {
-	callbackURL string
+type (
+	Facebook struct {
+		callbackURL string
+		csrf        CSRFValidator
+	}
+
+	CSRFValidator interface {
+		GetUserCSRF(w http.ResponseWriter, r *http.Request) (string, error)
+		VerifyUserCSRF(r *http.Request, token string) error
+	}
+)
+
+func New(callbackURL string, csrfValidator CSRFValidator) *Facebook {
+	return &Facebook{callbackURL, csrfValidator}
 }
 
-func New(callbackURL string) *Facebook { return &Facebook{callbackURL} }
-
 func (f *Facebook) BeginAuth(w http.ResponseWriter, r *http.Request) (string, error) {
+	state, err := f.csrf.GetUserCSRF(w, r)
+	if err != nil {
+		return "", fmt.Errorf("BeginAuth: CSRF error: %v", err)
+	}
 	url := getOauthConf(f.callbackURL).AuthCodeURL(state)
 	return url, nil
 }
@@ -54,6 +67,12 @@ func (f *Facebook) Callback(w http.ResponseWriter, r *http.Request) (*types.User
 	conf := getOauthConf(f.callbackURL)
 
 	code := r.URL.Query().Get("code")
+	state := r.URL.Query().Get("state")
+	err := f.csrf.VerifyUserCSRF(r, state)
+	if err != nil {
+		return nil, fmt.Errorf("Callback: state validation error: %v", err)
+	}
+
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %+v\n", err)

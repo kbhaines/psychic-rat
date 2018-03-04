@@ -19,19 +19,30 @@ const (
 )
 
 var (
-	state        = "12345"
 	clientID     = os.Getenv("GPLUS_CLIENT_ID")
 	clientSecret = os.Getenv("GPLUS_CLIENT_SECRET")
 	cookieStore  = sessions.NewCookieStore([]byte(os.Getenv("COOKIE_KEYS")))
 )
 
-type Gplus struct {
-	callbackURL string
-}
+type (
+	Gplus struct {
+		callbackURL string
+		csrf        CSRFValidator
+	}
 
-func New(callbackURL string) *Gplus { return &Gplus{callbackURL} }
+	CSRFValidator interface {
+		GetUserCSRF(w http.ResponseWriter, r *http.Request) (string, error)
+		VerifyUserCSRF(r *http.Request, token string) error
+	}
+)
+
+func New(callbackURL string, csrf CSRFValidator) *Gplus { return &Gplus{callbackURL, csrf} }
 
 func (g *Gplus) BeginAuth(w http.ResponseWriter, r *http.Request) (string, error) {
+	state, err := g.csrf.GetUserCSRF(w, r)
+	if err != nil {
+		return "", fmt.Errorf("BeginAuth: CSRF error: %v", err)
+	}
 	url := getOauthConf(g.callbackURL).AuthCodeURL(state)
 	return url, nil
 }
@@ -53,6 +64,11 @@ func (g *Gplus) Callback(w http.ResponseWriter, r *http.Request) (*types.User, e
 	conf := getOauthConf(g.callbackURL)
 
 	code := r.URL.Query().Get("code")
+	state := r.URL.Query().Get("state")
+	err := g.csrf.VerifyUserCSRF(r, state)
+	if err != nil {
+		return nil, fmt.Errorf("Callback: state validation error: %v", err)
+	}
 	token, err := conf.Exchange(oauth2.NoContext, code)
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %+v\n", err)

@@ -71,12 +71,12 @@ func initModules() {
 	)
 
 	if !flags.basicAuth {
-		authProviders = map[string]auth.AuthHandler{
-			"facebook": facebook.New(callbackURL + "?p=facebook"),
-			"twitter":  twitter.New(callbackURL + "?p=twitter"),
-			"gplus":    gplus.New(callbackURL + "?p=gplus"),
-		}
 		userHandler = auth.NewUserHandler()
+		authProviders = map[string]auth.AuthHandler{
+			"facebook": facebook.New(callbackURL+"?p=facebook", userHandler),
+			"twitter":  twitter.New(callbackURL + "?p=twitter"),
+			"gplus":    gplus.New(callbackURL+"?p=gplus", userHandler),
+		}
 	} else {
 		authProviders = map[string]auth.AuthHandler{
 			"basic": basic.New(callbackURL + "?p=basic"),
