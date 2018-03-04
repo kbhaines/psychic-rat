@@ -11,6 +11,7 @@ type userHandler struct{}
 func NewUserHandler() *userHandler { return &userHandler{} }
 
 func (u *userHandler) GetLoggedInUser(r *http.Request) (*types.User, error) {
+	panic("not implemented")
 	username, _, ok := r.BasicAuth()
 	if !ok {
 		// ignore invalid headers

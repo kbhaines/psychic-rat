@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"log"
 	"net/http"
 	"net/url"
 	"testing"
@@ -52,14 +53,36 @@ func TestPledgeWithLogin(t *testing.T) {
 func TestHappyPathPledge(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	client := getAuthdClient("admin", t)
+	client := getAuthdClient("user1", t)
+	log.Printf("client.Jar = %+v\n", client.Jar)
 	csrf := getCSRFToken(client, testURL+"/pledge", t)
+	log.Printf("client.Jar = %+v\n", client.Jar)
 	data := url.Values{"item": {"1"}, "csrf": {csrf}}
 	resp, err := client.PostForm(testURL+"/pledge", data)
 	testPageStatus(resp, err, http.StatusOK, t)
 	if actual := resp.Request.URL.String(); actual != testURL+"/thanks" {
 		t.Fatalf("expected to land at /thanks, got %s", actual)
 	}
+}
+
+func TestInvalidCSRF(t *testing.T) {
+	server, db := newServer(t)
+	defer cleanUp(server, db)
+	client := getAuthdClient("user1", t)
+
+	getCSRFToken(client, testURL+"/pledge", t)
+	data := url.Values{"item": {"1"}}
+	resp, err := client.PostForm(testURL+"/pledge", data)
+	testPageStatus(resp, err, http.StatusForbidden, t)
+
+	getCSRFToken(client, testURL+"/pledge", t)
+	data = url.Values{"item": {"1"}, "csrf": {"attack"}}
+	resp, err = client.PostForm(testURL+"/pledge", data)
+	testPageStatus(resp, err, http.StatusForbidden, t)
+
+	data = url.Values{"item": {"1"}, "csrf": {"attack"}}
+	resp, err = client.PostForm(testURL+"/pledge", data)
+	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
 func TestNewItem(t *testing.T) {

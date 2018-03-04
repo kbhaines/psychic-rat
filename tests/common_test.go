@@ -90,9 +90,9 @@ func testStrings(body string, expectedStrings []string, t *testing.T) {
 	}
 }
 
-func getCSRFToken(client *http.Client, url string, t *testing.T) string {
+func getCSRFToken(client *http.Client, srcURL string, t *testing.T) string {
 	t.Helper()
-	resp, err := client.Get(url)
+	resp, err := client.Get(srcURL)
 	if err != nil {
 		t.Fatal(err)
 	}

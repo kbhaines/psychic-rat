@@ -116,6 +116,7 @@ func (s *SessionStore) VerifyCSRF(token string) error {
 	if !ok {
 		return fmt.Errorf("VerifyCSRF: conversion error: %v", err)
 	}
+	delete(session.Values, csrfVar)
 	if csrf != token {
 		return fmt.Errorf("token mismatch, expected %s got %s in POST", csrf, token)
 	}
