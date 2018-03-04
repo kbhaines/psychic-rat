@@ -6,6 +6,7 @@ import (
 	"net/http/cookiejar"
 	"net/http/httptest"
 	"net/url"
+	"psychic-rat/auth"
 	"psychic-rat/auth/basic"
 	"psychic-rat/sqldb"
 	"psychic-rat/web"
@@ -25,7 +26,11 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	testUrl = server.URL
 	db := initDB(t)
 	renderer := tmpl.NewRenderer("../res/tmpl", false)
-	authHandler := basic.NewUserHandler()
+	authHandler := auth.NewUserHandler()
+	authProviders := map[string]auth.AuthHandler{
+		"basic": basic.New(testUrl + "callback?p=basic"),
+	}
+	auth.Init(db, authProviders)
 	web.Init(authHandler)
 	pub.Init(db, db, db, authHandler, renderer)
 	admin.Init(db, db, db, db, authHandler, renderer)
@@ -47,9 +52,10 @@ func cleanUp(server *httptest.Server, db *sqldb.DB) {
 	db.Close()
 }
 
-func loginUser(user string, t *testing.T) http.CookieJar {
+func getAuthdClient(user string, t *testing.T) *http.Client {
 	t.Helper()
-	req, err := http.NewRequest("GET", testUrl+"/callback?u="+user, nil)
+	req, err := http.NewRequest("GET", testUrl+"/callback?p=basic", nil)
+	req.SetBasicAuth(user, "")
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusSeeOther) {
 		t.Fatalf("unable to signin, error was %v, response %v", err, resp)
@@ -57,7 +63,7 @@ func loginUser(user string, t *testing.T) http.CookieJar {
 	jar, _ := cookiejar.New(nil)
 	url, _ := url.Parse(testUrl)
 	jar.SetCookies(url, resp.Cookies())
-	return jar
+	return &http.Client{Jar: jar}
 }
 
 func readResponseBody(resp *http.Response, t *testing.T) string {
@@ -82,7 +88,7 @@ func testStrings(body string, expectedStrings []string, t *testing.T) {
 	}
 }
 
-func getCSRFToken(client http.Client, url string, t *testing.T) string {
+func getCSRFToken(client *http.Client, url string, t *testing.T) string {
 	t.Helper()
 	resp, err := client.Get(url)
 	if err != nil {
@@ -96,7 +102,7 @@ func getCSRFToken(client http.Client, url string, t *testing.T) string {
 	return token
 }
 
-func execAuthdRequest(username, method, url string, postValues url.Values) (*http.Response, error) {
+func xxexecAuthdRequest(username, method, url string, postValues url.Values) (*http.Response, error) {
 	var req *http.Request
 	var err error
 	if postValues == nil {

@@ -45,7 +45,7 @@ type (
 func TestBlockAccessToItemListing(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
-	resp, err := execAuthdRequest("test1", http.MethodGet, testUrl+"/admin/newitems", nil)
+	resp, err := getAuthdClient("test1", t).Get(testUrl + "/admin/newitems")
 	testPageStatus(resp, err, http.StatusForbidden, t)
 }
 
@@ -58,7 +58,7 @@ func TestListNewItems(t *testing.T) {
 
 func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 	t.Helper()
-	resp, err := execAuthdRequest("admin", http.MethodGet, testUrl+"/admin/newitems", nil)
+	resp, err := getAuthdClient("admin", t).Get(testUrl + "/admin/newitems")
 	testPageStatus(resp, err, http.StatusOK, t)
 
 	doc, err := goquery.NewDocumentFromResponse(resp)
@@ -115,14 +115,15 @@ func testNewItemsPage(expectedNewItems []types.NewItem, t *testing.T) {
 func TestBadnewItemPost(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
+	client := getAuthdClient("admin", t)
 	post := url.Values{
 		"id[]":       {"0"},
 		"action[]":   {"blah"},
 		"isPledge[]": {"0"},
 		"userID[]":   {"test1"},
-		"csrf":       {getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t)},
+		"csrf":       {getCSRFToken(client, testUrl+"/admin/newitems", t)},
 	}
-	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", post)
+	resp, err := client.PostForm(testUrl+"/admin/newitems", post)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }
 
@@ -132,6 +133,7 @@ func TestNewItemAdminPost(t *testing.T) {
 	initNewItems(db, t)
 	// Going backwards so we don't have to adjust the index for each row
 	// and can just use the coincident index values from the DB. Bit lazy....
+	client := getAuthdClient("admin", t)
 	for i := len(testNewItems) - 1; i > 0; i-- {
 		ni := testNewItems[i]
 		pl := &postLine{v: url.Values{}}
@@ -145,8 +147,8 @@ func TestNewItemAdminPost(t *testing.T) {
 			isPledge().
 			selectToAdd()
 
-		pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
-		resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
+		pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
+		resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 		testPageStatus(resp, err, http.StatusOK, t)
 
 		item := findAddedNewItem(ni, db, t)
@@ -198,8 +200,9 @@ func TestNewItemAdminPostUsingExistingItem(t *testing.T) {
 	pl := postLine{v: url.Values{}}
 	pl.newPostLine(6).userID(testNewItems[5].UserID).existingItem(1).selectToAdd()
 
-	pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
-	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
+	client := getAuthdClient("admin", t)
+	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
+	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	newItems, err := db.ListItems()
 	if len(currentItems) != len(newItems) {
@@ -223,8 +226,9 @@ func TestNewItemAdminPostUsingExistingCompany(t *testing.T) {
 	ni := testNewItems[5]
 
 	pl.newPostLine(6).userID(ni.UserID).existingCompany(1).currency(ni.CurrencyID).value(ni.Value).selectToAdd()
-	pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
-	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
+	client := getAuthdClient("admin", t)
+	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
+	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	newCompanies, err := db.ListCompanies()
 	if len(currentCompanies) != len(newCompanies) {
@@ -242,8 +246,9 @@ func TestDeleteNewItems(t *testing.T) {
 	pl := postLine{v: url.Values{}}
 	ni := testNewItems[5]
 	pl.newPostLine(6).userID(ni.UserID).selectToDelete()
-	pl.v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
-	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", pl.v)
+	client := getAuthdClient("admin", t)
+	pl.v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
+	resp, err := client.PostForm(testUrl+"/admin/newitems", pl.v)
 
 	testPageStatus(resp, err, http.StatusOK, t)
 	testNewItemsPage(testNewItems[:len(testNewItems)-1], t)
@@ -253,8 +258,9 @@ func TestBadNewItemsPostInvalidAddParams(t *testing.T) {
 	server, db := newServer(t)
 	defer cleanUp(server, db)
 	v := url.Values{"action[]": []string{"abc"}, "id[]": []string{"abc"}}
-	v.Add("csrf", getCSRFToken(http.Client{}, testUrl+"/admin/newitems", t))
-	resp, err := execAuthdRequest("admin", http.MethodPost, testUrl+"/admin/newitems", v)
+	client := getAuthdClient("admin", t)
+	v.Add("csrf", getCSRFToken(client, testUrl+"/admin/newitems", t))
+	resp, err := client.PostForm(testUrl+"/admin/newitems", v)
 	testPageStatus(resp, err, http.StatusBadRequest, t)
 }
 
