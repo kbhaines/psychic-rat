@@ -2,6 +2,7 @@ package pub
 
 import (
 	"net/http"
+	"net/url"
 	"psychic-rat/log"
 	"psychic-rat/types"
 	"psychic-rat/web/dispatch"
@@ -38,6 +39,10 @@ type (
 		Render(http.ResponseWriter, string, interface{}) error
 	}
 
+	HumanTester interface {
+		IsHuman(f url.Values) error
+	}
+
 	// pageVariables holds data for the templates. Stuffed into one struct for now.
 	pageVariables struct {
 		Items      []types.Item
@@ -55,14 +60,16 @@ var (
 	pledgeAPI   PledgeAPI
 	renderer    Renderer
 	authHandler UserHandler
+	humanTester HumanTester
 )
 
-func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth UserHandler, rendr Renderer) {
+func Init(item ItemAPI, newItems NewItemAPI, pledge PledgeAPI, auth UserHandler, rendr Renderer, ht HumanTester) {
 	itemsAPI = item
 	newItemsAPI = newItems
 	pledgeAPI = pledge
 	authHandler = auth
 	renderer = rendr
+	humanTester = ht
 }
 
 func HomePageHandler(w http.ResponseWriter, r *http.Request) {
@@ -150,6 +157,12 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := humanTester.IsHuman(r.Form); err != nil {
+		log.Errorf(r.Context(), "failed human test: %v", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
 	itemId64, err := strconv.ParseInt(r.FormValue("item"), 10, 32)
 	if err != nil {
 		log.Errorf(r.Context(), "could not parse itemID: %v", err)
@@ -200,6 +213,12 @@ func NewItemHandler(w http.ResponseWriter, r *http.Request) {
 func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		log.Errorf(r.Context(), "could not parse new item form: %v", err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	if err := humanTester.IsHuman(r.Form); err != nil {
+		log.Errorf(r.Context(), "failed human test: %v", err)
 		http.Error(w, "", http.StatusBadRequest)
 		return
 	}

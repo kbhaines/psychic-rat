@@ -1,4 +1,5 @@
 {{ template "header.html.tmpl" . }}
+
       <div id="page">
         <div class="container">
           <div class="row">
@@ -13,7 +14,7 @@
                     <h2>Pledge your boycott</h2>
                     <p>Select the item you're boycotting from the list below</p>
                     <label class="wrapper">
-                    <form action="/pledge" method="post">
+                    <form action="/pledge" id="pledgeForm" method="post">
                     <input type="hidden" name="csrf" value="{{ .CSRFToken }}">
                     <div class="custom-select">
                     <select name="item" required>
@@ -22,7 +23,12 @@
                         {{ end }}
                     </select>
                     </div>
-                    <input type="submit" class="button" value="Submit">
+                     <script>
+                       function onSubmitPledge(token) {
+                         document.getElementById("pledgeForm").submit();
+                       }
+                     </script>
+                    <input type="submit" class="g-recaptcha button" data-sitekey="6LefuEsUAAAAAL0gXcn3hKHq3tmKmYuLvcHuc40W" data-callback='onSubmitPledge' value="Submit">
                     </form>
                     </label>
                     <br><br>
@@ -31,7 +37,7 @@
                     Note that items are checked by an admin before they appear in the main listing,
                     so there may be a delay of up to 24 hours.</p>
 
-                    <form action="/newitem" method="post">
+                    <form id="pledgeNew" action="/newitem" method="post">
                     <input type="hidden" name="csrf" value="{{ .CSRFToken }}">
                         <table>
                             <tr><td>Manufacturer/Company</td><td><input name="company"></td></tr>
@@ -48,7 +54,12 @@
                                 </div>
                             </td></tr>
                         </table>
-                        <input type="submit" class="button" value="Submit">
+                         <script>
+                           function onSubmitNew(token) {
+                             document.getElementById("pledgeNew").submit();
+                           }
+                         </script>
+                        <input type="submit" class="g-recaptcha button" data-sitekey="6LefuEsUAAAAAL0gXcn3hKHq3tmKmYuLvcHuc40W" data-callback='onSubmitNew' value="Submit">
                     </form>
                 </header>
               </section>
