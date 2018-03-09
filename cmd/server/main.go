@@ -82,6 +82,7 @@ func initModules() {
 			"basic": basic.New(callbackURL + "?p=basic"),
 		}
 		userHandler = basic.NewUserHandler()
+		log.Printf("WARNING: using basic auth")
 	}
 
 	auth.Init(db, authProviders)
