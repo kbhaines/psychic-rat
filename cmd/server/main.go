@@ -11,6 +11,7 @@ import (
 	"psychic-rat/auth/gplus"
 	"psychic-rat/auth/recaptcha"
 	"psychic-rat/auth/twitter"
+	"psychic-rat/limit"
 	"psychic-rat/sess"
 	"psychic-rat/sqldb"
 	"psychic-rat/types"
@@ -88,7 +89,7 @@ func initModules() {
 	}
 
 	auth.Init(db, authProviders)
-	web.Init(userHandler)
+	web.Init(userHandler, limit.New())
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	pub.Init(db, db, db, userHandler, renderer, recaptcha.New(os.Getenv("RECAPTCHA_SECRET")))
 	admin.Init(db, db, db, db, userHandler, renderer)

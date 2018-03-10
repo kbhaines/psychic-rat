@@ -35,6 +35,10 @@ type (
 		GetLoggedInUser(*http.Request) (*types.User, error)
 		VerifyUserCSRF(*http.Request, string) error
 	}
+
+	RateLimiter interface {
+		CheckLimit(*http.Request) error
+	}
 )
 
 var (
@@ -51,23 +55,32 @@ var (
 	}
 
 	userHandler UserHandler
+	rateLimiter RateLimiter
 
 	flags struct {
 		enableAuth0, sqldb bool
 	}
 )
 
-func Init(u UserHandler) {
+func Init(u UserHandler, r RateLimiter) {
 	userHandler = u
+	rateLimiter = r
 }
 
 func Handler() http.Handler {
 	hmux := http.NewServeMux()
 	handlerForDirs(hmux, "css", "js", "images")
 	for _, h := range uriHandlers {
-		hmux.HandleFunc(h.URI, addContextValues(logRequest(csrfProtect(h.Handler))))
+		hmux.HandleFunc(h.URI, addContextValues(logRequest(rateLimit(csrfProtect(h.Handler)))))
 	}
 	return hmux
+}
+
+func handlerForDirs(mux *http.ServeMux, dir ...string) {
+	for _, d := range dir {
+		baseHandler := http.StripPrefix("/"+d, http.FileServer(http.Dir("res/"+d+"/")))
+		mux.HandleFunc("/"+d+"/", addContextValues(logRequest(rateLimit(baseHandler.ServeHTTP))))
+	}
 }
 
 func addContextValues(next http.HandlerFunc) http.HandlerFunc {
@@ -94,6 +107,17 @@ func logRequest(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
+func rateLimit(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := rateLimiter.CheckLimit(r); err != nil {
+			log.Errorf(r.Context(), "rate limited: %v", err)
+			http.Error(w, "server resource limit", http.StatusServiceUnavailable)
+			return
+		}
+		next(w, r)
+	}
+}
+
 func csrfProtect(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -114,13 +138,6 @@ func csrfProtect(next http.HandlerFunc) http.HandlerFunc {
 		}
 		log.Logf(r.Context(), "csrf check ok")
 		next(w, r)
-	}
-}
-
-func handlerForDirs(mux *http.ServeMux, dir ...string) {
-	for _, d := range dir {
-		baseHandler := http.StripPrefix("/"+d, http.FileServer(http.Dir("res/"+d+"/")))
-		mux.HandleFunc("/"+d+"/", addContextValues(logRequest(baseHandler.ServeHTTP)))
 	}
 }
 
