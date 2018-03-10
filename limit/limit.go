@@ -48,7 +48,10 @@ func (l *Limiter) getBucketFor(s string) *bucket {
 	if !ok {
 		b = &bucket{tokens: l.max}
 		l.limits[s] = b
-		go b.tokenFiller(l.interval, l.increment, l.max, func() { l.deleteBucket(s) })
+		go func() {
+			b.tokenFiller(l.interval, l.increment, l.max)
+			l.deleteBucket(s)
+		}()
 		log.Logf(context.Background(), "bucket filler started for %s", s)
 	}
 	return b
@@ -70,12 +73,11 @@ func (b *bucket) consumeToken() bool {
 	return true
 }
 
-func (b *bucket) tokenFiller(interval, increment, max int, done func()) {
+func (b *bucket) tokenFiller(interval, increment, max int) {
 	for {
 		time.Sleep(time.Duration(interval) * time.Second)
 		b.tokens += increment
 		if b.tokens >= max {
-			done()
 			return
 		}
 	}
