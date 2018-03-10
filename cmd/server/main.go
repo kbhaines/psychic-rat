@@ -66,6 +66,7 @@ func initModules() {
 	}
 
 	callbackURL := serverURL + "callback"
+
 	var (
 		userHandler   UserHandler
 		authProviders map[string]auth.AuthHandler

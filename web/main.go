@@ -119,7 +119,8 @@ func csrfProtect(next http.HandlerFunc) http.HandlerFunc {
 
 func handlerForDirs(mux *http.ServeMux, dir ...string) {
 	for _, d := range dir {
-		mux.Handle("/"+d+"/", http.StripPrefix("/"+d, http.FileServer(http.Dir("res/"+d+"/"))))
+		baseHandler := http.StripPrefix("/"+d, http.FileServer(http.Dir("res/"+d+"/")))
+		mux.HandleFunc("/"+d+"/", addContextValues(logRequest(baseHandler.ServeHTTP)))
 	}
 }
 
