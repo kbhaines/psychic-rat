@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -19,6 +20,7 @@ import (
 	"psychic-rat/web/admin"
 	"psychic-rat/web/pub"
 	"psychic-rat/web/tmpl"
+	"strings"
 
 	"github.com/gorilla/context"
 )
@@ -29,6 +31,7 @@ var (
 		cacheTemplates bool
 		listenOn       string
 		basicAuth      bool
+		limit          string
 	}
 )
 
@@ -44,6 +47,7 @@ func main() {
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
 	flag.BoolVar(&flags.basicAuth, "basicauth", false, "enable basic auth mode for testing")
+	flag.StringVar(&flags.limit, "limit", "15,5,5", "rate-limit bucket specification")
 	flag.Parse()
 
 	initModules()
@@ -89,8 +93,17 @@ func initModules() {
 	}
 
 	auth.Init(db, authProviders)
-	web.Init(userHandler, limit.New())
+
+	var max, increment, interval int
+	_, err = fmt.Sscanf(flags.limit, "%d,%d,%d", &max, &increment, &interval)
+	if err != nil {
+		panic(err)
+	}
+
+	web.Init(userHandler, limit.New(max, increment, interval, idGenerator))
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	pub.Init(db, db, db, userHandler, renderer, recaptcha.New(os.Getenv("RECAPTCHA_SECRET")))
 	admin.Init(db, db, db, db, userHandler, renderer)
 }
+
+func idGenerator(r *http.Request) string { return r.Method + strings.Split(r.RemoteAddr, ":")[0] }

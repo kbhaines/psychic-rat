@@ -26,12 +26,16 @@ func (m *mockUserHandler) VerifyUserCSRF(r *http.Request, token string) error {
 	return fmt.Errorf("CSRF failed")
 }
 
+type mockRateLimit struct{}
+
+func (mr *mockRateLimit) CheckLimit(*http.Request) error { return nil }
+
 func TestCSRFBlock(t *testing.T) {
 	values := url.Values{"item": {"1"}}
 	req := &http.Request{Method: "POST", PostForm: values}
 	writer := httptest.NewRecorder()
 	called := false
-	Init(&mockUserHandler{csrfResult: false})
+	Init(&mockUserHandler{csrfResult: false}, &mockRateLimit{})
 	csrfFunc := csrfProtect(func(w http.ResponseWriter, r *http.Request) {
 		called = true
 	})
@@ -50,7 +54,7 @@ func TestCSRFPass(t *testing.T) {
 	token := "1234"
 	req.PostForm = url.Values{"item": {"1"}, "csrf": {token}}
 	mock := &mockUserHandler{csrfResult: true}
-	Init(mock)
+	Init(mock, &mockRateLimit{})
 	called := false
 	csrfFunc := csrfProtect(func(w http.ResponseWriter, r *http.Request) {
 		called = true

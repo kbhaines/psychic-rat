@@ -53,9 +53,14 @@ type mockRenderer struct {
 	t                *testing.T
 }
 
+type mockHuman struct{}
+
+func (m *mockHuman) IsHuman(f url.Values) error { return nil }
+
 func TestPledgeListItems(t *testing.T) {
 	itemsAPI = &mockItemAPI{}
 	authHandler = &mockAuthHandler{user: &types.User{}}
+	humanTester = &mockHuman{}
 
 	expectedVars := pageVariables{Items: mockItemList, CSRFToken: "1234"}
 	renderer = getRenderMock(t, "pledge.html.tmpl", expectedVars)

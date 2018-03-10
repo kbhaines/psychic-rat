@@ -23,6 +23,14 @@ const callback = "/callback?p=basic"
 
 var testURL string
 
+type mockRateLimit struct{}
+
+func (mr *mockRateLimit) CheckLimit(*http.Request) error { return nil }
+
+type mockHuman struct{}
+
+func (m *mockHuman) IsHuman(f url.Values) error { return nil }
+
 func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 	server := httptest.NewServer(web.Handler())
 	testURL = server.URL
@@ -33,8 +41,8 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 		"basic": basic.New(testURL + callback),
 	}
 	auth.Init(db, authProviders)
-	web.Init(authHandler)
-	pub.Init(db, db, db, authHandler, renderer)
+	web.Init(authHandler, &mockRateLimit{})
+	pub.Init(db, db, db, authHandler, renderer, &mockHuman{})
 	admin.Init(db, db, db, db, authHandler, renderer)
 	return server, db
 }

@@ -5,62 +5,64 @@ import (
 	"fmt"
 	"net/http"
 	"psychic-rat/log"
-	"strings"
 	"sync"
 	"time"
 )
 
 type (
 	Limiter struct {
-		limits map[string]*bucket
-		mu     sync.Mutex
+		limits      map[string]*bucket
+		mu          sync.Mutex
+		max         int
+		increment   int
+		interval    int
+		idGenerator IdGeneratorFunc
 	}
 
+	IdGeneratorFunc func(*http.Request) string
+
 	bucket struct {
-		tokens       int
-		max          int
-		fillWith     int
-		fillInterval int
-		mu           sync.Mutex
+		tokens int
+		mu     sync.Mutex
 	}
 )
 
-func NewBucket(path string, max, fillWith, fillInterval int) *bucket {
-	return &bucket{max, max, fillWith, fillInterval, sync.Mutex{}}
-}
-
-func New(bs ...bucket) *Limiter {
-	return &Limiter{limits: map[string]*bucket{}}
+func New(max, increment, interval int, idGen IdGeneratorFunc) *Limiter {
+	return &Limiter{limits: map[string]*bucket{}, max: max, increment: increment, interval: interval, idGenerator: idGen}
 }
 
 func (l *Limiter) CheckLimit(r *http.Request) error {
-	id := r.Method + strings.Split(r.RemoteAddr, ":")[0]
-	bh := l.getBucketHandler(id)
-	if !bh.getToken() {
+	id := l.idGenerator(r)
+	bh := l.getBucketFor(id)
+	if !bh.consumeToken() {
 		return fmt.Errorf("tokens exhausted for %s", id)
 	}
-	log.Logf(r.Context(), "%s: %v", id, bh)
 	return nil
 }
 
-func (l *Limiter) getBucketHandler(s string) *bucket {
+func (l *Limiter) getBucketFor(s string) *bucket {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	b, ok := l.limits[s]
 	if !ok {
-		b = &bucket{15, 15, 5, 5, sync.Mutex{}}
+		b = &bucket{tokens: l.max}
 		l.limits[s] = b
-		go b.tokenFiller()
+		go b.tokenFiller(l.interval, l.increment, l.max, func() { l.deleteBucket(s) })
 		log.Logf(context.Background(), "bucket filler started for %s", s)
 	}
 	return b
 }
 
-func (b *bucket) getToken() bool {
+func (l *Limiter) deleteBucket(s string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	delete(l.limits, s)
+}
+
+func (b *bucket) consumeToken() bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-
 	if b.tokens == 0 {
 		return false
 	}
@@ -68,13 +70,12 @@ func (b *bucket) getToken() bool {
 	return true
 }
 
-func (b *bucket) tokenFiller() {
+func (b *bucket) tokenFiller(interval, increment, max int, done func()) {
 	for {
-		time.Sleep(time.Duration(b.fillInterval) * time.Second)
-		b.tokens += b.fillWith
-		log.Logf(context.Background(), "tokens added")
-		if b.tokens >= b.max {
-			log.Logf(context.Background(), "bucket is full")
+		time.Sleep(time.Duration(interval) * time.Second)
+		b.tokens += increment
+		if b.tokens >= max {
+			done()
 			return
 		}
 	}
