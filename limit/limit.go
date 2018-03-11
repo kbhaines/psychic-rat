@@ -11,7 +11,7 @@ import (
 
 type (
 	Limiter struct {
-		limits      map[string]*bucket
+		clients     map[string]*bucket
 		mu          sync.Mutex
 		max         int
 		increment   int
@@ -28,7 +28,7 @@ type (
 )
 
 func New(max, increment, interval int, idGen IdGeneratorFunc) *Limiter {
-	return &Limiter{limits: map[string]*bucket{}, max: max, increment: increment, interval: interval, idGenerator: idGen}
+	return &Limiter{clients: map[string]*bucket{}, max: max, increment: increment, interval: interval, idGenerator: idGen}
 }
 
 func (l *Limiter) CheckLimit(r *http.Request) error {
@@ -44,15 +44,16 @@ func (l *Limiter) getBucketFor(s string) *bucket {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	b, ok := l.limits[s]
+	b, ok := l.clients[s]
 	if !ok {
 		b = &bucket{tokens: l.max}
-		l.limits[s] = b
+		l.clients[s] = b
 		go func() {
+			log.Logf(context.Background(), "bucket filler started for %s", s)
 			b.tokenFiller(l.interval, l.increment, l.max)
 			l.deleteBucket(s)
+			log.Logf(context.Background(), "bucket filler completed for %s", s)
 		}()
-		log.Logf(context.Background(), "bucket filler started for %s", s)
 	}
 	return b
 }
@@ -60,7 +61,7 @@ func (l *Limiter) getBucketFor(s string) *bucket {
 func (l *Limiter) deleteBucket(s string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	delete(l.limits, s)
+	delete(l.clients, s)
 }
 
 func (b *bucket) consumeToken() bool {
