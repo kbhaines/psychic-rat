@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/signal"
 	"psychic-rat/auth"
 	"psychic-rat/auth/basic"
 	"psychic-rat/auth/facebook"
@@ -22,6 +23,9 @@ import (
 	"psychic-rat/web/pub"
 	"psychic-rat/web/tmpl"
 	"strings"
+	"syscall"
+
+	ctxt "context"
 
 	"github.com/gorilla/context"
 )
@@ -55,14 +59,13 @@ func main() {
 	flag.StringVar(&flags.limit, "limit", "30,10,5", "rate-limit bucket specification")
 	flag.Parse()
 
-	initModules()
-	err := http.ListenAndServe(flags.listenOn, context.ClearHandler(web.Handler()))
-	if err != nil {
-		log.Fatalf("web server aborted: %v", err)
-	}
+	db := initModules()
+	shutdownChan := initSignalHandler()
+	runServer(shutdownChan)
+	db.Close()
 }
 
-func initModules() {
+func initModules() *sqldb.DB {
 	db, err := sqldb.OpenDB("pr.dat")
 	if err != nil {
 		panic("unable to init db: " + err.Error())
@@ -110,6 +113,31 @@ func initModules() {
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
 	pub.Init(db, db, db, userHandler, renderer, humanTest)
 	admin.Init(db, db, db, db, userHandler, renderer)
+	return db
+}
+
+func initSignalHandler() chan bool {
+	sigs := make(chan os.Signal, 1)
+	shutdown := make(chan bool, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		s := <-sigs
+		log.Printf("recevied signal %v", s)
+		shutdown <- true
+	}()
+
+	return shutdown
+}
+
+func runServer(shutdown chan bool) {
+	srv := &http.Server{Addr: flags.listenOn, Handler: context.ClearHandler(web.Handler())}
+	go func() {
+		err := srv.ListenAndServe()
+		log.Printf("web server shutdown: %v", err)
+	}()
+	<-shutdown
+	srv.Shutdown(ctxt.Background())
 }
 
 func idGenerator(r *http.Request) string { return strings.Split(r.RemoteAddr, ":")[0] }
