@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"os/exec"
 	"psychic-rat/types"
 	"time"
 
@@ -33,6 +34,11 @@ func OpenDB(name string) (*DB, error) {
 		return nil, err
 	}
 	return setupDB(db)
+}
+
+func Backup(originalFile, backupFile string) error {
+	os.Remove(backupFile)
+	return exec.Command("sqlite3", originalFile, ".backup "+backupFile).Run()
 }
 
 func setupDB(db *sql.DB) (*DB, error) {

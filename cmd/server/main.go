@@ -61,6 +61,7 @@ func main() {
 
 	db := initModules()
 	shutdownChan := initSignalHandler()
+	initBackupHandler("pr.dat", "pr.dat.bak")
 	runServer(shutdownChan)
 	db.Close()
 }
@@ -123,11 +124,27 @@ func initSignalHandler() chan bool {
 
 	go func() {
 		s := <-sigs
-		log.Printf("recevied signal %v", s)
+		log.Printf("received signal %v", s)
 		shutdown <- true
 	}()
 
 	return shutdown
+}
+
+func initBackupHandler(dbName string, backupName string) {
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGUSR1)
+	go func() {
+		for {
+			s := <-sigs
+			log.Printf("received backup request %v", s)
+			err := sqldb.Backup(dbName, backupName)
+			if err != nil {
+				log.Printf("backup error: %v", err)
+			}
+			log.Printf("backup completed")
+		}
+	}()
 }
 
 func runServer(shutdown chan bool) {
