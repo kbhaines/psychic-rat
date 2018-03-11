@@ -52,7 +52,7 @@ func main() {
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
 	flag.BoolVar(&flags.basicAuth, "basicauth", false, "enable basic auth mode for testing")
-	flag.StringVar(&flags.limit, "limit", "15,5,5", "rate-limit bucket specification")
+	flag.StringVar(&flags.limit, "limit", "30,10,5", "rate-limit bucket specification")
 	flag.Parse()
 
 	initModules()

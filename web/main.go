@@ -111,7 +111,9 @@ func rateLimit(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if err := rateLimiter.CheckLimit(r); err != nil {
 			log.Errorf(r.Context(), "rate limited: %v", err)
-			http.Error(w, "server resource limit", http.StatusServiceUnavailable)
+			w.WriteHeader(http.StatusServiceUnavailable)
+			fmt.Fprintf(w, "<html><meta http-equiv=refresh content=5;url=%s /></html>server has hit resource limits; retrying automatically in 5 seconds",
+				r.RequestURI)
 			return
 		}
 		next(w, r)
