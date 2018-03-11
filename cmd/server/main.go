@@ -112,6 +112,6 @@ func initModules() {
 	admin.Init(db, db, db, db, userHandler, renderer)
 }
 
-func idGenerator(r *http.Request) string { return r.Method + strings.Split(r.RemoteAddr, ":")[0] }
+func idGenerator(r *http.Request) string { return strings.Split(r.RemoteAddr, ":")[0] }
 
 func (_ *fakeCaptcha) IsHuman(url.Values) error { return nil }
