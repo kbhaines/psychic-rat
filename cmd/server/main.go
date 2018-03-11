@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"psychic-rat/auth"
 	"psychic-rat/auth/basic"
@@ -35,12 +36,16 @@ var (
 	}
 )
 
-type UserHandler interface {
-	GetLoggedInUser(*http.Request) (*types.User, error)
-	GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
-	LogOut(http.ResponseWriter, *http.Request) error
-	VerifyUserCSRF(*http.Request, string) error
-}
+type (
+	UserHandler interface {
+		GetLoggedInUser(*http.Request) (*types.User, error)
+		GetUserCSRF(http.ResponseWriter, *http.Request) (string, error)
+		LogOut(http.ResponseWriter, *http.Request) error
+		VerifyUserCSRF(*http.Request, string) error
+	}
+
+	fakeCaptcha struct{}
+)
 
 func main() {
 	flag.StringVar(&flags.listenOn, "listen", "localhost:8080", "interface:port to listen on")
@@ -73,23 +78,24 @@ func initModules() {
 	callbackURL := serverURL + "callback"
 
 	var (
-		userHandler   UserHandler
 		authProviders map[string]auth.AuthHandler
+		humanTest     pub.HumanTester
 	)
 
+	userHandler := auth.NewUserHandler()
 	if !flags.basicAuth {
-		userHandler = auth.NewUserHandler()
 		authProviders = map[string]auth.AuthHandler{
 			"facebook": facebook.New(callbackURL+"?p=facebook", userHandler),
 			"twitter":  twitter.New(callbackURL + "?p=twitter"),
 			"gplus":    gplus.New(callbackURL+"?p=gplus", userHandler),
 		}
+		humanTest = recaptcha.New(os.Getenv("RECAPTCHA_SECRET"))
 	} else {
 		authProviders = map[string]auth.AuthHandler{
 			"basic": basic.New(callbackURL + "?p=basic"),
 		}
-		userHandler = basic.NewUserHandler()
-		log.Printf("WARNING: using basic auth")
+		humanTest = &fakeCaptcha{}
+		log.Printf("WARNING: using basic auth, disabled captcha")
 	}
 
 	auth.Init(db, authProviders)
@@ -102,8 +108,10 @@ func initModules() {
 
 	web.Init(userHandler, limit.New(max, increment, interval, idGenerator))
 	renderer := tmpl.NewRenderer("res/tmpl", flags.cacheTemplates)
-	pub.Init(db, db, db, userHandler, renderer, recaptcha.New(os.Getenv("RECAPTCHA_SECRET")))
+	pub.Init(db, db, db, userHandler, renderer, humanTest)
 	admin.Init(db, db, db, db, userHandler, renderer)
 }
 
 func idGenerator(r *http.Request) string { return r.Method + strings.Split(r.RemoteAddr, ":")[0] }
+
+func (_ *fakeCaptcha) IsHuman(url.Values) error { return nil }
