@@ -289,6 +289,33 @@ func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
 	return result, nil
 }
 
+func (d *DB) ListRecentPledges(limit int) ([]types.RecentPledge, error) {
+	rows, err := d.Query("select firstName, country, make, model from userPledges order by timestamp desc, pledgeID desc limit ?", limit)
+	if err != nil {
+		return nil, fmt.Errorf("ListRecentPledges: unable to query: %v", err)
+	}
+	result := make([]types.RecentPledge, 0, limit)
+	for rows.Next() {
+		var p types.RecentPledge
+		err = rows.Scan(&p.UserName, &p.Country, &p.Make, &p.Model)
+		if err != nil {
+			return result, fmt.Errorf("ListRecentPledges: unable to parse result row: %v", err)
+		}
+		result = append(result, p)
+	}
+	return result, nil
+}
+
+func (d *DB) TotalPledges() (int, error) {
+	row := d.QueryRow("select sum(usdValue) from pledges")
+	var total int
+	err := row.Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("unable to calculate sum: %v", err)
+	}
+	return total, nil
+}
+
 func (d *DB) CurrencyConversion(id int, value int) (int, error) {
 	c, err := d.getCurrency(id)
 	if err != nil {

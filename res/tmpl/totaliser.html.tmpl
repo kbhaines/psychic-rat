@@ -8,7 +8,10 @@
 
 <header><h2>Recent Pledges</h2></header>
 
-{{ .RecentPledges }}
+    {{ range .RecentPledges }}
+        {{ printf "%s %s %s %s" .UserName .Country .Make .Model }}
+        <br>
+    {{ end}}
 
-<header><h2>Total Pledged so far</h2></header>
-<header> ${{ .TotalPledges }} </header>
+    <br>
+<header><h2>Total: ${{.TotalPledges}}</h2></header>

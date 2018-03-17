@@ -40,6 +40,14 @@ type User struct {
 	IsAdmin   bool
 }
 
+type RecentPledge struct {
+	UserName string
+	Country  string
+	Make     string
+	Model    string
+	Value    int
+}
+
 // NewItem is a record of a (user) request to add a new item to the database of
 // Items. 'Company' will be used if also adding in a new company to the
 // database. IsPledge is true if the user also pledged the item

@@ -1,7 +1,6 @@
 package pub
 
 import (
-	syslog "log"
 	"net/http"
 	"net/url"
 	"psychic-rat/log"
@@ -25,6 +24,8 @@ type (
 	PledgeAPI interface {
 		AddPledge(itemId int, userID string, usdValue int) (*types.Pledge, error)
 		ListUserPledges(userID string) ([]types.Pledge, error)
+		ListRecentPledges(limit int) ([]types.RecentPledge, error)
+		TotalPledges() (int, error)
 	}
 
 	UserAPI interface {
@@ -54,7 +55,7 @@ type (
 		Currencies    []types.Currency
 		CSRFToken     string
 		UserPledges   []types.Pledge
-		RecentPledges []types.Pledge
+		RecentPledges []types.RecentPledge
 		TotalPledges  int
 	}
 )
@@ -86,10 +87,8 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET": func(w http.ResponseWriter, r *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(r)
-			syslog.Printf("vars = %+v\n", vars)
 			if vars.User.ID != "" {
 				pledges, err := pledgeAPI.ListUserPledges(vars.User.ID)
-				syslog.Printf("pledges = %+v\n", pledges)
 				if err != nil {
 					log.Errorf(r.Context(), "unable to retrieve pledges: %v", err)
 					http.Error(w, "pledge service error", http.StatusInternalServerError)
@@ -97,7 +96,20 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				vars.UserPledges = pledges[0:3]
 			}
-			vars.RecentPledges = []types.Pledge{types.Pledge{USDValue: 100, UserID: "user001"}}
+			recentPledges, err := pledgeAPI.ListRecentPledges(10)
+			if err != nil {
+				log.Errorf(r.Context(), "unable to retrieve pledges: %v", err)
+				http.Error(w, "pledge service error", http.StatusInternalServerError)
+				return
+			}
+			vars.RecentPledges = recentPledges
+			total, err := pledgeAPI.TotalPledges()
+			if err != nil {
+				log.Errorf(r.Context(), "unable to retrieve total: %v", err)
+				http.Error(w, "pledge service error", http.StatusInternalServerError)
+				return
+			}
+			vars.TotalPledges = total
 			render(r, w, "home.html.tmpl", vars)
 		},
 	}
