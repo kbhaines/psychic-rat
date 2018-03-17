@@ -176,6 +176,7 @@ func (m *mockItemAPI) GetItem(id int) (types.Item, error)        { return mockIt
 func (m *mockItemAPI) ListCurrencies() ([]types.Currency, error) { return nil, nil }
 
 func (p *mockPledgeAPI) AddPledge(itemID int, userID string, value int) (*types.Pledge, error) {
+
 	p.t.Helper()
 	if p.userID != userID || p.itemID != itemID || p.value != value {
 		err := fmt.Errorf("expected AddPledge to be called with userID:%s itemID:%d value:%d, got %s %d %d", p.userID, p.itemID, p.value, userID, itemID, value)
@@ -192,6 +193,14 @@ func (p *mockPledgeAPI) checkUsed() {
 		p.t.Fatalf("expected call to AddPledge with %d,%s, didn't happen", p.itemID, p.userID)
 	}
 }
+
+func (m *mockPledgeAPI) ListUserPledges(userID string) ([]types.Pledge, error) {
+	panic("not implemented")
+}
+func (m *mockPledgeAPI) ListRecentPledges(limit int) ([]types.RecentPledge, error) {
+	panic("not implemented")
+}
+func (m *mockPledgeAPI) TotalPledges() (int, error) { panic("not implemented") }
 
 func (a *mockAuthHandler) Handler(http.ResponseWriter, *http.Request)         {}
 func (a *mockAuthHandler) GetLoggedInUser(*http.Request) (*types.User, error) { return a.user, nil }

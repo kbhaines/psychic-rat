@@ -308,12 +308,17 @@ func (d *DB) ListRecentPledges(limit int) ([]types.RecentPledge, error) {
 
 func (d *DB) TotalPledges() (int, error) {
 	row := d.QueryRow("select sum(usdValue) from pledges")
-	var total int
+
+	// Using interface allows for the initial state of sum() == nil
+	var total interface{}
 	err := row.Scan(&total)
 	if err != nil {
 		return 0, fmt.Errorf("unable to calculate sum: %v", err)
 	}
-	return total, nil
+	if total == nil {
+		return 0, nil
+	}
+	return int(total.(int64)), nil
 }
 
 func (d *DB) CurrencyConversion(id int, value int) (int, error) {
