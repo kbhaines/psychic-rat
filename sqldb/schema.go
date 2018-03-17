@@ -52,10 +52,10 @@ func createSchema(db *sql.DB) error {
 	  usdValue integer,
 	  timestamp integer);
 
-	create view userPledges as select p.id pledgeID, p.userID, p.timestamp, 
-		i.id itemID, i.Make, i.Model, c.id companyID, c.name 
-		from pledges p, items i, companies c 
-		where p.itemID = i.id and i.companyID = c.id;
+	create view userPledges as select p.id pledgeID, p.userID, u.FirstName, u.country, 
+			p.timestamp, i.id itemID, i.Make, i.Model, c.id companyID, c.name 
+		from pledges p, items i, companies c, users u
+		where p.itemID = i.id and i.companyID = c.id and u.id = p.userID;
 	`
 	_, err := db.Exec(stmt)
 	if err != nil {

@@ -1,6 +1,7 @@
 package pub
 
 import (
+	syslog "log"
 	"net/http"
 	"net/url"
 	"psychic-rat/log"
@@ -22,11 +23,12 @@ type (
 	}
 
 	PledgeAPI interface {
-		AddPledge(itemId int, userId string, usdValue int) (*types.Pledge, error)
+		AddPledge(itemId int, userID string, usdValue int) (*types.Pledge, error)
+		ListUserPledges(userID string) ([]types.Pledge, error)
 	}
 
 	UserAPI interface {
-		GetUser(userId string) (*types.User, error)
+		GetUser(userID string) (*types.User, error)
 	}
 
 	UserHandler interface {
@@ -45,12 +47,15 @@ type (
 
 	// pageVariables holds data for the templates. Stuffed into one struct for now.
 	pageVariables struct {
-		Items      []types.Item
-		User       types.User
-		NewItems   []types.NewItem
-		Companies  []types.Company
-		Currencies []types.Currency
-		CSRFToken  string
+		Items         []types.Item
+		User          types.User
+		NewItems      []types.NewItem
+		Companies     []types.Company
+		Currencies    []types.Currency
+		CSRFToken     string
+		UserPledges   []types.Pledge
+		RecentPledges []types.Pledge
+		TotalPledges  int
 	}
 )
 
@@ -81,6 +86,18 @@ func HomePageHandler(w http.ResponseWriter, r *http.Request) {
 	selector := dispatch.MethodSelector{
 		"GET": func(w http.ResponseWriter, r *http.Request) {
 			vars := (&pageVariables{}).withSessionVars(r)
+			syslog.Printf("vars = %+v\n", vars)
+			if vars.User.ID != "" {
+				pledges, err := pledgeAPI.ListUserPledges(vars.User.ID)
+				syslog.Printf("pledges = %+v\n", pledges)
+				if err != nil {
+					log.Errorf(r.Context(), "unable to retrieve pledges: %v", err)
+					http.Error(w, "pledge service error", http.StatusInternalServerError)
+					return
+				}
+				vars.UserPledges = pledges[0:3]
+			}
+			vars.RecentPledges = []types.Pledge{types.Pledge{USDValue: 100, UserID: "user001"}}
 			render(r, w, "home.html.tmpl", vars)
 		},
 	}
@@ -179,10 +196,10 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, _ := authHandler.GetLoggedInUser(r)
-	userId := user.ID
+	userID := user.ID
 
-	log.Logf(r.Context(), "pledge item %v from user %v", itemId, userId)
-	pledge, err := pledgeAPI.AddPledge(itemId, userId, item.USDValue)
+	log.Logf(r.Context(), "pledge item %v from user %v", itemId, userID)
+	pledge, err := pledgeAPI.AddPledge(itemId, userID, item.USDValue)
 	if err != nil {
 		log.Errorf(r.Context(), "unable to pledge: ", err)
 		http.Error(w, "", http.StatusInternalServerError)
@@ -224,7 +241,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, _ := authHandler.GetLoggedInUser(r)
-	userId := user.ID
+	userID := user.ID
 
 	company := r.FormValue("company")
 	make := r.FormValue("make")
@@ -250,7 +267,7 @@ func newItemPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newItem := types.NewItem{UserID: userId, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
+	newItem := types.NewItem{UserID: userID, IsPledge: true, Make: make, Model: model, Company: company, CurrencyID: int(currencyIDInt), Value: int(valueInt)}
 	_, err = newItemsAPI.AddNewItem(newItem)
 	if err != nil {
 		log.Errorf(r.Context(), "could not add new item %v: %v", newItem, err)

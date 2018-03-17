@@ -271,7 +271,7 @@ func (d *DB) AddPledge(itemID int, userID string, usdValue int) (*types.Pledge, 
 }
 
 func (d *DB) ListUserPledges(userID string) ([]types.Pledge, error) {
-	rows, err := d.Query("select pledgeID, userID, make, model, companyID, name, timestamp from userPledges where userID = ?", userID)
+	rows, err := d.Query("select pledgeID, userID, make, model, companyID, name, timestamp from userPledges where userID = ? order by timestamp desc", userID)
 	if err != nil {
 		return nil, fmt.Errorf("ListUserPledges: unable to query: %v", err)
 	}
