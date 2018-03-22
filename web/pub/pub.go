@@ -211,6 +211,20 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 	userID := user.ID
 
 	log.Logf(r.Context(), "pledge item %v from user %v", itemId, userID)
+
+	pledges, err := pledgeAPI.ListUserPledges(userID)
+	if err != nil {
+		log.Errorf(r.Context(), "could not get pledges for user %v: %v", userID, err)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
+	if len(pledges) > 999999 {
+		log.Errorf(r.Context(), "user pledge limit exceeded for %s", userID)
+		http.Error(w, "", http.StatusBadRequest)
+		return
+	}
+
 	pledge, err := pledgeAPI.AddPledge(itemId, userID, item.USDValue)
 	if err != nil {
 		log.Errorf(r.Context(), "unable to pledge: ", err)

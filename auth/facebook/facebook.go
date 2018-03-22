@@ -15,7 +15,7 @@ import (
 const (
 	authURL         string = "https://www.facebook.com/dialog/oauth"
 	tokenURL        string = "https://graph.facebook.com/oauth/access_token"
-	endpointProfile string = "https://graph.facebook.com/me?fields=email,first_name,last_name,link,about,id,name,picture,location"
+	endpointProfile string = "https://graph.facebook.com/me?fields=email,first_name,last_name,id,name"
 	facebookCookie  string = "fb"
 )
 
@@ -55,7 +55,7 @@ func getOauthConf(cb string) *oauth2.Config {
 		ClientID:     clientID,
 		ClientSecret: clientSecret,
 		RedirectURL:  cb,
-		Scopes:       []string{"public_profile", "email"},
+		Scopes:       []string{"public_profile", "email", "user_hometown"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  authURL,
 			TokenURL: tokenURL,

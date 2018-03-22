@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"psychic-rat/types"
+	"strings"
 
 	"github.com/gorilla/sessions"
 	"golang.org/x/oauth2"
@@ -109,8 +110,8 @@ func userFromReader(reader io.Reader) (*types.User, error) {
 	}
 
 	user := &types.User{}
-	user.FirstName = u.FirstName
 	user.Fullname = u.Name
+	user.FirstName = strings.Split(u.Name, " ")[0]
 	user.Email = u.Email
 	user.ID = "gplus" + u.ID
 	user.Country = u.Location.Name
