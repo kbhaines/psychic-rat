@@ -195,10 +195,10 @@ func (p *mockPledgeAPI) checkUsed() {
 }
 
 func (m *mockPledgeAPI) ListUserPledges(userID string) ([]types.Pledge, error) {
-	panic("not implemented")
+	return nil, nil
 }
 func (m *mockPledgeAPI) ListRecentPledges(limit int) ([]types.RecentPledge, error) {
-	panic("not implemented")
+	return nil, nil
 }
 func (m *mockPledgeAPI) TotalPledges() (int, error) { panic("not implemented") }
 
