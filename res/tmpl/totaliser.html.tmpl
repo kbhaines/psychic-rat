@@ -9,8 +9,7 @@
 <header><h2>Recent Pledges</h2></header>
 
 {{ range .RecentPledges }}
-    {{ printf "%s %s %s %s" .UserName .Country .Make .Model }}
-    <br>
+    <p style="line-height:120%; margin-bottom:0"><img onerror="this.src='/images/flags/UN.png'" style="width: 30px;vertical-align: middle" src='/images/flags/{{.Country}}.png' alt='{{.Country}}'>{{ printf "  %s %s %s" .UserName .Make .Model }}</p>
 {{ end}}
 
 <br>
