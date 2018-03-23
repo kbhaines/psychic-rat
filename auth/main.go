@@ -63,21 +63,23 @@ func CallbackHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
-
-	user, err := sess.NewSessionStore(r).Get()
-	if err != nil {
-		log.Errorf(r.Context(), "could not read user back", err)
-		http.Error(w, "auth error has occurred", http.StatusInternalServerError)
-		return
+	country := r.URL.Query().Get("c")
+	if country == "" {
+		user, err := sess.NewSessionStore(r).Get()
+		if err != nil || user == nil {
+			log.Errorf(r.Context(), "could not read user back to get country: %v", err)
+			http.Error(w, "auth error has occurred", http.StatusInternalServerError)
+			return
+		}
+		country = user.Country
 	}
-	country := user.Country
 	if !validCountry(country) {
 		log.Errorf(r.Context(), "invalid country in callback: %s", country)
 		http.Error(w, "invalid request", http.StatusBadRequest)
 		return
 	}
 
-	user, err = handler.Callback(w, r)
+	user, err := handler.Callback(w, r)
 	if err != nil {
 		log.Errorf(r.Context(), "could not handle callback: %v", err)
 		http.Error(w, "auth error has occurred", http.StatusInternalServerError)

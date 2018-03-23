@@ -19,7 +19,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-const callback = "/callback?p=basic"
+const callback = "/callback?p=basic&c=GB"
 
 var testURL string
 

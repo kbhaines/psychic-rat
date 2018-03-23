@@ -32,5 +32,6 @@ func (_ *Basic) Callback(w http.ResponseWriter, r *http.Request) (*types.User, e
 		Email:    username + "@usermail.com",
 		Fullname: username + " full",
 		IsAdmin:  strings.HasPrefix(username, "admin"),
+		Country:  "UN",
 	}, nil
 }
