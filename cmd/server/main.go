@@ -27,6 +27,8 @@ import (
 
 	ctxt "context"
 
+	_ "net/http/pprof"
+
 	"github.com/gorilla/context"
 )
 
@@ -51,6 +53,8 @@ type (
 	fakeCaptcha struct{}
 )
 
+var memprofile = flag.Bool("profile", false, "serve profiling")
+
 func main() {
 	flag.StringVar(&flags.listenOn, "listen", "localhost:8080", "interface:port to listen on")
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
@@ -58,6 +62,12 @@ func main() {
 	flag.BoolVar(&flags.basicAuth, "basicauth", false, "enable basic auth mode for testing")
 	flag.StringVar(&flags.limit, "limit", "30,10,5", "rate-limit bucket specification")
 	flag.Parse()
+
+	if *memprofile {
+		go func() {
+			log.Println(http.ListenAndServe("localhost:6060", nil))
+		}()
+	}
 
 	db := initModules()
 	shutdownChan := initSignalHandler()

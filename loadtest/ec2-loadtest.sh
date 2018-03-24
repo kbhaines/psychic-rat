@@ -12,6 +12,7 @@ TYPE=$3
 DURATION=$4
 
 set -x
+set -e
 iid=`aws ec2 run-instances --image-id ami-1b791862 --security-group-ids sg-88a76cf2 --instance-type $TYPE --key-name $AWSKEY --query "Instances[0].InstanceId"`
 aws ec2 wait instance-running --instance-ids $iid
 host=`aws ec2 describe-instances --instance-ids $iid --query Reservations[0].Instances[*].PublicDnsName`
@@ -26,7 +27,7 @@ $SSH sudo adduser ubuntu docker \; sudo apt-get install sqlite3
 docker save pr:latest | gzip | ssh -i $KEYFILE ubuntu@$host gunzip \| docker load
 scp -i $KEYFILE pr.dat ubuntu@$host:
 
-container_id=`$SSH docker run -d --name pr -e COOKIE_KEYS=loadtest -v /home/ubuntu/pr.dat:/pr.dat -p 8080:8080 pr /server.linux -mockcsrf -listen :8080 -cache-templates`
+container_id=`$SSH docker run -d --name pr -e COOKIE_KEYS=loadtest -v /home/ubuntu/pr.dat:/pr.dat -p 8080:8080 pr /server.linux -basicauth -listen :8080 -cache-templates -limit 2000,2000,1`
 
 echo $host with instance ID $iid is ready for load test
 echo container on host is $container_id

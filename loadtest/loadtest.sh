@@ -11,8 +11,8 @@ if [ "$TARGET" == "" ];then
 fi
 
 # Generate cookie
-curl http://$USER:@localhost:8080/callback\?p=basic -c cookie > /dev/null
-curl http://$USER:@localhost:8080/pledge -b cookie -c cookie > /dev/null
+curl http://$USER:@$TARGET/callback\?p=basic -c cookie > /dev/null
+curl http://$USER:@$TARGET/pledge -b cookie -c cookie > /dev/null
 
 COOKIE=`awk '/localhost/{ print $7}' cookie`
 
