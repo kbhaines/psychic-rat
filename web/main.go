@@ -11,6 +11,8 @@ import (
 	"psychic-rat/web/admin"
 	"psychic-rat/web/dispatch"
 	"psychic-rat/web/pub"
+
+	gorcon "github.com/gorilla/context"
 )
 
 const (
@@ -94,6 +96,11 @@ func addContextValues(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, "uid", user.ID)
 		r = r.WithContext(ctx)
 		next(w, r)
+
+		// Clear the request we created here - otherwise there's a leak as Gorilla
+		// keeps the request pointer in a map. The original request is already
+		// handled by the ClearHandler call from main.runServer
+		gorcon.Clear(r)
 	}
 }
 
