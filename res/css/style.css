@@ -25,11 +25,14 @@
     margin: 0px;
     padding: 0px;
     font-weight: 300;
+    padding-top: 20px;
   }
 
   p {
     margin-bottom: 1.5em;
-    line-height: 180%;
+    line-height: 120%;
+    font-weight: 200;
+    font-size: 1.2em;
   }
 
   a {
@@ -97,6 +100,15 @@
     letter-spacing: -2px;
     /*text-transform: uppercase;*/
     font-weight: 900;
+    font-size: 2em;
+    color: #323338;
+  }
+
+  header h3
+  {
+    /*text-transform: uppercase;*/
+    padding-top:10px;
+    font-weight: 400;
     font-size: 2em;
     color: #323338;
   }
@@ -546,7 +558,9 @@ ul.style1 li {
   display: inline-block;
   padding: 1em 0em;
   border-top: 1px solid #E6E6E6;
-  line-height: 160%;
+  line-height: 120%;
+  font-weight: 200;
+  font-size: 1.2em;
 }
 
 ul.style1 span

@@ -2,7 +2,7 @@
 TARGET=$1
 DURATION=${2:-5s}
 
-RATE=100
+RATE=50
 USER=user041
 
 if [ "$TARGET" == "" ];then

@@ -10,10 +10,11 @@ KEYFILE=$1
 AWSKEY=$2
 TYPE=$3
 DURATION=$4
+IMAGE_ID=ami-1b791862 
 
 set -x
 set -e
-iid=`aws ec2 run-instances --image-id ami-1b791862 --security-group-ids sg-88a76cf2 --instance-type $TYPE --key-name $AWSKEY --query "Instances[0].InstanceId"`
+iid=`aws ec2 run-instances --image-id $IMAGE_ID --security-groups webserver --instance-type $TYPE --key-name $AWSKEY --query "Instances[0].InstanceId"`
 aws ec2 wait instance-running --instance-ids $iid
 host=`aws ec2 describe-instances --instance-ids $iid --query Reservations[0].Instances[*].PublicDnsName`
 
