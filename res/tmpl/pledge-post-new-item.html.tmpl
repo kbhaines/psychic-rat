@@ -3,12 +3,7 @@
       <div id="page">
         <div class="container">
           <div class="row">
-            <div class="3u">
-              <section id="sidebard2">
-                  {{ template "home-sidebar-wc.html.tmpl" . }}
-              </section>
-            </div>
-            <div class="6u skel-cell-important">
+            <div class="-2u 7u skel-cell-important">
               <section id="content" >
                 {{ $item := index .Items 0 }}
                 <p>Thank you for supporting this cause with your boycott of {{ printf "%s %s by %s" $item.Make $item.Model $item.Company.Name }} </p>
