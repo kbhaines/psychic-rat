@@ -33,6 +33,7 @@ container_id=`$SSH docker run -d --name pr -e COOKIE_KEYS=loadtest -v /home/ubun
 echo $host with instance ID $iid is ready for load test
 echo container on host is $container_id
 
+exit 
 echo Starting load test
 ./loadtest.sh $host:8080 $DURATION
 

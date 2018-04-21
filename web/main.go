@@ -71,7 +71,7 @@ func Init(u UserHandler, r RateLimiter) {
 
 func Handler() http.Handler {
 	hmux := http.NewServeMux()
-	handlerForDirs(hmux, "css", "js", "images")
+	handlerForDirs(hmux, "css", "js", "images", ".well-known")
 	for _, h := range uriHandlers {
 		hmux.HandleFunc(h.URI, addContextValues(logRequest(rateLimit(csrfProtect(h.Handler)))))
 	}

@@ -39,6 +39,8 @@ var (
 		listenOn       string
 		basicAuth      bool
 		limit          string
+		certFile       string
+		keyFile        string
 	}
 )
 
@@ -61,6 +63,8 @@ func main() {
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
 	flag.BoolVar(&flags.basicAuth, "basicauth", false, "enable basic auth mode for testing")
 	flag.StringVar(&flags.limit, "limit", "30,10,5", "rate-limit bucket specification")
+	flag.StringVar(&flags.certFile, "cert", "/cert/fullchain.pem", "SSL certificate filename")
+	flag.StringVar(&flags.keyFile, "key", "/cert/privkey.pem", "SSL key filename")
 	flag.Parse()
 
 	if *memprofile {
@@ -160,9 +164,14 @@ func initBackupHandler(dbName string, backupName string) {
 func runServer(shutdown chan bool) {
 	srv := &http.Server{Addr: flags.listenOn, Handler: context.ClearHandler(web.Handler())}
 	go func() {
+		err := srv.ListenAndServeTLS(flags.certFile, flags.keyFile)
+		log.Printf("SSL web server shutdown: %v", err)
+	}()
+	go func() {
 		err := srv.ListenAndServe()
 		log.Printf("web server shutdown: %v", err)
 	}()
+
 	<-shutdown
 	srv.Shutdown(ctxt.Background())
 }
