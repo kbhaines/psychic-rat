@@ -10,7 +10,7 @@ KEYFILE=$1
 AWSKEY=$2
 TYPE=$3
 DURATION=$4
-IMAGE_ID=ami-1b791862 
+IMAGE_ID=ami-f4f21593
 
 set -x
 set -e
