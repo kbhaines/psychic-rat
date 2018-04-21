@@ -37,6 +37,7 @@ var (
 		sqldb          bool
 		cacheTemplates bool
 		listenOn       string
+		listenSSL      string
 		basicAuth      bool
 		limit          string
 		certFile       string
@@ -59,6 +60,7 @@ var memprofile = flag.Bool("profile", false, "serve profiling")
 
 func main() {
 	flag.StringVar(&flags.listenOn, "listen", "localhost:8080", "interface:port to listen on")
+	flag.StringVar(&flags.listenSSL, "listenSSL", "localhost:4444", "interface:port to listen on for SSL")
 	flag.BoolVar(&flags.sqldb, "sqldb", false, "enable real database")
 	flag.BoolVar(&flags.cacheTemplates, "cache-templates", false, "enable template caching")
 	flag.BoolVar(&flags.basicAuth, "basicauth", false, "enable basic auth mode for testing")
@@ -162,11 +164,12 @@ func initBackupHandler(dbName string, backupName string) {
 }
 
 func runServer(shutdown chan bool) {
-	srv := &http.Server{Addr: flags.listenOn, Handler: context.ClearHandler(web.Handler())}
+	srvSSL := &http.Server{Addr: flags.listenSSL, Handler: context.ClearHandler(web.Handler())}
 	go func() {
-		err := srv.ListenAndServeTLS(flags.certFile, flags.keyFile)
+		err := srvSSL.ListenAndServeTLS(flags.certFile, flags.keyFile)
 		log.Printf("SSL web server shutdown: %v", err)
 	}()
+	srv := &http.Server{Addr: flags.listenOn, Handler: context.ClearHandler(web.Handler())}
 	go func() {
 		err := srv.ListenAndServe()
 		log.Printf("web server shutdown: %v", err)
@@ -174,6 +177,7 @@ func runServer(shutdown chan bool) {
 
 	<-shutdown
 	srv.Shutdown(ctxt.Background())
+	srvSSL.Shutdown(ctxt.Background())
 }
 
 func idGenerator(r *http.Request) string { return strings.Split(r.RemoteAddr, ":")[0] }
