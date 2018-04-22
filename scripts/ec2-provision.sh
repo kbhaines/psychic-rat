@@ -35,7 +35,7 @@ cat <<-'EOF' > container_init
 #!/bin/sh
 
 if [ $# -ne 1 ];then
-    echo Usage: $0 <domain>
+    echo "Usage: $0 <domain>"
     exit 0
 fi
 
@@ -61,4 +61,4 @@ echo press enter when DNS is ready to serve from $HOST
 nslookup $HOST
 read
 
-$SSH ./container_init
+$SSH ./container_init www.rat.me.uk
