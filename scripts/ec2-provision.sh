@@ -1,13 +1,14 @@
 #!/bin/sh
 
-if [ $# -ne 3 ];then
-    echo "Usage: $0 <keyfile> <aws-keyname> <instance-type>"
+if [ $# -ne 4 ];then
+    echo "Usage: $0 <keyfile> <aws-keyname> <instance-type> <domain>"
     exit
 fi
 
 KEYFILE=$1
 AWSKEY=$2
 TYPE=$3
+DOMAIN=$4
 IMAGE_ID=ami-f4f21593
 
 set -x
@@ -33,6 +34,7 @@ SSH="ssh -i $KEYFILE ubuntu@$HOST"
 cat <<-'EOF' > container_init
 #!/bin/sh
 
+set -e
 if [ $# -ne 1 ];then
     echo "Usage: $0 <domain>"
     exit 0
@@ -57,8 +59,8 @@ EOF
 chmod +x container_init
 scp -i $KEYFILE pr.dat pr.env container_init ubuntu@$HOST:
 
-echo press enter when DNS is ready to serve from $HOST
 nslookup $HOST
+echo Press enter when DNS is ready to serve $DOMAIN from $HOST
 read
 
-$SSH ./container_init www.rat.me.uk
+$SSH ./container_init $DOMAIN
