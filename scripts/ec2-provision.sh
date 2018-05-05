@@ -14,22 +14,21 @@ set -x
 set -e
 
 start_instance() {
-    iid=`aws ec2 run-instances --image-id $IMAGE_ID --security-groups webserver --instance-type $TYPE --key-name $AWSKEY --query "Instances[0].InstanceId"`
+    iid=`aws ec2 run-instances --image-id $IMAGE_ID --security-groups webserver --iam-instance-profile Name=InstanceIAM --instance-type $TYPE --key-name $AWSKEY --query "Instances[0].InstanceId"`
     aws ec2 wait instance-running --instance-ids $iid
     HOST=`aws ec2 describe-instances --instance-ids $iid --query Reservations[0].Instances[*].PublicDnsName`
     SSH="ssh -i $KEYFILE ubuntu@$HOST"
     while ! $SSH sudo curl https://get.docker.com \| sh;do
         sleep 5
     done
-    $SSH sudo adduser ubuntu docker \; sudo apt-get install sqlite3
+    $SSH sudo adduser ubuntu docker \; sudo apt-get -y install sqlite3 awscli
 }
 
 start_instance
-#HOST=ec2-35-177-6-185.eu-west-2.compute.amazonaws.com
 
 SSH="ssh -i $KEYFILE ubuntu@$HOST"
 
-docker save pr:latest | gzip | $SSH gunzip \| docker load
+#docker save pr:latest | gzip | $SSH gunzip \| docker load
 
 cat <<-'EOF' > container_init
 #!/bin/sh
@@ -43,6 +42,7 @@ DOMAIN=$1
 
 rm -rf ./res
 
+aws s3 --region eu-west-2 cp s3://psychic-images/pr.img.gz - | gunzip | docker load
 docker create --name res pr 
 docker cp res:/res ./res 
 docker rm res
