@@ -1,0 +1,28 @@
+# 
+snippet erm "error with a message"
+if err != nil {
+	return ${1:nil, }fmt.Errorf("${2:could not }${3}: %v", ${4}err)
+}
+${0}
+endsnippet
+
+snippet ,ev "handle errors from method"
+${1}, err := ${2}(${3})
+if err != nil {
+	return ${4:nil, }fmt.Errorf("${5:could not }${6}: %v", ${7}err)
+}
+${0}
+endsnippet
+
+snippet http "HTTP handler"
+func ${1}(${2:w http.ResponseWriter,} ${3:r *http.Request}) ${4} {
+	${0}
+}
+endsnippet
+
+snippet htr "http request param"
+r *http.Request
+endsnippet
+snippet htw "http response writer param"
+w *http.ResponseWriter
+endsnippet
