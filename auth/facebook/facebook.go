@@ -87,7 +87,7 @@ func (f *Facebook) Callback(w http.ResponseWriter, r *http.Request) (*types.User
 	userProfile, err := userFromReader(resp.Body)
 	defer resp.Body.Close()
 	if err != nil {
-		return nil, fmt.Errorf("unable to get user from profile: %v", userProfile, err)
+		return nil, fmt.Errorf("unable to get user from profile: %v %v", userProfile, err)
 	}
 
 	return userProfile, nil

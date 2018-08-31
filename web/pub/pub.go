@@ -227,7 +227,7 @@ func pledgePostHandler(w http.ResponseWriter, r *http.Request) {
 
 	pledge, err := pledgeAPI.AddPledge(itemId, userID, item.USDValue)
 	if err != nil {
-		log.Errorf(r.Context(), "unable to pledge: ", err)
+		log.Errorf(r.Context(), "unable to pledge: %v", err)
 		http.Error(w, "", http.StatusInternalServerError)
 		return
 	}

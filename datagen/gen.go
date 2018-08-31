@@ -70,7 +70,7 @@ func Generate(db *sqldb.DB, totalSize int) error {
 
 func runOrPanic(f func() error) {
 	if err := f(); err != nil {
-		panic(fmt.Sprintf("failed %v: %v", f, err))
+		panic(fmt.Sprintf("failed: %v", err))
 	}
 }
 

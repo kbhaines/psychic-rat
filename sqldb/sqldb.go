@@ -265,7 +265,7 @@ func (d *DB) AddPledge(itemID int, userID string, usdValue int) (*types.Pledge, 
 	}
 	lastID, err := r.LastInsertId()
 	if err != nil {
-		return nil, fmt.Errorf("no id returned for pledge for item %d for user %d: %v", itemID, userID, err)
+		return nil, fmt.Errorf("no id returned for pledge for item %d for user %s: %v", itemID, userID, err)
 	}
 	return &types.Pledge{PledgeID: int(lastID), UserID: userID, USDValue: usdValue, Timestamp: timestamp}, nil
 }

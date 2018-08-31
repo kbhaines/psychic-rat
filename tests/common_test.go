@@ -50,7 +50,7 @@ func newServer(t *testing.T) (*httptest.Server, *sqldb.DB) {
 func testPageStatus(resp *http.Response, err error, expectedCode int, t *testing.T) {
 	t.Helper()
 	if err != nil {
-		t.Fatalf("unexpected error", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
 	if resp.StatusCode != expectedCode {
 		t.Fatalf("wanted %v, got %v. Response was %v", expectedCode, resp.StatusCode, resp)
