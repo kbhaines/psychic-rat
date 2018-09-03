@@ -42,6 +42,7 @@ var (
 		limit          string
 		certFile       string
 		keyFile        string
+		memprofile     bool
 	}
 )
 
@@ -56,8 +57,6 @@ type (
 	fakeCaptcha struct{}
 )
 
-var memprofile = flag.Bool("profile", false, "serve profiling")
-
 func main() {
 	flag.StringVar(&flags.listenOn, "listen", "localhost:8080", "interface:port to listen on")
 	flag.StringVar(&flags.listenSSL, "listenSSL", "localhost:4444", "interface:port to listen on for SSL")
@@ -67,9 +66,10 @@ func main() {
 	flag.StringVar(&flags.limit, "limit", "30,10,5", "rate-limit bucket specification")
 	flag.StringVar(&flags.certFile, "cert", "/cert/fullchain.pem", "SSL certificate filename")
 	flag.StringVar(&flags.keyFile, "key", "/cert/privkey.pem", "SSL key filename")
+	flag.BoolVar(&flags.memprofile, "profile", false, "serve profiling")
 	flag.Parse()
 
-	if *memprofile {
+	if flags.memprofile {
 		go func() {
 			log.Println(http.ListenAndServe("localhost:6060", nil))
 		}()
