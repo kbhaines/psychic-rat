@@ -37,15 +37,47 @@ func TestAddCompany(t *testing.T) {
 	}
 }
 
+func TestListCompanies1(t *testing.T) {
+	mock := mockDB{
+		execs: []expectedExecStmt{
+			{
+				query: &queryStmt{
+					table:   "companies",
+					columns: "id, name",
+				},
+				rows: &sql.Rows{},
+			},
+		},
+		t: t,
+	}
+
+	db := DB{mock}
+	cos, err := db.ListCompanies()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cos) == 0 {
+		t.Fatal("no companies returned!")
+	}
+}
+
 type expectedExecStmt struct {
 	insert       *insertStmt
+	query        *queryStmt
 	insertId     int64
 	rowsAffected int64
+	rows         *sql.Rows
 }
 
 type insertStmt struct {
 	table   string
 	columns map[string]interface{}
+}
+
+type queryStmt struct {
+	table       string
+	columns     string
+	whereClause string
 }
 
 func (m expectedExecStmt) LastInsertId() (int64, error) {
@@ -69,7 +101,17 @@ func (m mockDB) Exec(query string, args ...interface{}) (sql.Result, error) {
 		checkExecInsert(m.t, exec.insert, query, args)
 		return exec, nil
 	}
-	return nil, fmt.Errorf("not able to match mock exec for query %v", query)
+	return nil, fmt.Errorf("not able to match mock exec for query %s", query)
+}
+
+func (m mockDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	exec := m.execs[m.execsDone]
+	m.execsDone++
+	if exec.query != nil {
+		checkQuery(m.t, exec.query, query, args)
+		return exec.rows, nil
+	}
+	return nil, fmt.Errorf("not able to match mock to query %s", query)
 }
 
 func checkExecInsert(t *testing.T, insert *insertStmt, query string, args []interface{}) {
@@ -100,17 +142,29 @@ func checkExecInsert(t *testing.T, insert *insertStmt, query string, args []inte
 			t.Fatalf("unexpected column: %v", col)
 		}
 		if values[i] != "?" {
-			t.Fatalf("got non-variable parameter, expected ?, got %v", values[i])
+			t.Fatalf("got unexpected placeholder, expected ?, got %v", values[i])
 		}
 		if !reflect.DeepEqual(expv, args[i]) {
 			t.Fatalf("types & values don't match, expected %v of type %T, got %v of type %T", expv, expv, args[i], args[i])
 		}
-
 	}
 }
 
-func (m mockDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	panic("not implemented")
+func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interface{}) {
+	t.Helper()
+	re := regexp.MustCompile("select (.*) from (.*)( where (.*))?")
+	match := re.FindStringSubmatch(query)
+	if len(match) < 3 {
+		t.Fatalf("could not match select statement (%v)", query)
+	}
+	columns := match[1]
+	table := match[2]
+	if expQuery.table != table {
+		t.Fatalf("expected table %s, got %s in query %s", expQuery.table, table, query)
+	}
+	if expQuery.columns != columns {
+		t.Fatalf("expected columns %s, got %s in query %s", expQuery.columns, columns, query)
+	}
 }
 
 func (m mockDB) QueryRow(query string, args ...interface{}) *sql.Row {
