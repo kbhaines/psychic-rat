@@ -1,14 +1,13 @@
 package sqldb
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 )
 
 const schemaVersion = 1
 
-func createSchema(db *sql.DB) error {
+func createSchema(db DBInterface) error {
 	log.Print("creating initial schema")
 	stmt := `
 	create table companies (id integer primary key, name string);
@@ -65,7 +64,7 @@ func createSchema(db *sql.DB) error {
 	return nil
 }
 
-func schemaUpdates(db *sql.DB) {
+func schemaUpdates(db DBInterface) {
 	vers := getVersion(db)
 	if vers < 1 {
 		createSchema(db)
@@ -75,7 +74,7 @@ func schemaUpdates(db *sql.DB) {
 	}
 }
 
-func getVersion(db *sql.DB) int {
+func getVersion(db DBInterface) int {
 	row := db.QueryRow("pragma user_version")
 	var version int
 	err := row.Scan(&version)
@@ -85,14 +84,14 @@ func getVersion(db *sql.DB) int {
 	return version
 }
 
-func setVersion(db *sql.DB, v int) {
+func setVersion(db DBInterface, v int) {
 	_, err := db.Exec(fmt.Sprintf("pragma user_version = %d", v))
 	if err != nil {
 		log.Fatalf("unable to set schema version: %v", err)
 	}
 }
 
-func updateV2(db *sql.DB) {
+func updateV2(db DBInterface) {
 	log.Print("updating schema to version 2")
 	setVersion(db, 2)
 	return

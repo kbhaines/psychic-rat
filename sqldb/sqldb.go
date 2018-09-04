@@ -11,13 +11,17 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type DB struct {
-	*sql.DB
-	insertUser   *sql.Stmt
-	insertPledge *sql.Stmt
+type DBInterface interface {
+	Exec(query string, args ...interface{}) (sql.Result, error)
+	Query(query string, args ...interface{}) (*sql.Rows, error)
+	QueryRow(query string, args ...interface{}) *sql.Row
 }
 
-func NewDB(name string) (*DB, error) {
+type DB struct {
+	DBInterface
+}
+
+func NewDB(dbi DBInterface, name string) (*DB, error) {
 	if _, err := os.Stat(name); os.IsExist(err) {
 		panic(fmt.Sprintf("refusing to create when DB %s already exists", name))
 	}
@@ -28,7 +32,7 @@ func NewDB(name string) (*DB, error) {
 	return setupDB(db)
 }
 
-func OpenDB(name string) (*DB, error) {
+func OpenDB(dbi DBInterface, name string) (*DB, error) {
 	db, err := sql.Open("sqlite3", name)
 	if err != nil {
 		return nil, err
@@ -41,7 +45,7 @@ func Backup(originalFile, backupFile string) error {
 	return exec.Command("sqlite3", originalFile, ".backup "+backupFile).Run()
 }
 
-func setupDB(db *sql.DB) (*DB, error) {
+func setupDB(db DBInterface) (*DB, error) {
 	schemaUpdates(db)
 	_, err := db.Exec("PRAGMA synchronous = OFF")
 	if err != nil {
@@ -52,13 +56,11 @@ func setupDB(db *sql.DB) (*DB, error) {
 		return nil, err
 	}
 
-	insertUser, err := db.Prepare("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)")
-	insertPledge, err := db.Prepare("insert into pledges(itemID, userID, usdValue, timestamp) values (?,?,?,?)")
 	if err != nil {
 		return nil, err
 	}
 
-	return &DB{db, insertUser, insertPledge}, nil
+	return &DB{db}, nil
 }
 
 func (d *DB) AddCompany(c types.Company) (*types.Company, error) {
@@ -250,7 +252,7 @@ func (d *DB) GetUser(userID string) (*types.User, error) {
 }
 
 func (d *DB) AddUser(u types.User) error {
-	_, err := d.insertUser.Exec(u.ID, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
+	_, err := d.Exec("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)", u.ID, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
 	if err != nil {
 		return err
 	}
@@ -259,7 +261,7 @@ func (d *DB) AddUser(u types.User) error {
 
 func (d *DB) AddPledge(itemID int, userID string, usdValue int) (*types.Pledge, error) {
 	timestamp := time.Now().Truncate(time.Second)
-	r, err := d.insertPledge.Exec(itemID, userID, usdValue, timestamp.Unix())
+	r, err := d.Exec("insert into pledges(itemID, userID, usdValue, timestamp) values (?,?,?,?)", itemID, userID, usdValue, timestamp.Unix())
 	if err != nil {
 		return nil, err
 	}

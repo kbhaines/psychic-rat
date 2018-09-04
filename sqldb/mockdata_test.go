@@ -1,8 +1,11 @@
 package sqldb
 
 import (
+	"database/sql"
 	"psychic-rat/types"
 	"testing"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
@@ -48,10 +51,15 @@ var (
 
 func initDB(t *testing.T) *DB {
 	t.Helper()
-	db, err := NewDB(":memory:")
+	dbi, err := sql.Open("sqlite3", ":memory:")
+	db, err := NewDB(dbi, ":memory:")
 	if err != nil {
 		t.Fatalf("could not init DB: %v", err)
 	}
+	initCompanies(db, t)
+	initCurrencies(db, t)
+	initUsers(db, t)
+	initItems(db, t)
 	return db
 }
 
