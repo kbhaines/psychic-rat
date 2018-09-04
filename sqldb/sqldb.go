@@ -1,66 +1,40 @@
 package sqldb
 
 import (
-	"database/sql"
 	"fmt"
-	"os"
-	"os/exec"
 	"psychic-rat/types"
 	"time"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
+// TODO: rename
 type DBInterface interface {
-	Exec(query string, args ...interface{}) (sql.Result, error)
-	Query(query string, args ...interface{}) (*sql.Rows, error)
-	QueryRow(query string, args ...interface{}) *sql.Row
+	Exec(query string, args ...interface{}) (Result, error)
+	Query(query string, args ...interface{}) (Rows, error)
+	QueryRow(query string, args ...interface{}) Row
 }
 
+// TODO: Rename; it's not a DB it's a repo for entities
 type DB struct {
 	DBInterface
 }
 
-func NewDB(dbi DBInterface, name string) (*DB, error) {
-	if _, err := os.Stat(name); os.IsExist(err) {
-		panic(fmt.Sprintf("refusing to create when DB %s already exists", name))
-	}
-	db, err := sql.Open("sqlite3", name)
-	if err != nil {
-		return nil, err
-	}
-	return setupDB(db)
+type Result interface {
+	LastInsertId() (int64, error)
 }
 
-func OpenDB(dbi DBInterface, name string) (*DB, error) {
-	db, err := sql.Open("sqlite3", name)
-	if err != nil {
-		return nil, err
-	}
-	return setupDB(db)
+type Rows interface {
+	Next() bool
+	Scan(v ...interface{}) error
 }
 
-func Backup(originalFile, backupFile string) error {
-	os.Remove(backupFile)
-	return exec.Command("sqlite3", originalFile, ".backup "+backupFile).Run()
+type Row interface {
+	Scan(v ...interface{}) error
 }
 
-func setupDB(db DBInterface) (*DB, error) {
-	schemaUpdates(db)
-	_, err := db.Exec("PRAGMA synchronous = OFF")
-	if err != nil {
-		return nil, err
-	}
-	_, err = db.Exec("PRAGMA journal_mode = WAL")
-	if err != nil {
-		return nil, err
-	}
-
-	if err != nil {
-		return nil, err
-	}
-
-	return &DB{db}, nil
+func NewDB(db DBInterface) *DB {
+	return &DB{db}
 }
 
 func (d *DB) AddCompany(c types.Company) (*types.Company, error) {
@@ -84,7 +58,7 @@ func (d *DB) ListCompanies() ([]types.Company, error) {
 	}
 	for rows.Next() {
 		var co types.Company
-		err = rows.Scan(&co.ID, &co.Name)
+		err = rows.Scan(nil, &co.Name)
 		if err != nil {
 			return result, err
 		}

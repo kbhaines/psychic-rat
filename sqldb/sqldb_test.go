@@ -1,12 +1,8 @@
 package sqldb
 
 import (
-	"database/sql"
-	"fmt"
 	"psychic-rat/types"
 	"reflect"
-	"regexp"
-	"strings"
 	"testing"
 	"time"
 )
@@ -44,8 +40,13 @@ func TestListCompanies1(t *testing.T) {
 				query: &queryStmt{
 					table:   "companies",
 					columns: "id, name",
+					rows: &rowsResult{
+						rows: [][]interface{}{
+							{1, "testco1"},
+							{2, "testco2"},
+						},
+					},
 				},
-				rows: &sql.Rows{},
 			},
 		},
 		t: t,
@@ -59,116 +60,6 @@ func TestListCompanies1(t *testing.T) {
 	if len(cos) == 0 {
 		t.Fatal("no companies returned!")
 	}
-}
-
-type expectedExecStmt struct {
-	insert       *insertStmt
-	query        *queryStmt
-	insertId     int64
-	rowsAffected int64
-	rows         *sql.Rows
-}
-
-type insertStmt struct {
-	table   string
-	columns map[string]interface{}
-}
-
-type queryStmt struct {
-	table       string
-	columns     string
-	whereClause string
-}
-
-func (m expectedExecStmt) LastInsertId() (int64, error) {
-	return m.insertId, nil
-}
-
-func (m expectedExecStmt) RowsAffected() (int64, error) {
-	return m.rowsAffected, nil
-}
-
-type mockDB struct {
-	execsDone int
-	execs     []expectedExecStmt
-	t         *testing.T
-}
-
-func (m mockDB) Exec(query string, args ...interface{}) (sql.Result, error) {
-	exec := m.execs[m.execsDone]
-	m.execsDone++
-	if exec.insert != nil {
-		checkExecInsert(m.t, exec.insert, query, args)
-		return exec, nil
-	}
-	return nil, fmt.Errorf("not able to match mock exec for query %s", query)
-}
-
-func (m mockDB) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	exec := m.execs[m.execsDone]
-	m.execsDone++
-	if exec.query != nil {
-		checkQuery(m.t, exec.query, query, args)
-		return exec.rows, nil
-	}
-	return nil, fmt.Errorf("not able to match mock to query %s", query)
-}
-
-func checkExecInsert(t *testing.T, insert *insertStmt, query string, args []interface{}) {
-	t.Helper()
-
-	re := regexp.MustCompile("insert into (.*)\\((.*)\\) values\\((.*)\\)")
-	results := re.FindStringSubmatch(query)
-	if len(results) != 4 {
-		t.Fatalf("could not match query: %v", query)
-	}
-
-	table := results[1]
-	columns := strings.Split(results[2], ",")
-	values := strings.Split(results[3], ",")
-
-	if insert.table != table {
-		t.Fatalf("wrong table, expected %v, got %v", insert.table, table)
-	}
-	if len(columns) != len(values) {
-		t.Fatalf("wrong number of values, expected %v, got %v", len(columns), len(values))
-	}
-	if len(insert.columns) != len(columns) {
-		t.Fatalf("column counts don't match, expected %v, got %v", insert.columns, columns)
-	}
-	for i, col := range columns {
-		expv, exists := insert.columns[col]
-		if !exists {
-			t.Fatalf("unexpected column: %v", col)
-		}
-		if values[i] != "?" {
-			t.Fatalf("got unexpected placeholder, expected ?, got %v", values[i])
-		}
-		if !reflect.DeepEqual(expv, args[i]) {
-			t.Fatalf("types & values don't match, expected %v of type %T, got %v of type %T", expv, expv, args[i], args[i])
-		}
-	}
-}
-
-func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interface{}) {
-	t.Helper()
-	re := regexp.MustCompile("select (.*) from (.*)( where (.*))?")
-	match := re.FindStringSubmatch(query)
-	if len(match) < 3 {
-		t.Fatalf("could not match select statement (%v)", query)
-	}
-	columns := match[1]
-	table := match[2]
-	if expQuery.table != table {
-		t.Fatalf("expected table %s, got %s in query %s", expQuery.table, table, query)
-	}
-	if expQuery.columns != columns {
-		t.Fatalf("expected columns %s, got %s in query %s", expQuery.columns, columns, query)
-	}
-}
-
-func (m mockDB) QueryRow(query string, args ...interface{}) *sql.Row {
-	panic("not implemented")
 }
 
 func TestListCompanies(t *testing.T) {

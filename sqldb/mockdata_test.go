@@ -1,7 +1,6 @@
 package sqldb
 
 import (
-	"database/sql"
 	"psychic-rat/types"
 	"testing"
 
@@ -51,8 +50,9 @@ var (
 
 func initDB(t *testing.T) *DB {
 	t.Helper()
-	dbi, err := sql.Open("sqlite3", ":memory:")
-	db, err := NewDB(dbi, ":memory:")
+	//dbi, err := sql.Open("sqlite3", ":memory:")
+	sqldb, err := NewSqlLiteDB(":memory:")
+	db := NewDB(sqldb)
 	if err != nil {
 		t.Fatalf("could not init DB: %v", err)
 	}
