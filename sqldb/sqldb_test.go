@@ -37,16 +37,10 @@ func TestListCompanies1(t *testing.T) {
 	mock := mockDB{
 		execs: []expectedExecStmt{
 			{
-				query: &queryStmt{
-					table:   "companies",
-					columns: "id, name",
-					rows: &rowsResult{
-						rows: [][]interface{}{
-							{1, "testco1"},
-							{2, "testco2"},
-						},
-					},
-				},
+				query: NewQuery("companies").
+					WithColumns("id", "name").
+					WithResultsRow(1, "testco1").
+					WithResultsRow(2, "testco2"),
 			},
 		},
 		t: t,

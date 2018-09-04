@@ -33,18 +33,32 @@ type rowsResult struct {
 	rows [][]interface{}
 }
 
+type mockDB struct {
+	execsDone int
+	execs     []expectedExecStmt
+	t         *testing.T
+}
+
+func NewQuery(table string) *queryStmt {
+	return &queryStmt{table: table, rows: &rowsResult{}}
+}
+
+func (q *queryStmt) WithColumns(cols ...string) *queryStmt {
+	q.columns = strings.Join(cols, ",")
+	return q
+}
+
+func (q *queryStmt) WithResultsRow(v ...interface{}) *queryStmt {
+	q.rows.rows = append(q.rows.rows, v)
+	return q
+}
+
 func (m expectedExecStmt) LastInsertId() (int64, error) {
 	return m.insertId, nil
 }
 
 func (m expectedExecStmt) RowsAffected() (int64, error) {
 	return m.rowsAffected, nil
-}
-
-type mockDB struct {
-	execsDone int
-	execs     []expectedExecStmt
-	t         *testing.T
 }
 
 func (m mockDB) Exec(query string, args ...interface{}) (Result, error) {
