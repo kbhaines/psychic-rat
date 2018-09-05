@@ -81,6 +81,9 @@ func (m mockDB) Query(query string, args ...interface{}) (Rows, error) {
 	return nil, fmt.Errorf("not able to match mock to query %s", query)
 }
 
+func (m mockDB) Close() {
+}
+
 func checkExecInsert(t *testing.T, insert *insertStmt, query string, args []interface{}) {
 	t.Helper()
 

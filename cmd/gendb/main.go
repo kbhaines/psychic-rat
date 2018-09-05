@@ -15,7 +15,8 @@ func main() {
 	file := flag.String("file", "pr.dat", "name of DB file to output")
 	flag.Parse()
 
-	db, err := sqldb.NewDB(*file)
+	sql, err := sqldb.NewSqliteDB(*file)
+	db := sqldb.NewDB(sql)
 	if err != nil {
 		panic("could not initialise db:" + err.Error())
 	}

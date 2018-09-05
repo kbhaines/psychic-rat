@@ -83,7 +83,8 @@ func main() {
 }
 
 func initModules() *sqldb.DB {
-	db, err := sqldb.OpenDB("pr.dat")
+	sql, err := sqldb.OpenSqliteDB("pr.dat")
+	db := sqldb.NewDB(sql)
 	if err != nil {
 		panic("unable to init db: " + err.Error())
 	}

@@ -51,7 +51,7 @@ var (
 func initDB(t *testing.T) *DB {
 	t.Helper()
 	//dbi, err := sql.Open("sqlite3", ":memory:")
-	sqldb, err := NewSqlLiteDB(":memory:")
+	sqldb, err := NewSqliteDB(":memory:")
 	db := NewDB(sqldb)
 	if err != nil {
 		t.Fatalf("could not init DB: %v", err)

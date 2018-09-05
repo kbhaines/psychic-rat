@@ -13,6 +13,7 @@ type DBInterface interface {
 	Exec(query string, args ...interface{}) (Result, error)
 	Query(query string, args ...interface{}) (Rows, error)
 	QueryRow(query string, args ...interface{}) Row
+	Close()
 }
 
 // TODO: Rename; it's not a DB it's a repo for entities

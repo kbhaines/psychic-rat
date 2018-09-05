@@ -9,10 +9,10 @@ import (
 
 type SQLLite3 struct {
 	DBInterface
-	sqllite *sql.DB
+	sqlite *sql.DB
 }
 
-func NewSqlLiteDB(name string) (*SQLLite3, error) {
+func NewSqliteDB(name string) (*SQLLite3, error) {
 	if _, err := os.Stat(name); os.IsExist(err) {
 		panic(fmt.Sprintf("refusing to create when DB %s already exists", name))
 	}
@@ -23,7 +23,7 @@ func NewSqlLiteDB(name string) (*SQLLite3, error) {
 	return setupDB(db)
 }
 
-func OpenDB(name string) (*SQLLite3, error) {
+func OpenSqliteDB(name string) (*SQLLite3, error) {
 	db, err := sql.Open("sqlite3", name)
 	if err != nil {
 		return nil, err
@@ -51,17 +51,21 @@ func setupDB(db *sql.DB) (*SQLLite3, error) {
 		return nil, err
 	}
 
-	return &SQLLite3{sqllite: db}, nil
+	return &SQLLite3{sqlite: db}, nil
 }
 
 func (s *SQLLite3) Exec(query string, args ...interface{}) (Result, error) {
-	panic("not implemented")
+	return s.sqlite.Exec(query, args...)
 }
 
 func (s *SQLLite3) Query(query string, args ...interface{}) (Rows, error) {
-	panic("not implemented")
+	return s.sqlite.Query(query, args...)
 }
 
 func (s *SQLLite3) QueryRow(query string, args ...interface{}) Row {
-	panic("not implemented")
+	return s.sqlite.QueryRow(query, args...)
+}
+
+func (s *SQLLite3) Close() {
+	s.sqlite.Close()
 }
