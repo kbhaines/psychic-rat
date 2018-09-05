@@ -12,16 +12,10 @@ func TestCreateDB(t *testing.T) {
 }
 
 func TestAddCompany(t *testing.T) {
-	mock := mockDB{
-		execs: []expectedExecStmt{
-			{
-				insert: &insertStmt{table: "companies",
-					columns: map[string]interface{}{"name": "testco1"},
-				},
-				insertId: 1234},
-		},
-		t: t,
-	}
+	mock := NewMockDB(t)
+	mock.ExecExpectation(NewExec("companies").
+		WithColumnValue("name", "testco1").
+		WithInsertId(1234))
 
 	db := DB{mock}
 	co, err := db.AddCompany(types.Company{Name: "testco1"})
@@ -34,17 +28,11 @@ func TestAddCompany(t *testing.T) {
 }
 
 func TestListCompanies1(t *testing.T) {
-	mock := mockDB{
-		execs: []expectedExecStmt{
-			{
-				query: NewQuery("companies").
-					WithColumns("id", "name").
-					WithResultsRow(1, "testco1").
-					WithResultsRow(2, "testco2"),
-			},
-		},
-		t: t,
-	}
+	mock := NewMockDB(t)
+	mock.QueryExpectation(NewQuery("companies").
+		WithColumns("id", "name").
+		WithResultsRow(1, "testco1").
+		WithResultsRow(2, "testco2"))
 
 	db := DB{mock}
 	cos, err := db.ListCompanies()

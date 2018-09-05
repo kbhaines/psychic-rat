@@ -9,34 +9,86 @@ import (
 	"time"
 )
 
-type expectedExecStmt struct {
-	insert       *insertStmt
-	query        *queryStmt
+type mockDB struct {
+	nextExpectation int
+	expectations    []expectation
+	t               *testing.T
+}
+
+type expectation struct {
+	exec  *execStmt
+	query *queryStmt
+}
+
+func NewMockDB(t *testing.T) *mockDB {
+	return &mockDB{t: t}
+}
+
+func (m *mockDB) QueryExpectation(q *queryStmt) *mockDB {
+	m.expectations = append(m.expectations, expectation{query: q})
+	return m
+}
+
+func (m *mockDB) ExecExpectation(e *execStmt) *mockDB {
+	m.expectations = append(m.expectations, expectation{exec: e})
+	return m
+}
+
+func (m mockDB) Exec(query string, args ...interface{}) (Result, error) {
+	exec := m.expectations[m.nextExpectation]
+	m.nextExpectation++
+	if exec.exec != nil {
+		checkExecInsert(m.t, exec.exec, query, args)
+		return exec.exec, nil
+	}
+	return exec.exec, fmt.Errorf("not able to match mock exec for query %s", query)
+}
+
+func (m mockDB) Query(query string, args ...interface{}) (Rows, error) {
+	exec := m.expectations[m.nextExpectation]
+	m.nextExpectation++
+	if exec.query != nil {
+		checkQuery(m.t, exec.query, query, args)
+		return exec.query.rows, nil
+	}
+	return nil, fmt.Errorf("not able to match mock to query %s", query)
+}
+
+func (m mockDB) Close() {}
+
+// execStmt represents an expectation for an sql.Exec call
+
+type execStmt struct {
+	table        string
+	columns      map[string]interface{}
 	insertId     int64
 	rowsAffected int64
 }
 
-type insertStmt struct {
-	table   string
-	columns map[string]interface{}
+func NewExec(table string) *execStmt {
+	return &execStmt{table: table, columns: make(map[string]interface{})}
 }
 
+func (e *execStmt) WithColumnValue(col string, value interface{}) *execStmt {
+	e.columns[col] = value
+	return e
+}
+
+func (e *execStmt) WithInsertId(id int64) *execStmt {
+	e.insertId = id
+	return e
+}
+
+func (e *execStmt) LastInsertId() (int64, error) {
+	return e.insertId, nil
+}
+
+// queryStmt represents an expectation for a sql.Query call
 type queryStmt struct {
 	table       string
 	columns     string
 	whereClause string
 	rows        *rowsResult
-}
-
-type rowsResult struct {
-	next int
-	rows [][]interface{}
-}
-
-type mockDB struct {
-	execsDone int
-	execs     []expectedExecStmt
-	t         *testing.T
 }
 
 func NewQuery(table string) *queryStmt {
@@ -53,38 +105,40 @@ func (q *queryStmt) WithResultsRow(v ...interface{}) *queryStmt {
 	return q
 }
 
-func (m expectedExecStmt) LastInsertId() (int64, error) {
-	return m.insertId, nil
+// rowsResult represents a result from a mock query execution
+
+type rowsResult struct {
+	next int
+	rows [][]interface{}
 }
 
-func (m expectedExecStmt) RowsAffected() (int64, error) {
-	return m.rowsAffected, nil
+func (r *rowsResult) Next() bool {
+	return r.next < len(r.rows)
 }
 
-func (m mockDB) Exec(query string, args ...interface{}) (Result, error) {
-	exec := m.execs[m.execsDone]
-	m.execsDone++
-	if exec.insert != nil {
-		checkExecInsert(m.t, exec.insert, query, args)
-		return exec, nil
+func (r *rowsResult) Scan(v ...interface{}) error {
+	if r.next == len(r.rows) {
+		// TODO: make test fail
+		return fmt.Errorf("Scan called but rows exhausted")
 	}
-	return exec, fmt.Errorf("not able to match mock exec for query %s", query)
-}
-
-func (m mockDB) Query(query string, args ...interface{}) (Rows, error) {
-	exec := m.execs[m.execsDone]
-	m.execsDone++
-	if exec.query != nil {
-		checkQuery(m.t, exec.query, query, args)
-		return exec.query.rows, nil
+	row := r.rows[r.next]
+	if len(row) != len(v) {
+		// TODO: make test fail
+		return fmt.Errorf("Scan called with wrong number of arguments, expected %d got %d", len(row), len(v))
 	}
-	return nil, fmt.Errorf("not able to match mock to query %s", query)
+
+	for i, val := range row {
+		// TODO: make test fail
+		if err := convertAssign(v[i], val); err != nil {
+			return err
+		}
+	}
+	r.next++
+
+	return nil
 }
 
-func (m mockDB) Close() {
-}
-
-func checkExecInsert(t *testing.T, insert *insertStmt, query string, args []interface{}) {
+func checkExecInsert(t *testing.T, insert *execStmt, query string, args []interface{}) {
 	t.Helper()
 
 	re := regexp.MustCompile("insert into (.*)\\((.*)\\) values\\((.*)\\)")
@@ -127,7 +181,7 @@ func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interfac
 	if len(match) < 3 {
 		t.Fatalf("could not match select statement (%v)", query)
 	}
-	columns := match[1]
+	columns := strings.Replace(match[1], " ", "", -1)
 	table := match[2]
 	if expQuery.table != table {
 		t.Fatalf("expected table %s, got %s in query %s", expQuery.table, table, query)
@@ -139,32 +193,6 @@ func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interfac
 
 func (m mockDB) QueryRow(query string, args ...interface{}) Row {
 	panic("not implemented")
-}
-
-func (r *rowsResult) Next() bool {
-	return r.next < len(r.rows)
-}
-
-func (r *rowsResult) Scan(v ...interface{}) error {
-	if r.next == len(r.rows) {
-		// TODO: make test fail
-		return fmt.Errorf("Scan called but rows exhausted")
-	}
-	row := r.rows[r.next]
-	if len(row) != len(v) {
-		// TODO: make test fail
-		return fmt.Errorf("Scan called with wrong number of arguments, expected %d got %d", len(row), len(v))
-	}
-
-	for i, val := range row {
-		// TODO: make test fail
-		if err := convertAssign(v[i], val); err != nil {
-			return err
-		}
-	}
-	r.next++
-
-	return nil
 }
 
 var errNilPtr = fmt.Errorf("nil pointer")
