@@ -59,7 +59,7 @@ func (d *DB) ListCompanies() ([]types.Company, error) {
 	}
 	for rows.Next() {
 		var co types.Company
-		err = rows.Scan(nil, &co.Name)
+		err = rows.Scan(&co.ID, &co.Name)
 		if err != nil {
 			return result, err
 		}

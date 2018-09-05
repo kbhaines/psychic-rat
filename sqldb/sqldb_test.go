@@ -194,15 +194,12 @@ func TestCurrencies(t *testing.T) {
 
 func TestAddNewPledge(t *testing.T) {
 	db := initDB(t)
-	initCompanies(db, t)
-	initItems(db, t)
-
 	p, err := db.AddPledge(1, "user001", 100)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if p.UserID != "user001" || p.USDValue != 100 || p.Item.ID != 1 {
+	if p.UserID != "user001" || p.USDValue != 100 {
 		t.Fatalf("failed to add pledge, got %v", p)
 	}
 }
