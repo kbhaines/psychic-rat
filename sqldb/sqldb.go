@@ -77,6 +77,20 @@ func (d *DB) GetCompany(id int) (types.Company, error) {
 	return result, nil
 }
 
+func (d *DB) AddItem(i types.Item) (*types.Item, error) {
+	r, err := d.Exec("insert into items(make, model, companyID, usdValue, newItemID) values (?,?,?,?,?)", i.Make, i.Model, i.Company.ID, i.USDValue, i.NewItemID)
+	if err != nil {
+		return nil, err
+	}
+	lastID, err := r.LastInsertId()
+	if err != nil {
+		return nil, err
+	}
+	new := i
+	new.ID = int(lastID)
+	return &new, nil
+}
+
 func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
 	rows, err := d.Query("select id, make, model, companyID, companyName, usdValue from itemsCompany order by companyName, make, model")
@@ -92,6 +106,15 @@ func (d *DB) ListItems() ([]types.Item, error) {
 		ir = append(ir, item)
 	}
 	return ir, nil
+}
+
+func (d *DB) GetItem(id int) (types.Item, error) {
+	i := types.Item{}
+	err := d.QueryRow("select id, make, model, companyID, companyName, usdValue from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name, &i.USDValue)
+	if err != nil {
+		return i, fmt.Errorf("could not get item %d: %v ", id, err)
+	}
+	return i, nil
 }
 
 func (d *DB) AddCurrency(c types.Currency) (*types.Currency, error) {
@@ -131,29 +154,6 @@ func (d *DB) getCurrency(id int) (*types.Currency, error) {
 		return nil, fmt.Errorf("could not get currency %d", id)
 	}
 	return &c, nil
-}
-
-func (d *DB) GetItem(id int) (types.Item, error) {
-	i := types.Item{}
-	err := d.QueryRow("select id, make, model, companyID, companyName, usdValue from itemsCompany where id = ?", id).Scan(&i.ID, &i.Make, &i.Model, &i.Company.ID, &i.Company.Name, &i.USDValue)
-	if err != nil {
-		return i, fmt.Errorf("could not get item %d: %v ", id, err)
-	}
-	return i, nil
-}
-
-func (d *DB) AddItem(i types.Item) (*types.Item, error) {
-	r, err := d.Exec("insert into items(make, model, companyID, usdValue, newItemID) values (?,?,?,?,?)", i.Make, i.Model, i.Company.ID, i.USDValue, i.NewItemID)
-	if err != nil {
-		return nil, err
-	}
-	lastID, err := r.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-	new := i
-	new.ID = int(lastID)
-	return &new, nil
 }
 
 func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
@@ -217,6 +217,14 @@ func (d *DB) getNewItem(id int) (*types.NewItem, error) {
 	return &i, nil
 }
 
+func (d *DB) AddUser(u types.User) error {
+	_, err := d.Exec("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)", u.ID, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (d *DB) GetUser(userID string) (*types.User, error) {
 	u := types.User{}
 	err := d.QueryRow("select id, fullname, firstName, country, email, isAdmin from users where id=?", userID).Scan(&u.ID, &u.Fullname, &u.FirstName, &u.Country, &u.Email, &u.IsAdmin)
@@ -224,14 +232,6 @@ func (d *DB) GetUser(userID string) (*types.User, error) {
 		return &u, err
 	}
 	return &u, nil
-}
-
-func (d *DB) AddUser(u types.User) error {
-	_, err := d.Exec("insert into users(id, fullName, firstName, country, email, isAdmin) values (?,?,?,?,?,?)", u.ID, u.Fullname, u.FirstName, u.Country, u.Email, u.IsAdmin)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (d *DB) AddPledge(itemID int, userID string, usdValue int) (*types.Pledge, error) {

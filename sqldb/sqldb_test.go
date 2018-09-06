@@ -126,7 +126,24 @@ func TestListItems(t *testing.T) {
 	}
 }
 
-func TestCurrencies(t *testing.T) {
+func TestGetItem(t *testing.T) {
+	db := initDB(t)
+	initCurrencies(db, t)
+	ids := initItems(db, t)
+	initCompanies(db, t)
+
+	for i := range testItems {
+		item, err := db.GetItem(ids[i])
+		if err != nil {
+			t.Fatal(err)
+		}
+		if reflect.DeepEqual(testItems[i], item) {
+			t.Fatalf("expected %v, got %v", testItems[i], item)
+		}
+	}
+}
+
+func TestListCurrencies(t *testing.T) {
 	qe := NewQuery("currencies").
 		WithColumns("id", "ident", "usdConversion")
 	for _, c := range currencies {
@@ -148,57 +165,7 @@ func TestCurrencies(t *testing.T) {
 		}
 	}
 }
-
-func TestNewItems(t *testing.T) {
-	db := initDB(t)
-	newItems := initNewItems(db, t)
-	ns, err := db.ListNewItems()
-	if err != nil {
-		t.Fatal(err)
-	}
-	// TODO: expected results template
-	if len(newItems) != len(ns) {
-		t.Fatalf("expected %v items, got %v items [%v]", len(newItems), len(ns), ns)
-	}
-	for i := range ns {
-		if !reflect.DeepEqual(newItems[i], ns[i]) {
-			t.Fatalf("expected item %v but got %v", newItems[i], ns[i])
-		}
-	}
-}
-
-func TestNewUser(t *testing.T) {
-	db := initDB(t)
-
-	for _, u := range testUsers {
-		user, err := db.GetUser(u.ID)
-		if err != nil {
-			t.Fatal("error from db.GetUser:" + err.Error())
-		}
-		if reflect.DeepEqual(u, user) {
-			t.Fatalf("expected %v got %v", u, user)
-		}
-	}
-}
-
-func TestGetItem(t *testing.T) {
-	db := initDB(t)
-	initCurrencies(db, t)
-	ids := initItems(db, t)
-	initCompanies(db, t)
-
-	for i := range testItems {
-		item, err := db.GetItem(ids[i])
-		if err != nil {
-			t.Fatal(err)
-		}
-		if reflect.DeepEqual(testItems[i], item) {
-			t.Fatalf("expected %v, got %v", testItems[i], item)
-		}
-	}
-}
-
-func TestAddNewItem(t *testing.T) {
+func TestAddNewItems(t *testing.T) {
 	db := initDB(t)
 	initCurrencies(db, t)
 
@@ -223,7 +190,39 @@ func TestAddNewItem(t *testing.T) {
 	}
 }
 
-func TestAddNewPledge(t *testing.T) {
+func TestListNewItems(t *testing.T) {
+	db := initDB(t)
+	newItems := initNewItems(db, t)
+	ns, err := db.ListNewItems()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// TODO: expected results template
+	if len(newItems) != len(ns) {
+		t.Fatalf("expected %v items, got %v items [%v]", len(newItems), len(ns), ns)
+	}
+	for i := range ns {
+		if !reflect.DeepEqual(newItems[i], ns[i]) {
+			t.Fatalf("expected item %v but got %v", newItems[i], ns[i])
+		}
+	}
+}
+
+func TestAddUser(t *testing.T) {
+	db := initDB(t)
+
+	for _, u := range testUsers {
+		user, err := db.GetUser(u.ID)
+		if err != nil {
+			t.Fatal("error from db.GetUser:" + err.Error())
+		}
+		if reflect.DeepEqual(u, user) {
+			t.Fatalf("expected %v got %v", u, user)
+		}
+	}
+}
+
+func TestAddPledge(t *testing.T) {
 	db := initDB(t)
 	p, err := db.AddPledge(1, "user001", 100)
 	if err != nil {
