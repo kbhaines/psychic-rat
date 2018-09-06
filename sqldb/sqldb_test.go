@@ -12,24 +12,24 @@ func TestCreateDB(t *testing.T) {
 }
 
 var (
-	cos = map[int]types.Company{
-		1: types.Company{ID: 1, Name: "testco1"},
-		2: types.Company{ID: 2, Name: "testco2"},
-		3: types.Company{ID: 3, Name: "testco3"},
-		4: types.Company{ID: 4, Name: "testco4"},
+	cos = []types.Company{
+		types.Company{ID: 1, Name: "testco1"},
+		types.Company{ID: 2, Name: "testco2"},
+		types.Company{ID: 3, Name: "testco3"},
+		types.Company{ID: 4, Name: "testco4"},
 	}
 
-	items = map[int]types.Item{
-		1: types.Item{ID: 1, Make: "phone", Model: "xyz", Company: cos[0], USDValue: 100},
-		2: types.Item{ID: 2, Make: "phone", Model: "133", Company: cos[0], USDValue: 100},
-		3: types.Item{ID: 3, Make: "tablet", Model: "ab1", Company: cos[1], USDValue: 100},
-		4: types.Item{ID: 4, Make: "tablet", Model: "xy1", Company: cos[1], USDValue: 100},
+	items = []types.Item{
+		types.Item{ID: 1, Make: "phone", Model: "xyz", Company: cos[0], USDValue: 100},
+		types.Item{ID: 2, Make: "phone", Model: "133", Company: cos[0], USDValue: 100},
+		types.Item{ID: 3, Make: "tablet", Model: "ab1", Company: cos[1], USDValue: 100},
+		types.Item{ID: 4, Make: "tablet", Model: "xy1", Company: cos[1], USDValue: 100},
 	}
 
-	currencies = map[int]types.Currency{
-		1: types.Currency{ID: 1, Ident: "USD", ConversionToUSD: 1.0},
-		2: types.Currency{ID: 2, Ident: "GBP", ConversionToUSD: 1.2},
-		3: types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 1.4},
+	currencies = []types.Currency{
+		types.Currency{ID: 1, Ident: "USD", ConversionToUSD: 1.0},
+		types.Currency{ID: 2, Ident: "GBP", ConversionToUSD: 1.2},
+		types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 1.4},
 	}
 )
 
@@ -70,7 +70,7 @@ func TestListCompanies(t *testing.T) {
 }
 
 func TestGetCompanyById(t *testing.T) {
-	co := cos[1]
+	co := cos[0]
 	mock := NewMockDB(t).
 		QueryExpectation(NewQuery("companies").
 			WithColumns("id", "name").
@@ -88,7 +88,7 @@ func TestGetCompanyById(t *testing.T) {
 }
 
 func TestGetCompanyByWrongId(t *testing.T) {
-	co := cos[1]
+	co := cos[0]
 	mock := NewMockDB(t).
 		QueryExpectation(NewQuery("companies").
 			WithColumns("id", "name").
@@ -120,27 +120,32 @@ func TestListItems(t *testing.T) {
 		t.Fatalf("expected %v items, got %v items [%v]", len(items), len(its), its)
 	}
 	for i := range its {
-		if !reflect.DeepEqual(items[its[i].ID], its[i]) {
-			t.Fatalf("expected %v, got %v", items[its[i].ID], its[i])
+		if !reflect.DeepEqual(items[i], its[i]) {
+			t.Fatalf("expected %v, got %v", items[i], its[i])
 		}
 	}
 }
 
 func TestGetItem(t *testing.T) {
-	db := initDB(t)
-	initCurrencies(db, t)
-	ids := initItems(db, t)
-	initCompanies(db, t)
+	mock := NewMockDB(t)
+	for _, i := range items {
+		mock.QueryExpectation(NewQuery("itemsCompany").
+			WithColumns("id", "make", "model", "companyID", "companyName", "usdValue").
+			WithResultsRow(i.ID, i.Make, i.Model, i.Company.ID, i.Company.Name, i.USDValue))
+	}
 
-	for i := range testItems {
-		item, err := db.GetItem(ids[i])
+	db := DB{mock}
+
+	for _, item := range items {
+		it, err := db.GetItem(item.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if reflect.DeepEqual(testItems[i], item) {
-			t.Fatalf("expected %v, got %v", testItems[i], item)
+		if !reflect.DeepEqual(item, it) {
+			t.Fatalf("expected %v, got %v", item, it)
 		}
 	}
+	mock.CheckAllExpectationsMet()
 }
 
 func TestListCurrencies(t *testing.T) {
@@ -160,8 +165,8 @@ func TestListCurrencies(t *testing.T) {
 	mock.CheckAllExpectationsMet()
 
 	for i := range curs {
-		if currencies[curs[i].ID] != curs[i] {
-			t.Fatalf("currency did not match, expected %v got %v", currencies[curs[i].ID], curs[i])
+		if currencies[i] != curs[i] {
+			t.Fatalf("currency did not match, expected %v got %v", currencies[i], curs[i])
 		}
 	}
 }
