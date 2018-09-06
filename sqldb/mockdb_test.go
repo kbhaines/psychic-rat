@@ -34,7 +34,15 @@ func (m *mockDB) ExecExpectation(e *execStmt) *mockDB {
 	return m
 }
 
-func (m mockDB) Exec(query string, args ...interface{}) (Result, error) {
+func (m *mockDB) CheckAllExpectationsMet() {
+	m.t.Helper()
+	if m.nextExpectation != len(m.expectations) {
+		m.t.Errorf("some interactions missed, expected %d, got %d", len(m.expectations), m.nextExpectation)
+	}
+
+}
+
+func (m *mockDB) Exec(query string, args ...interface{}) (Result, error) {
 	exec := m.expectations[m.nextExpectation]
 	m.nextExpectation++
 	if exec.exec != nil {
@@ -44,7 +52,7 @@ func (m mockDB) Exec(query string, args ...interface{}) (Result, error) {
 	return exec.exec, fmt.Errorf("not able to match mock exec for query %s", query)
 }
 
-func (m mockDB) Query(query string, args ...interface{}) (Rows, error) {
+func (m *mockDB) Query(query string, args ...interface{}) (Rows, error) {
 	exec := m.expectations[m.nextExpectation]
 	m.nextExpectation++
 	if exec.query != nil {
@@ -52,6 +60,20 @@ func (m mockDB) Query(query string, args ...interface{}) (Rows, error) {
 		return exec.query.rows, nil
 	}
 	return nil, fmt.Errorf("not able to match mock to query %s", query)
+}
+
+func (m *mockDB) QueryRow(query string, args ...interface{}) Row {
+	m.t.Helper()
+	exec := m.expectations[m.nextExpectation]
+	m.nextExpectation++
+	if exec.query != nil {
+		if len(exec.query.rows.rows) != 1 {
+			m.t.Errorf("QueryRow called, expected 1 row in mock results, got %d", len(exec.query.rows.rows))
+		}
+		checkQuery(m.t, exec.query, query, args)
+		return exec.query.rows
+	}
+	return &rowError{query}
 }
 
 func (m mockDB) Close() {}
@@ -105,7 +127,7 @@ func (q *queryStmt) WithResultsRow(v ...interface{}) *queryStmt {
 	return q
 }
 
-// rowsResult represents a result from a mock query execution
+// rowsResult represents a result from a sql.Query call
 
 type rowsResult struct {
 	next int
@@ -137,6 +159,18 @@ func (r *rowsResult) Scan(v ...interface{}) error {
 
 	return nil
 }
+
+// rowError is the case where a sql.QueryRow doesn't return just a single row from
+// the mock.
+type rowError struct {
+	query string
+}
+
+func (r *rowError) Scan(v ...interface{}) error {
+	return fmt.Errorf("not able to match mock to query %s", r.query)
+}
+
+/////
 
 func checkExecInsert(t *testing.T, insert *execStmt, query string, args []interface{}) {
 	t.Helper()
@@ -176,7 +210,7 @@ func checkExecInsert(t *testing.T, insert *execStmt, query string, args []interf
 
 func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interface{}) {
 	t.Helper()
-	re := regexp.MustCompile("select (.*) from (.*)( where (.*))?")
+	re := regexp.MustCompile("select (.*) from (\\w*)( where (.*))?")
 	match := re.FindStringSubmatch(query)
 	if len(match) < 3 {
 		t.Fatalf("could not match select statement (%v)", query)
@@ -187,12 +221,8 @@ func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interfac
 		t.Fatalf("expected table %s, got %s in query %s", expQuery.table, table, query)
 	}
 	if expQuery.columns != columns {
-		t.Fatalf("expected columns %s, got %s in query %s", expQuery.columns, columns, query)
+		t.Fatalf("expected columns [%s], got [%s] in query %s", expQuery.columns, columns, query)
 	}
-}
-
-func (m mockDB) QueryRow(query string, args ...interface{}) Row {
-	panic("not implemented")
 }
 
 var errNilPtr = fmt.Errorf("nil pointer")

@@ -11,14 +11,24 @@ func TestCreateDB(t *testing.T) {
 	initDB(t)
 }
 
+var (
+	cos = map[int]types.Company{
+		1: types.Company{ID: 1, Name: "testco1"},
+		2: types.Company{ID: 2, Name: "testco2"},
+		3: types.Company{ID: 3, Name: "testco3"},
+		4: types.Company{ID: 4, Name: "testco4"},
+	}
+)
+
 func TestAddCompany(t *testing.T) {
-	mock := NewMockDB(t)
-	mock.ExecExpectation(NewExec("companies").
-		WithColumnValue("name", "testco1").
-		WithInsertId(1234))
+	mock := NewMockDB(t).
+		ExecExpectation(NewExec("companies").
+			WithColumnValue("name", "testco1").
+			WithInsertId(1234))
 
 	db := DB{mock}
 	co, err := db.AddCompany(types.Company{Name: "testco1"})
+	mock.CheckAllExpectationsMet()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -27,49 +37,40 @@ func TestAddCompany(t *testing.T) {
 	}
 }
 
-func TestListCompanies1(t *testing.T) {
-	mock := NewMockDB(t)
-	mock.QueryExpectation(NewQuery("companies").
-		WithColumns("id", "name").
-		WithResultsRow(1, "testco1").
-		WithResultsRow(2, "testco2"))
+func TestListCompanies(t *testing.T) {
+	qe := NewQuery("companies").WithColumns("id", "name")
+	for _, r := range cos {
+		qe.WithResultsRow(r.ID, r.Name)
+	}
+	mock := NewMockDB(t).QueryExpectation(qe)
 
 	db := DB{mock}
-	cos, err := db.ListCompanies()
+	listing, err := db.ListCompanies()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(cos) == 0 {
-		t.Fatal("no companies returned!")
+	mock.CheckAllExpectationsMet()
+
+	if len(cos) != len(listing) {
+		t.Errorf("expected %d companies, got %d", len(cos), len(listing))
 	}
-}
-
-func TestListCompanies(t *testing.T) {
-	db := initDB(t)
-
-	companies, err := db.ListCompanies()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for i, c := range testCos {
-		if c != companies[i].Name && i != companies[i].ID {
-			t.Fatalf("company did not match, expected %v got %v", c, companies[i])
-		}
-	}
-
 }
 
 func TestGetCompanyById(t *testing.T) {
-	db := initDB(t)
+	co := cos[1]
+	mock := NewMockDB(t).
+		QueryExpectation(NewQuery("companies").
+			WithColumns("id", "name").
+			WithResultsRow(co.ID, co.Name))
 
-	id := 1
-	c, err := db.GetCompany(id)
+	db := DB{mock}
+	c, err := db.GetCompany(co.ID)
+	mock.CheckAllExpectationsMet()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.ID != id {
-		t.Fatalf("wanted id %v, got %v", id, c.ID)
+	if co != c {
+		t.Fatalf("wanted company record %v, got %v", co, c)
 	}
 }
 
