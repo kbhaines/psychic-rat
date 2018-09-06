@@ -18,6 +18,13 @@ var (
 		3: types.Company{ID: 3, Name: "testco3"},
 		4: types.Company{ID: 4, Name: "testco4"},
 	}
+
+	items = map[int]types.Item{
+		1: types.Item{ID: 1, Make: "phone", Model: "xyz", Company: cos[0], USDValue: 100},
+		2: types.Item{ID: 2, Make: "phone", Model: "133", Company: cos[0], USDValue: 100},
+		3: types.Item{ID: 3, Make: "tablet", Model: "ab1", Company: cos[1], USDValue: 100},
+		4: types.Item{ID: 4, Make: "tablet", Model: "xy1", Company: cos[1], USDValue: 100},
+	}
 )
 
 func TestAddCompany(t *testing.T) {
@@ -74,18 +81,41 @@ func TestGetCompanyById(t *testing.T) {
 	}
 }
 
+func TestGetCompanyByWrongId(t *testing.T) {
+	co := cos[1]
+	mock := NewMockDB(t).
+		QueryExpectation(NewQuery("companies").
+			WithColumns("id", "name").
+			WithError("not found"))
+
+	db := DB{mock}
+	_, err := db.GetCompany(co.ID)
+	mock.CheckAllExpectationsMet()
+	if err == nil {
+		t.Fatalf("did not get expected error")
+	}
+}
+
 func TestListItems(t *testing.T) {
-	db := initDB(t)
-	items, err := db.ListItems()
+	qe := NewQuery("itemsCompany").
+		WithColumns("id", "make", "model", "companyID", "companyName", "usdValue")
+	for _, i := range items {
+		qe.WithResultsRow(i.ID, i.Make, i.Model, i.Company.ID, i.Company.Name, i.USDValue)
+	}
+
+	mock := NewMockDB(t).QueryExpectation(qe)
+	db := DB{mock}
+	its, err := db.ListItems()
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(testItems) != len(items) {
-		t.Fatalf("expected %v items, got %v items [%v]", len(testItems), len(items), items)
+	mock.CheckAllExpectationsMet()
+	if len(items) != len(its) {
+		t.Fatalf("expected %v items, got %v items [%v]", len(items), len(its), its)
 	}
-	for i := range items {
-		if reflect.DeepEqual(testItems[i], items[i]) {
-			t.Fatalf("expected %v, got %v", testItems[i], items[i])
+	for i := range its {
+		if reflect.DeepEqual(items[i], its[i]) {
+			t.Fatalf("expected %v, got %v", items[i], its[i])
 		}
 	}
 }

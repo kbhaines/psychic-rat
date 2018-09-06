@@ -57,6 +57,9 @@ func (m *mockDB) Query(query string, args ...interface{}) (Rows, error) {
 	m.nextExpectation++
 	if exec.query != nil {
 		checkQuery(m.t, exec.query, query, args)
+		if exec.query.err != nil {
+			return exec.query.rows, exec.query.err
+		}
 		return exec.query.rows, nil
 	}
 	return nil, fmt.Errorf("not able to match mock to query %s", query)
@@ -67,13 +70,16 @@ func (m *mockDB) QueryRow(query string, args ...interface{}) Row {
 	exec := m.expectations[m.nextExpectation]
 	m.nextExpectation++
 	if exec.query != nil {
+		if exec.query.err != nil {
+			return &rowError{err: exec.query.err}
+		}
 		if len(exec.query.rows.rows) != 1 {
 			m.t.Errorf("QueryRow called, expected 1 row in mock results, got %d", len(exec.query.rows.rows))
 		}
 		checkQuery(m.t, exec.query, query, args)
 		return exec.query.rows
 	}
-	return &rowError{query}
+	return &rowError{query: query}
 }
 
 func (m mockDB) Close() {}
@@ -111,14 +117,20 @@ type queryStmt struct {
 	columns     string
 	whereClause string
 	rows        *rowsResult
+	err         error
 }
 
 func NewQuery(table string) *queryStmt {
-	return &queryStmt{table: table, rows: &rowsResult{}}
+	return &queryStmt{table: table, rows: &rowsResult{}, err: nil}
 }
 
 func (q *queryStmt) WithColumns(cols ...string) *queryStmt {
 	q.columns = strings.Join(cols, ",")
+	return q
+}
+
+func (q *queryStmt) WithError(msg string) *queryStmt {
+	q.err = fmt.Errorf(msg)
 	return q
 }
 
@@ -164,9 +176,13 @@ func (r *rowsResult) Scan(v ...interface{}) error {
 // the mock.
 type rowError struct {
 	query string
+	err   error
 }
 
 func (r *rowError) Scan(v ...interface{}) error {
+	if r.err != nil {
+		return r.err
+	}
 	return fmt.Errorf("not able to match mock to query %s", r.query)
 }
 
