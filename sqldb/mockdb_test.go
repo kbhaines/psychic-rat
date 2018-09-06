@@ -297,6 +297,12 @@ func convertAssign(dest, src interface{}) error {
 			*d = []byte(s.Format(time.RFC3339Nano))
 			return nil
 		}
+	case float64:
+		switch d := dest.(type) {
+		case *float64:
+			*d = s
+			return nil
+		}
 	case nil:
 		switch d := dest.(type) {
 		case *interface{}:

@@ -81,13 +81,13 @@ func (d *DB) ListItems() ([]types.Item, error) {
 	ir := []types.Item{}
 	rows, err := d.Query("select id, make, model, companyID, companyName, usdValue from itemsCompany order by companyName, make, model")
 	if err != nil {
-		return ir, err
+		return nil, err
 	}
 	for rows.Next() {
 		item := types.Item{}
 		err = rows.Scan(&item.ID, &item.Make, &item.Model, &item.Company.ID, &item.Company.Name, &item.USDValue)
 		if err != nil {
-			return ir, err
+			return nil, err
 		}
 		ir = append(ir, item)
 	}

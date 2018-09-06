@@ -25,6 +25,12 @@ var (
 		3: types.Item{ID: 3, Make: "tablet", Model: "ab1", Company: cos[1], USDValue: 100},
 		4: types.Item{ID: 4, Make: "tablet", Model: "xy1", Company: cos[1], USDValue: 100},
 	}
+
+	currencies = map[int]types.Currency{
+		1: types.Currency{ID: 1, Ident: "USD", ConversionToUSD: 1.0},
+		2: types.Currency{ID: 2, Ident: "GBP", ConversionToUSD: 1.2},
+		3: types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 1.4},
+	}
 )
 
 func TestAddCompany(t *testing.T) {
@@ -91,8 +97,8 @@ func TestGetCompanyByWrongId(t *testing.T) {
 	db := DB{mock}
 	_, err := db.GetCompany(co.ID)
 	mock.CheckAllExpectationsMet()
-	if err == nil {
-		t.Fatalf("did not get expected error")
+	if err == nil || err.Error() != "not found" {
+		t.Fatalf("did not get expected error, got %v", err)
 	}
 }
 
@@ -114,8 +120,31 @@ func TestListItems(t *testing.T) {
 		t.Fatalf("expected %v items, got %v items [%v]", len(items), len(its), its)
 	}
 	for i := range its {
-		if reflect.DeepEqual(items[i], its[i]) {
-			t.Fatalf("expected %v, got %v", items[i], its[i])
+		if !reflect.DeepEqual(items[its[i].ID], its[i]) {
+			t.Fatalf("expected %v, got %v", items[its[i].ID], its[i])
+		}
+	}
+}
+
+func TestCurrencies(t *testing.T) {
+	qe := NewQuery("currencies").
+		WithColumns("id", "ident", "usdConversion")
+	for _, c := range currencies {
+		qe.WithResultsRow(c.ID, c.Ident, c.ConversionToUSD)
+	}
+
+	mock := NewMockDB(t).QueryExpectation(qe)
+	db := DB{mock}
+
+	curs, err := db.ListCurrencies()
+	if err != nil {
+		t.Fatal(err)
+	}
+	mock.CheckAllExpectationsMet()
+
+	for i := range curs {
+		if currencies[curs[i].ID] != curs[i] {
+			t.Fatalf("currency did not match, expected %v got %v", currencies[curs[i].ID], curs[i])
 		}
 	}
 }
@@ -192,23 +221,6 @@ func TestAddNewItem(t *testing.T) {
 	if !reflect.DeepEqual(*newItem, n) {
 		t.Fatalf("expected %v, got back %v", newItem, n)
 	}
-}
-
-func TestCurrencies(t *testing.T) {
-	db := initDB(t)
-	initCurrencies(db, t)
-
-	currencies, err := db.ListCurrencies()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for i, c := range testCurrencies {
-		if c != currencies[i] {
-			t.Fatalf("currency did not match, expected %v got %v", c, currencies[i])
-		}
-	}
-
 }
 
 func TestAddNewPledge(t *testing.T) {
