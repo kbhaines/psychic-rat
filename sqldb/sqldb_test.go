@@ -31,6 +31,12 @@ var (
 		types.Currency{ID: 2, Ident: "GBP", ConversionToUSD: 1.2},
 		types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 1.4},
 	}
+
+	nits = []types.NewItem{
+		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100, Timestamp: time.Unix(0, 0)},
+		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100, Timestamp: time.Unix(0, 0)},
+		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100, Timestamp: time.Unix(0, 0)},
+	}
 )
 
 func TestAddCompany(t *testing.T) {
@@ -170,45 +176,58 @@ func TestListCurrencies(t *testing.T) {
 		}
 	}
 }
-func TestAddNewItems(t *testing.T) {
-	db := initDB(t)
-	initCurrencies(db, t)
+func TestAddNewItem(t *testing.T) {
+	ni := nits[0]
+	mock := NewMockDB(t)
 
-	newItem := &types.NewItem{Make: "newthing", Model: "newmodel", Company: "newco", UserID: "test1", CurrencyID: 1, Value: 100}
-	newItem, err := db.AddNewItem(*newItem)
+	mock.QueryExpectation(NewQuery("currencies").
+		WithColumns("id", "ident", "usdConversion").
+		WithResultsRow(ni.CurrencyID, "USD", 2.0))
+
+	mock.ExecExpectation(NewExec("newItems").
+		WithColumnValue("userID", ni.UserID).
+		WithColumnValue("isPledge", ni.IsPledge).
+		WithColumnValue("make", ni.Make).
+		WithColumnValue("model", ni.Model).
+		WithColumnValue("company", ni.Company).
+		WithColumnValue("companyID", ni.CompanyID).
+		WithColumnValue("currencyID", ni.CurrencyID).
+		WithColumnValue("currencyValue", ni.Value).
+		WithColumnValue("timestamp", time.Now().Truncate(time.Second).Unix()).
+		WithColumnValue("used", 0))
+
+	db := DB{mock}
+	_, err := db.AddNewItem(ni)
 	if err != nil {
 		t.Fatal(err)
 	}
+	mock.CheckAllExpectationsMet()
 
-	var n types.NewItem
-	var timestamp int64
-	err = db.QueryRow("select id, make, model, company, userID, currencyID, currencyValue, timestamp from newItems where id=?", newItem.ID).Scan(&n.ID, &n.Make, &n.Model, &n.Company, &n.UserID, &n.CurrencyID, &n.Value, &timestamp)
-	if err != nil {
-		t.Fatal(err)
-	}
-	n.Timestamp = time.Unix(timestamp, 0)
-	if time.Since(n.Timestamp) > time.Second {
-		t.Fatalf("timestamp problem, new is %v: ", n.Timestamp)
-	}
-	if !reflect.DeepEqual(*newItem, n) {
-		t.Fatalf("expected %v, got back %v", newItem, n)
-	}
 }
 
 func TestListNewItems(t *testing.T) {
-	db := initDB(t)
-	newItems := initNewItems(db, t)
+	qe := NewQuery("newItems").
+		WithColumns("id", "userID", "isPledge", "make", "model", "company", "companyID", "currencyID", "currencyValue", "timestamp")
+
+	for _, ni := range nits {
+		qe.WithResultsRow(ni.ID, ni.UserID, ni.IsPledge, ni.Make, ni.Model, ni.Company, ni.CompanyID, ni.CurrencyID, ni.Value, int64(0))
+	}
+
+	mock := NewMockDB(t).QueryExpectation(qe)
+
+	db := DB{mock}
 	ns, err := db.ListNewItems()
 	if err != nil {
 		t.Fatal(err)
 	}
+	mock.CheckAllExpectationsMet()
 	// TODO: expected results template
-	if len(newItems) != len(ns) {
-		t.Fatalf("expected %v items, got %v items [%v]", len(newItems), len(ns), ns)
+	if len(nits) != len(ns) {
+		t.Fatalf("expected %v items, got %v items [%v]", len(nits), len(ns), ns)
 	}
 	for i := range ns {
-		if !reflect.DeepEqual(newItems[i], ns[i]) {
-			t.Fatalf("expected item %v but got %v", newItems[i], ns[i])
+		if !reflect.DeepEqual(nits[i], ns[i]) {
+			t.Fatalf("expected item %v but got %v", nits[i], ns[i])
 		}
 	}
 }

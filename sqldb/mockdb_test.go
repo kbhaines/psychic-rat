@@ -43,6 +43,10 @@ func (m *mockDB) CheckAllExpectationsMet() {
 }
 
 func (m *mockDB) Exec(query string, args ...interface{}) (Result, error) {
+	m.t.Helper()
+	if m.nextExpectation == len(m.expectations) {
+		m.t.Fatalf("no more expectations set for Exec")
+	}
 	exec := m.expectations[m.nextExpectation]
 	m.nextExpectation++
 	if exec.exec != nil {
@@ -53,6 +57,10 @@ func (m *mockDB) Exec(query string, args ...interface{}) (Result, error) {
 }
 
 func (m *mockDB) Query(query string, args ...interface{}) (Rows, error) {
+	m.t.Helper()
+	if m.nextExpectation == len(m.expectations) {
+		m.t.Fatalf("no more expectations set for Query")
+	}
 	exec := m.expectations[m.nextExpectation]
 	m.nextExpectation++
 	if exec.query != nil {
@@ -67,6 +75,9 @@ func (m *mockDB) Query(query string, args ...interface{}) (Rows, error) {
 
 func (m *mockDB) QueryRow(query string, args ...interface{}) Row {
 	m.t.Helper()
+	if m.nextExpectation == len(m.expectations) {
+		m.t.Fatalf("no more expectations set for QueryRow")
+	}
 	exec := m.expectations[m.nextExpectation]
 	m.nextExpectation++
 	if exec.query != nil {
@@ -191,15 +202,15 @@ func (r *rowError) Scan(v ...interface{}) error {
 func checkExecInsert(t *testing.T, insert *execStmt, query string, args []interface{}) {
 	t.Helper()
 
-	re := regexp.MustCompile("insert into (.*)\\((.*)\\) values\\((.*)\\)")
+	re := regexp.MustCompile("insert\\s+into\\s+(.+)\\s*\\((.*)\\)\\s+values\\s*\\((.*)\\)")
 	results := re.FindStringSubmatch(query)
 	if len(results) != 4 {
-		t.Fatalf("could not match query: %v", query)
+		t.Fatalf("could not match exec statement; regexp match [%v] from [%v]", results, query)
 	}
 
 	table := results[1]
-	columns := strings.Split(results[2], ",")
-	values := strings.Split(results[3], ",")
+	columns := strings.Split(strings.Replace(results[2], " ", "", -1), ",")
+	values := strings.Split(strings.Replace(results[3], " ", "", -1), ",")
 
 	if insert.table != table {
 		t.Fatalf("wrong table, expected %v, got %v", insert.table, table)
@@ -226,7 +237,7 @@ func checkExecInsert(t *testing.T, insert *execStmt, query string, args []interf
 
 func checkQuery(t *testing.T, expQuery *queryStmt, query string, args []interface{}) {
 	t.Helper()
-	re := regexp.MustCompile("select (.*) from (\\w*)( where (.*))?")
+	re := regexp.MustCompile("select\\s+(.*)\\s+from\\s+(\\w*)(\\s+where\\s+(.*))?")
 	match := re.FindStringSubmatch(query)
 	if len(match) < 3 {
 		t.Fatalf("could not match select statement (%v)", query)
@@ -255,6 +266,12 @@ func convertAssign(dest, src interface{}) error {
 			if d == nil {
 				return errNilPtr
 			}
+			*d = s
+			return nil
+		}
+	case int64:
+		switch d := dest.(type) {
+		case *int64:
 			*d = s
 			return nil
 		}
@@ -296,10 +313,19 @@ func convertAssign(dest, src interface{}) error {
 			}
 			*d = []byte(s.Format(time.RFC3339Nano))
 			return nil
+		case *int64:
+			*d = s.Unix()
+			return nil
 		}
 	case float64:
 		switch d := dest.(type) {
 		case *float64:
+			*d = s
+			return nil
+		}
+	case bool:
+		switch d := dest.(type) {
+		case *bool:
 			*d = s
 			return nil
 		}
@@ -320,5 +346,5 @@ func convertAssign(dest, src interface{}) error {
 		}
 	}
 
-	return fmt.Errorf("unable to parse in Scan")
+	return fmt.Errorf("unable to parse in Scan: dest: %v(%T), src:%v(%T)", dest, dest, src, src)
 }

@@ -162,7 +162,7 @@ func (d *DB) AddNewItem(i types.NewItem) (*types.NewItem, error) {
 	if err != nil {
 		return nil, err
 	}
-	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp, used) values (?,?,?,?,?,?,?,?,?,0)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix())
+	r, err := d.Exec("insert into newItems(userID, isPledge, make, model, company, companyID, currencyID, currencyValue, timestamp, used) values (?,?,?,?,?,?,?,?,?,?)", i.UserID, i.IsPledge, i.Make, i.Model, i.Company, i.CompanyID, i.CurrencyID, i.Value, timestamp.Unix(), 0)
 	if err != nil {
 		return nil, err
 	}
