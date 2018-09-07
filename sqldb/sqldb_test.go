@@ -7,10 +7,6 @@ import (
 	"time"
 )
 
-func TestCreateDB(t *testing.T) {
-	initDB(t)
-}
-
 var (
 	cos = []types.Company{
 		types.Company{ID: 1, Name: "testco1"},
@@ -32,10 +28,23 @@ var (
 		types.Currency{ID: 3, Ident: "EUR", ConversionToUSD: 1.4},
 	}
 
-	nits = []types.NewItem{
+	newItems = []types.NewItem{
 		types.NewItem{ID: 1, UserID: "test1", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100, Timestamp: time.Unix(0, 0)},
 		types.NewItem{ID: 2, UserID: "test2", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100, Timestamp: time.Unix(0, 0)},
 		types.NewItem{ID: 3, UserID: "test3", IsPledge: true, Make: "newPhone", Model: "newMod", Company: "co1", CompanyID: 1, CurrencyID: 1, Value: 100, Timestamp: time.Unix(0, 0)},
+	}
+
+	users = []types.User{
+		types.User{ID: "test1", FirstName: "user1", Email: "user1@user.com"},
+		types.User{ID: "test2", FirstName: "user2", Email: "user2@user.com"},
+		types.User{ID: "test3", FirstName: "user3", Email: "user3@user.com"},
+		types.User{ID: "test4", FirstName: "user4", Email: "user4@user.com"},
+		types.User{ID: "test5", FirstName: "user5", Email: "user5@user.com"},
+		types.User{ID: "test6", FirstName: "user6", Email: "user6@user.com"},
+		types.User{ID: "test7", FirstName: "user7", Email: "user7@user.com"},
+		types.User{ID: "test8", FirstName: "user8", Email: "user8@user.com"},
+		types.User{ID: "test9", FirstName: "user9", Email: "user9@user.com"},
+		types.User{ID: "test10", FirstName: "user10", Email: "user10@user.com"},
 	}
 )
 
@@ -177,7 +186,7 @@ func TestListCurrencies(t *testing.T) {
 	}
 }
 func TestAddNewItem(t *testing.T) {
-	ni := nits[0]
+	ni := newItems[0]
 	mock := NewMockDB(t)
 
 	mock.QueryExpectation(NewQuery("currencies").
@@ -209,7 +218,7 @@ func TestListNewItems(t *testing.T) {
 	qe := NewQuery("newItems").
 		WithColumns("id", "userID", "isPledge", "make", "model", "company", "companyID", "currencyID", "currencyValue", "timestamp")
 
-	for _, ni := range nits {
+	for _, ni := range newItems {
 		qe.WithResultsRow(ni.ID, ni.UserID, ni.IsPledge, ni.Make, ni.Model, ni.Company, ni.CompanyID, ni.CurrencyID, ni.Value, int64(0))
 	}
 
@@ -221,37 +230,66 @@ func TestListNewItems(t *testing.T) {
 		t.Fatal(err)
 	}
 	mock.CheckAllExpectationsMet()
-	// TODO: expected results template
-	if len(nits) != len(ns) {
-		t.Fatalf("expected %v items, got %v items [%v]", len(nits), len(ns), ns)
+	if len(newItems) != len(ns) {
+		t.Fatalf("expected %v items, got %v items [%v]", len(newItems), len(ns), ns)
 	}
 	for i := range ns {
-		if !reflect.DeepEqual(nits[i], ns[i]) {
-			t.Fatalf("expected item %v but got %v", nits[i], ns[i])
+		if !reflect.DeepEqual(newItems[i], ns[i]) {
+			t.Fatalf("expected item %v but got %v", newItems[i], ns[i])
 		}
 	}
 }
 
 func TestAddUser(t *testing.T) {
-	db := initDB(t)
+	user := users[0]
+	mock := NewMockDB(t).ExecExpectation(NewExec("users").
+		WithColumnValue("id", user.ID).
+		WithColumnValue("fullName", user.Fullname).
+		WithColumnValue("firstName", user.FirstName).
+		WithColumnValue("country", user.Country).
+		WithColumnValue("email", user.Email).
+		WithColumnValue("isAdmin", user.IsAdmin).
+		WithInsertId(1234))
 
-	for _, u := range testUsers {
-		user, err := db.GetUser(u.ID)
-		if err != nil {
-			t.Fatal("error from db.GetUser:" + err.Error())
-		}
-		if reflect.DeepEqual(u, user) {
-			t.Fatalf("expected %v got %v", u, user)
-		}
+	db := DB{mock}
+	err := db.AddUser(user)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mock.CheckAllExpectationsMet()
+}
+
+func TestGetUser(t *testing.T) {
+	user := users[0]
+	mock := NewMockDB(t).QueryExpectation(NewQuery("users").
+		WithColumns("id", "fullname", "firstName", "country", "email", "isAdmin").
+		WithResultsRow(user.ID, user.Fullname, user.FirstName, user.Country, user.Email, user.IsAdmin))
+
+	db := DB{mock}
+	u, err := db.GetUser(user.ID)
+	if err != nil {
+		t.Fatal("error from db.GetUser:" + err.Error())
+	}
+	mock.CheckAllExpectationsMet()
+	if reflect.DeepEqual(u, user) {
+		t.Fatalf("expected %v got %v", u, user)
 	}
 }
 
 func TestAddPledge(t *testing.T) {
-	db := initDB(t)
+	mock := NewMockDB(t).ExecExpectation(NewExec("pledges").
+		WithInsertId(1234).
+		WithColumnValue("itemID", 1).
+		WithColumnValue("userID", "user001").
+		WithColumnValue("usdValue", 100).
+		WithColumnValue("timestamp", time.Now().Truncate(time.Second).Unix()))
+
+	db := DB{mock}
 	p, err := db.AddPledge(1, "user001", 100)
 	if err != nil {
 		t.Fatal(err)
 	}
+	mock.CheckAllExpectationsMet()
 
 	if p.UserID != "user001" || p.USDValue != 100 {
 		t.Fatalf("failed to add pledge, got %v", p)
